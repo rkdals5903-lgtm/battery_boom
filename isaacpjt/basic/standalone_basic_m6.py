@@ -38,7 +38,7 @@ while simulation_app.is_running():
     prev_is_playing = is_playing
 
     world.step(render=True)
-    time.sleep(0.03)
+    time.sleep(0.01)
     step_count += 1
 
     if step_count % 100 == 0:
