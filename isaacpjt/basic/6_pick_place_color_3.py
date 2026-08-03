@@ -937,8 +937,7 @@ def main():
                 task_done = True
                 my_world.pause()
 
-            # 현재 Controller 단계와 높이를 확인하기 
-            위한 디버그 출력
+            # 현재 Controller 단계와 높이를 확인하기 위한 디버그 출력
             event = controller.get_current_event()
             ee_position, _ = (
                 robot.end_effector.get_world_pose()
