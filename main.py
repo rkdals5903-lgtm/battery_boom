@@ -344,21 +344,11 @@ class BatteryFactoryTask(BaseTask):
         )
 
         # 장치별 배치 좌표 설정
-        UsdGeom.Xformable(
-            stage.GetPrimAtPath(M0609_RG2_PRIM_PATH)
-        ).AddTranslateOp().Set(Gf.Vec3d(*M0609_RG2_POSITION))
+        UsdGeom.Xformable(stage.GetPrimAtPath(M0609_RG2_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_RG2_POSITION))
+        UsdGeom.Xformable(stage.GetPrimAtPath(M0609_VG10_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_VG10_POSITION))
+        UsdGeom.Xformable(stage.GetPrimAtPath(M0609_SCREW_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_SCREW_POSITION))
 
-        UsdGeom.Xformable(
-            stage.GetPrimAtPath(M0609_VG10_PRIM_PATH)
-        ).AddTranslateOp().Set(Gf.Vec3d(*M0609_VG10_POSITION))
-
-        UsdGeom.Xformable(
-            stage.GetPrimAtPath(M0609_SCREW_PRIM_PATH)
-        ).AddTranslateOp().Set(Gf.Vec3d(*M0609_SCREW_POSITION))
-
-        work_table_xform = UsdGeom.Xformable(
-            stage.GetPrimAtPath(WORK_TABLE_PRIM_PATH)
-        )
+        work_table_xform = UsdGeom.Xformable(stage.GetPrimAtPath(WORK_TABLE_PRIM_PATH))
         work_table_xform.AddTranslateOp().Set(Gf.Vec3d(*WORK_TABLE_POSITION))
         work_table_xform.AddScaleOp().Set(Gf.Vec3f(*WORK_TABLE_SCALE))
 
@@ -434,29 +424,18 @@ class BatteryFactoryTask(BaseTask):
             drive_count = 0
 
             for prim in Usd.PrimRange(robot_prim):
-                for drive_type in (
-                    "angular",
-                    "linear",
-                ):
-                    drive = UsdPhysics.DriveAPI.Get(
-                        prim,
-                        drive_type,
-                    )
+                for drive_type in ("angular", "linear",):
+                    drive = UsdPhysics.DriveAPI.Get(prim, drive_type,)
 
                     if not drive:
                         continue
 
-                    drive.GetStiffnessAttr().Set(
-                        robot_config["stiffness"]
-                    )
-                    drive.GetDampingAttr().Set(
-                        robot_config["damping"]
-                    )
-                    drive.GetMaxForceAttr().Set(
-                        robot_config["max_force"]
-                    )
+                    drive.GetStiffnessAttr().Set(robot_config["stiffness"])
+                    drive.GetDampingAttr().Set(robot_config["damping"])
+                    drive.GetMaxForceAttr().Set(robot_config["max_force"])
 
                     drive_count += 1
+
         print(f"  [OK] M0609 Drive 설정:{drive_count}")
 
         # 조원별 Physics 설정 위치
