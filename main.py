@@ -32,6 +32,7 @@ import time
 
 import numpy as np
 import omni.usd
+import rclpy
 from pxr import Gf, Usd, UsdGeom, UsdPhysics # GF 모름
 from usd.schema.isaac import robot_schema
 #######################################
@@ -40,6 +41,7 @@ from isaacsim.core.api import World
 from isaacsim.core.api.objects import DynamicCuboid, VisualCuboid
 from isaacsim.core.api.tasks import BaseTask
 from isaacsim.core.experimental.utils import prim as prim_utils
+from isaacsim.core.prims import SingleRigidPrim
 from isaacsim.robot.manipulators.grippers import ParallelGripper, SurfaceGripper
 from isaacsim.robot.manipulators.manipulators import SingleManipulator
 from isaacsim.robot.surface_gripper import GripperView
@@ -67,6 +69,7 @@ RMPFLOW_DIR = PROJECT_DIR / "rmpflow"
 # 예시:
 
 from pick_place_controller import PickPlaceController
+from vg10_worktable_node import VG10WorktableNode
 
 # from screwdriver_controller import ScrewdriverController
 # from inspection_controller import InspectionController
@@ -85,6 +88,9 @@ M0609_RG2_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_rg2_cube.usd")
 M0609_VG10_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_vg10_cube.usd")
 M0609_SCREW_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_screw_cube.usd")
 WORK_TABLE_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "work_table.usd")
+BATTERY_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "good_battery.usd")
+# 1번(팔레트 -> 컨베이어 적재) 전용 VG10. usd 에셋은 4번 VG10과 동일한 파일을 재사용한다.
+M0609_VG10_PALLET_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_vg10_cube.usd")
 
 
 # <장치명>_PRIM_PATH
@@ -95,17 +101,25 @@ M0609_RG2_PRIM_PATH = "/World/m0609_rg2"
 M0609_VG10_PRIM_PATH = "/World/m0609_vg10"
 M0609_SCREW_PRIM_PATH = "/World/m0609_screw"
 WORK_TABLE_PRIM_PATH = "/World/work_table"
+BATTERY_PRIM_PATH = "/World/good_battery"
+
+# 1번(팔레트 -> 컨베이어 적재) 전용 VG10. 4번(컨베이어 -> 작업대) VG10과는
+# 별도의 로봇이다.
+M0609_VG10_PALLET_PRIM_PATH = "/World/m0609_vg10_pallet"
 
 # <장치명>_POSITION / _SCALE
 #     Stage 배치 시 사용할 Local Translate / Scale 값
 M0609_RG2_POSITION = np.array([3.75, 7.4, 0.0035])
 M0609_VG10_POSITION = np.array([2.2, 7.0, 0.0035])
 M0609_SCREW_POSITION = np.array([3.75, 6.4, 0.0035])
+# TODO: factory_work_set.usd의 팔레트 구역(Pallet_A 등) 근처 실제 좌표로 교체 필요.
+M0609_VG10_PALLET_POSITION = np.array([0.0, 0.0, 0.0035])
 
 WORK_TABLE_POSITION = np.array([-1.45938, -1.9134, 0.0])
 WORK_TABLE_SCALE = np.array([1.23622, 2.93456, 2.75608])
 
 M0609_SCENE_NAME = "m0609_robot"
+M0609_VG10_PALLET_SCENE_NAME = "m0609_vg10_pallet_robot"
 
 M0609_URDF_PATH = str( PROJECT_DIR/ "urdf"/ "m0609_isaac_sim.urdf")
 M0609_DESCRIPTION_PATH = str(PROJECT_DIR/ "rmpflow"/ "m0609_description.yaml")
@@ -133,13 +147,24 @@ RG2_JOINT_NAMES = ["finger_joint", "right_inner_knuckle_joint",]
 M0609_VG10_SCENE_NAME = "m0609_vg10_robot"
 
 VG10_SURFACE_GRIPPER_JOINT_PATH = f"{M0609_VG10_PRIM_PATH}/SurfaceGripperAttachJoint"
-# EE(link_6) 원점에서 흡착면까지 거리. TODO: Isaac Sim에서 bbox 실측 후 채우기.
-VG10_SURFACE_LOCAL_OFFSET = np.array([0.0, 0.0, 0.0])
-VG10_SURFACE_MAX_GRIP_DISTANCE = 0.03
-VG10_SURFACE_COAXIAL_FORCE_LIMIT = 100.0
-VG10_SURFACE_SHEAR_FORCE_LIMIT = 100.0
+# 1번(팔레트) VG10용 attach joint. 하드웨어가 동일하므로 아래 VG10_SURFACE_* 파라미터를 함께 쓴다.
+VG10_PALLET_SURFACE_GRIPPER_JOINT_PATH = f"{M0609_VG10_PALLET_PRIM_PATH}/SurfaceGripperAttachJoint"
+# EE(link_6) 원점에서 흡착면까지 거리. vg10_gamin.py에서 실측/검증된 값(2026-08-05)을 재사용한다.
+# 이 값과 컨트롤러 호출부의 end_effector_offset은 반드시 함께 바꿔야 한다.
+VG10_SURFACE_LOCAL_OFFSET = np.array([0.0, 0.0, 0.14])
+VG10_SURFACE_MAX_GRIP_DISTANCE = 0.05
+VG10_SURFACE_COAXIAL_FORCE_LIMIT = 1000.0
+VG10_SURFACE_SHEAR_FORCE_LIMIT = 1000.0
 VG10_SURFACE_RETRY_INTERVAL = 1.0
 VG10_SURFACE_CLEARANCE_OFFSET = 0.008
+
+# ------------------------------------------------------------
+# 4-2b. 배터리 물리 파라미터 (vg10_gamin.py 실측값 재사용)
+# ------------------------------------------------------------
+BATTERY_MASS_KG = 6.0  # TODO: 실제 배터리 무게로 교체
+# TODO: 컨베이어 트리거가 배터리를 멈추는 실제 좌표로 교체해야 한다.
+# 지금은 1번/4번 컨트롤러만 우선 연결하는 단계라 임시로 work_table 근처에 둔다.
+BATTERY_INITIAL_POSITION = np.array([0.0, 0.0, 0.0])
 
 # ------------------------------------------------------------
 # 4-3. 다른 장치 작성 예시
@@ -171,6 +196,13 @@ ROBOT_PHYSICS_CONFIGS = [
         "max_force": 1e8,
     },
     {
+        "name": "M0609_VG10_PALLET",
+        "prim_path": M0609_VG10_PALLET_PRIM_PATH,
+        "stiffness": 1e8,
+        "damping": 1e4,
+        "max_force": 1e8,
+    },
+    {
         "name": "M0609_SCREW",
         "prim_path": M0609_SCREW_PRIM_PATH,
         "stiffness": 1e8,
@@ -185,8 +217,27 @@ ROBOT_PHYSICS_CONFIGS = [
 #
 # TODO: 실제 pick/place 좌표가 정해지면 아래 값을 교체한다.
 #
-VG10_PICK_POSITION = np.array([0.30, 0.40, 0.0])
-VG10_PLACE_POSITION = np.array([0.55, -0.35, 0.0])
+# VG10(컨베이어 -> 작업대) 목표 배치 좌표.
+# vg10_gamin.py의 실측값(factory_clean_work_table.usd 기준)을 그대로 가져왔다.
+# TODO: main.py 통합 씬은 work_table 배치 좌표(WORK_TABLE_POSITION/SCALE)가 다르므로
+# Isaac Sim에서 재측정 후 교체해야 한다. pick 위치는 배터리 prim에서 매 프레임
+# bbox로 계산하므로(BatteryFactoryTask.get_battery_pick_surface_position) 별도 상수가 없다.
+VG10_WORKTABLE_PLACE_POSITION = np.array([1.76929, 6.49723, 1.0123])
+
+# ------------------------------------------------------------
+# 6-2. VG10(팔레트 -> 컨베이어) 파라미터
+# ------------------------------------------------------------
+# TODO: factory_work_set.usd 실제 구조 확인 후 교체. strings 덤프에서 확인된
+# 후보 prim 이름은 Pallet_A, ConveyorTrack, good_battery_01/02 등이었다.
+# 이 값들이 채워지기 전까지는 controller/vg10_pallet_node.py::VG10PalletNode를
+# main()에서 생성하지 않는다(주석 처리된 예시 참고).
+PALLET_PRIM_PATH = "/World/Pallet_A"
+PALLET_BATTERY_PRIM_PATHS = {
+    "good_battery_01": "/World/good_battery_01",
+    "good_battery_02": "/World/good_battery_02",
+}
+PALLET_BATTERY_ORDER = ["good_battery_01", "good_battery_02"]
+CONVEYOR_DESTINATION_POSITION = np.array([0.667304, 0.300000, 0.95435])
 
 RG2_PICK_POSITION = np.array([0.30, 0.40, 0.0515 / 2.0])
 RG2_PLACE_POSITION = np.array([0.55, -0.35, 0.0])
@@ -250,6 +301,29 @@ def add_usd_reference(stage, usd_path: str, target_prim_path: str = FACTORY_ROOT
     )
 
 
+def compute_world_bbox(stage, prim_path: str):
+    """Prim 전체 계층의 월드 축 정렬 Bounding Box를 반환한다. (vg10_gamin.py 재사용)"""
+    prim = stage.GetPrimAtPath(prim_path)
+    if not prim.IsValid():
+        raise RuntimeError(f"Bounding Box 대상 Prim이 없습니다: {prim_path}")
+
+    bbox_cache = UsdGeom.BBoxCache(
+        Usd.TimeCode.Default(),
+        [UsdGeom.Tokens.default_, UsdGeom.Tokens.render, UsdGeom.Tokens.proxy],
+        useExtentsHint=True,
+    )
+    bbox_cache.Clear()
+    aligned_range = bbox_cache.ComputeWorldBound(prim).ComputeAlignedRange()
+
+    bbox_min = np.array(aligned_range.GetMin(), dtype=float)
+    bbox_max = np.array(aligned_range.GetMax(), dtype=float)
+
+    if not np.all(np.isfinite(bbox_min)) or not np.all(np.isfinite(bbox_max)):
+        raise RuntimeError(f"Bounding Box 계산 결과가 유효하지 않습니다: {prim_path}")
+
+    return bbox_min, bbox_max, (bbox_max - bbox_min)
+
+
 def initialize_robot(robot, world) -> None:
     """World reset 후 로봇과 그리퍼를 초기화한다.
 
@@ -298,6 +372,12 @@ class BatteryFactoryTask(BaseTask):
         self._vg10_robot = None
         self._vg10_ee_path: Optional[str] = None
 
+        self._vg10_pallet_robot = None
+        self._vg10_pallet_ee_path: Optional[str] = None
+
+        self._battery = None
+        self._battery_dimensions = None
+
         # self._component_paths: Dict[str, str] = {}
 
     def set_up_scene(self, scene) -> None:
@@ -335,6 +415,11 @@ class BatteryFactoryTask(BaseTask):
             usd_path=M0609_SCREW_USD_PATH,
             target_prim_path=M0609_SCREW_PRIM_PATH,
         )
+        add_usd_reference(
+            stage=stage,
+            usd_path=M0609_VG10_PALLET_USD_PATH,
+            target_prim_path=M0609_VG10_PALLET_PRIM_PATH,
+        )
 
         # 작업대 USD 로드
         add_usd_reference(
@@ -343,14 +428,24 @@ class BatteryFactoryTask(BaseTask):
             target_prim_path=WORK_TABLE_PRIM_PATH,
         )
 
+        # 배터리 USD 로드 (4번 VG10 작업대 컨트롤러 테스트용)
+        add_usd_reference(
+            stage=stage,
+            usd_path=BATTERY_USD_PATH,
+            target_prim_path=BATTERY_PRIM_PATH,
+        )
+
         # 장치별 배치 좌표 설정
         UsdGeom.Xformable(stage.GetPrimAtPath(M0609_RG2_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_RG2_POSITION))
         UsdGeom.Xformable(stage.GetPrimAtPath(M0609_VG10_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_VG10_POSITION))
         UsdGeom.Xformable(stage.GetPrimAtPath(M0609_SCREW_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_SCREW_POSITION))
+        UsdGeom.Xformable(stage.GetPrimAtPath(M0609_VG10_PALLET_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_VG10_PALLET_POSITION))
 
         work_table_xform = UsdGeom.Xformable(stage.GetPrimAtPath(WORK_TABLE_PRIM_PATH))
         work_table_xform.AddTranslateOp().Set(Gf.Vec3d(*WORK_TABLE_POSITION))
         work_table_xform.AddScaleOp().Set(Gf.Vec3f(*WORK_TABLE_SCALE))
+
+        UsdGeom.Xformable(stage.GetPrimAtPath(BATTERY_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*BATTERY_INITIAL_POSITION))
 
         for _ in range(15):
             simulation_app.update()
@@ -358,7 +453,9 @@ class BatteryFactoryTask(BaseTask):
         print(f"  [OK] {M0609_RG2_USD_PATH}")
         print(f"  [OK] {M0609_VG10_USD_PATH}")
         print(f"  [OK] {M0609_SCREW_USD_PATH}")
+        print(f"  [OK] {M0609_VG10_PALLET_USD_PATH}")
         print(f"  [OK] {WORK_TABLE_USD_PATH}")
+        print(f"  [OK] {BATTERY_USD_PATH}")
 
     # --------------------------------------------------------
     # 8-2. DISCOVER
@@ -391,6 +488,19 @@ class BatteryFactoryTask(BaseTask):
             )
 
         print(f"  VG10 EE = {self._vg10_ee_path}")
+
+        self._vg10_pallet_ee_path = find_prim_path_by_name(
+            M0609_VG10_PALLET_PRIM_PATH,
+            M0609_EE_LINK_NAME,
+        )
+
+        if self._vg10_pallet_ee_path is None:
+            raise RuntimeError(
+                f"{M0609_VG10_PALLET_PRIM_PATH} 아래에서 "
+                f"{M0609_EE_LINK_NAME}을 찾을 수 없습니다."
+            )
+
+        print(f"  VG10(팔레트) EE = {self._vg10_pallet_ee_path}")
 
         # 조원별 Prim 탐색 예시
         #
@@ -535,6 +645,68 @@ class BatteryFactoryTask(BaseTask):
         print(f"  [OK] VG10 등록: {M0609_VG10_PRIM_PATH}")
         print(f"  [OK] VG10 Surface Gripper: {self._vg10_surface_gripper_path}")
 
+        # --------------------------------------------------------
+        # VG10(팔레트) Surface Gripper 등록 — 위 블록과 동일한 방식,
+        # 대상 로봇만 M0609_VG10_PALLET로 바꾼 것이다.
+        # --------------------------------------------------------
+        pallet_attach_joint = UsdPhysics.Joint.Define(stage, VG10_PALLET_SURFACE_GRIPPER_JOINT_PATH)
+        pallet_attach_joint.CreateBody0Rel().SetTargets([self._vg10_pallet_ee_path])
+        pallet_attach_joint.CreateLocalPos0Attr().Set(Gf.Vec3f(*VG10_SURFACE_LOCAL_OFFSET))
+        pallet_attach_joint.CreateLocalRot0Attr().Set(Gf.Quatf(1.0, 0.0, 0.0, 0.0))
+        pallet_attach_joint.CreateExcludeFromArticulationAttr().Set(True)
+        pallet_attach_prim = pallet_attach_joint.GetPrim()
+
+        for axis in ("transX", "transY", "transZ", "rotX", "rotY", "rotZ"):
+            limit = UsdPhysics.LimitAPI.Apply(pallet_attach_prim, axis)
+            limit.CreateLowAttr().Set(1.0)
+            limit.CreateHighAttr().Set(-1.0)
+
+        robot_schema.ApplyAttachmentPointAPI(pallet_attach_prim)
+        prim_utils.create_prim_attribute(
+            pallet_attach_prim,
+            name=robot_schema.Attributes.FORWARD_AXIS.name,
+            type_name=robot_schema.Attributes.FORWARD_AXIS.type,
+        ).Set("Z")
+        prim_utils.create_prim_attribute(
+            pallet_attach_prim,
+            name=robot_schema.Attributes.CLEARANCE_OFFSET.name,
+            type_name=robot_schema.Attributes.CLEARANCE_OFFSET.type,
+        ).Set(VG10_SURFACE_CLEARANCE_OFFSET)
+
+        vg10_pallet_gripper_prim = robot_schema.CreateSurfaceGripper(
+            stage, f"{self._vg10_pallet_ee_path}/SurfaceGripper"
+        )
+        vg10_pallet_gripper_prim.GetRelationship(
+            robot_schema.Relations.ATTACHMENT_POINTS.name
+        ).SetTargets([VG10_PALLET_SURFACE_GRIPPER_JOINT_PATH])
+        self._vg10_pallet_surface_gripper_path = str(vg10_pallet_gripper_prim.GetPath())
+
+        self._vg10_pallet_surface_gripper_view = GripperView(
+            paths=self._vg10_pallet_surface_gripper_path,
+            max_grip_distance=[VG10_SURFACE_MAX_GRIP_DISTANCE],
+            coaxial_force_limit=[VG10_SURFACE_COAXIAL_FORCE_LIMIT],
+            shear_force_limit=[VG10_SURFACE_SHEAR_FORCE_LIMIT],
+            retry_interval=[VG10_SURFACE_RETRY_INTERVAL],
+        )
+
+        vg10_pallet_gripper = SurfaceGripper(
+            end_effector_prim_path=self._vg10_pallet_ee_path,
+            surface_gripper_path=self._vg10_pallet_surface_gripper_path,
+        )
+        vg10_pallet_gripper.set_default_state(opened=True)
+
+        self._vg10_pallet_robot = scene.add(
+            SingleManipulator(
+                prim_path=M0609_VG10_PALLET_PRIM_PATH,
+                name=M0609_VG10_PALLET_SCENE_NAME,
+                end_effector_prim_path=self._vg10_pallet_ee_path,
+                gripper=vg10_pallet_gripper,
+            )
+        )
+
+        print(f"  [OK] VG10(팔레트) 등록: {M0609_VG10_PALLET_PRIM_PATH}")
+        print(f"  [OK] VG10(팔레트) Surface Gripper: {self._vg10_pallet_surface_gripper_path}")
+
         # 조원별 객체 등록 예시
         #
         # self._conveyor = scene.add(...)
@@ -547,9 +719,44 @@ class BatteryFactoryTask(BaseTask):
     def _create_scene(self, scene) -> None:
         print("[5.SCENE] 작업 환경 객체 생성")
 
+        stage = omni.usd.get_context().get_stage()
+        battery_prim = stage.GetPrimAtPath(BATTERY_PRIM_PATH)
+
+        if not battery_prim.HasAPI(UsdPhysics.RigidBodyAPI):
+            UsdPhysics.RigidBodyAPI.Apply(battery_prim)
+
+        if not battery_prim.HasAPI(UsdPhysics.MassAPI):
+            mass_api = UsdPhysics.MassAPI.Apply(battery_prim)
+            mass_api.CreateMassAttr().Set(BATTERY_MASS_KG)
+
+        # good_battery.usd는 STEP CAD를 그대로 임포트한 것이라 실제 지오메트리는
+        # 최상위 Xform이 아니라 그 아래 Mesh leaf prim들에 있다. CollisionAPI를
+        # 최상위 Xform 하나에만 적용하면 물리적으로 아무 콜라이더도 생기지 않으므로
+        # 모든 Mesh 하위 prim에 개별적으로 적용한다. (vg10_gamin.py에서 확인된 원인)
+        collider_count = 0
+        for mesh_prim in Usd.PrimRange(battery_prim):
+            if not mesh_prim.IsA(UsdGeom.Mesh):
+                continue
+            if not mesh_prim.HasAPI(UsdPhysics.CollisionAPI):
+                UsdPhysics.CollisionAPI.Apply(mesh_prim)
+                mesh_collision = UsdPhysics.MeshCollisionAPI.Apply(mesh_prim)
+                mesh_collision.CreateApproximationAttr().Set("convexHull")
+            collider_count += 1
+
+        print(f"  [OK] 배터리 Collision API 적용 Mesh 수: {collider_count}")
+
+        self._battery = scene.add(
+            SingleRigidPrim(
+                prim_path=BATTERY_PRIM_PATH,
+                name="target_battery",
+            )
+        )
+
+        _, _, self._battery_dimensions = compute_world_bbox(stage, BATTERY_PRIM_PATH)
+        print(f"  [OK] 배터리 등록: {BATTERY_PRIM_PATH}, dimensions(m)={np.round(self._battery_dimensions, 5)}")
+
         # 조원별 환경 객체 생성 위치
         #
-        # - 배터리 팩
         # - 작업대
         # - 볼트
         # - 안전 박스
@@ -569,6 +776,26 @@ class BatteryFactoryTask(BaseTask):
             },
         }
 
+    def get_battery_pick_surface_position(self) -> np.ndarray:
+        """배터리 윗면 중심 좌표를 매 호출 시 다시 계산한다 (vg10_gamin.py와 동일한 방식).
+
+        X, Y는 bbox 중심(피벗이 기하학적 중심과 어긋나 있을 수 있으므로),
+        Z는 피벗 z + half_height를 사용한다. VG10WorktableNode가 매 프레임
+        호출하므로 배터리가 물리적으로 안착/이동 중이어도 최신 위치를 따라간다.
+        """
+        stage = omni.usd.get_context().get_stage()
+        battery_pivot, _ = self._battery.get_world_pose()
+        bbox_min, bbox_max, _ = compute_world_bbox(stage, BATTERY_PRIM_PATH)
+        half_height = float(self._battery_dimensions[2]) / 2.0
+
+        return np.array(
+            [
+                (bbox_min[0] + bbox_max[0]) / 2.0,
+                (bbox_min[1] + bbox_max[1]) / 2.0,
+                battery_pivot[2] + half_height,
+            ]
+        )
+
     def post_reset(self) -> None:
         if self._robot is not None:
             self._robot.gripper.set_joint_positions(
@@ -586,30 +813,18 @@ def create_controllers(robot, vg10_robot):
 
     각 조원의 Controller는 이름을 Key로 하여 딕셔너리에 저장한다.
     아직 구현되지 않은 Controller는 None으로 둔다.
+
+    VG10(컨베이어 -> 작업대) Pick & Place는 더 이상 여기서 만들지 않는다.
+    main()에서 VG10WorktableNode(ROS2 service)로 직접 감싸서 만든다 —
+    서비스 호출로 실행 순서를 보장하기 위함이다.
     """
     controllers = {
-        "pick_place": None,
         "rg2_pick_place": None,
         "screwdriver": None,
         "conveyor": None,
         "inspection": None,
         "output": None,
     }
-
-    # --------------------------------------------------------
-    # Pick & Place Controller (VG10)
-    # --------------------------------------------------------
-    controllers["pick_place"] = PickPlaceController(
-        name="m0609_vg10_pick_place_controller",
-        gripper=vg10_robot.gripper,
-        robot_articulation=vg10_robot,
-        end_effector_initial_height=0.30,
-        events_dt=EVENTS_DT,
-        urdf_path=M0609_URDF_PATH,
-        robot_description_path=M0609_DESCRIPTION_PATH,
-        rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
-        end_effector_frame_name=M0609_EE_LINK_NAME,
-    )
 
     # --------------------------------------------------------
     # Pick & Place Controller (RG2)
@@ -686,35 +901,10 @@ def update_process(
 
     False:
         공정 진행 중
+
+    VG10(컨베이어 -> 작업대)은 VG10WorktableNode의 service call로 실행되므로
+    여기서는 다루지 않는다.
     """
-
-    # --------------------------------------------------------
-    # Pick & Place 실행 (VG10)
-    # --------------------------------------------------------
-    pick_place_controller = (
-        controllers["pick_place"]
-    )
-
-    if pick_place_controller is not None:
-        observations = task.get_observations()
-
-        current_joints = (
-            observations["m0609_vg10_robot"]
-            ["joint_positions"]
-        )
-
-        actions = pick_place_controller.forward(
-            picking_position=VG10_PICK_POSITION,
-            placing_position=VG10_PLACE_POSITION,
-            current_joint_positions=current_joints,
-            end_effector_offset=VG10_SURFACE_LOCAL_OFFSET,
-        )
-
-        vg10_robot.apply_action(actions)
-
-        if pick_place_controller.is_done():
-            print("[완료] VG10 Pick & Place")
-            return True
 
     # --------------------------------------------------------
     # Pick & Place 실행 (RG2)
@@ -786,6 +976,9 @@ def main() -> None:
     vg10_robot = my_world.scene.get_object(
         M0609_VG10_SCENE_NAME
     )
+    vg10_pallet_robot = my_world.scene.get_object(
+        M0609_VG10_PALLET_SCENE_NAME
+    )
 
     initialize_robot(
         robot=robot,
@@ -795,23 +988,80 @@ def main() -> None:
         robot=vg10_robot,
         world=my_world,
     )
+    initialize_robot(
+        robot=vg10_pallet_robot,
+        world=my_world,
+    )
 
-    # Controller는 여러 개 생성한다.
+    # Controller는 여러 개 생성한다. (RG2는 아직 예시용 placeholder)
     controllers = create_controllers(
         robot=robot,
         vg10_robot=vg10_robot,
     )
 
+    # --------------------------------------------------------
+    # VG10(컨베이어 -> 작업대) 은 ROS2 service call로 실행한다.
+    # 오케스트레이터가 서비스를 호출하면, 그 안에서 완료될 때까지
+    # controller.forward() + world.step()을 반복한 뒤 응답한다.
+    # 이렇게 하면 다른 노드와의 실행 순서가 서비스 호출 순서로 보장된다.
+    # --------------------------------------------------------
+    rclpy.init()
+    vg10_worktable_node = VG10WorktableNode(
+        world=my_world,
+        robot=vg10_robot,
+        get_picking_position=task.get_battery_pick_surface_position,
+        placing_position=VG10_WORKTABLE_PLACE_POSITION,
+        end_effector_offset=VG10_SURFACE_LOCAL_OFFSET,
+        controller_kwargs=dict(
+            name="m0609_vg10_worktable_controller",
+            gripper=vg10_robot.gripper,
+            robot_articulation=vg10_robot,
+            urdf_path=M0609_URDF_PATH,
+            robot_description_path=M0609_DESCRIPTION_PATH,
+            rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
+            end_effector_frame_name=M0609_EE_LINK_NAME,
+        ),
+    )
+
+    # --------------------------------------------------------
+    # VG10(팔레트 -> 컨베이어)도 같은 방식으로 service node를 만든다.
+    # PALLET_PRIM_PATH / PALLET_BATTERY_PRIM_PATHS / CONVEYOR_DESTINATION_POSITION이
+    # 아직 factory_work_set.usd 실측값이 아니라 TODO placeholder라서 지금은
+    # 주석 처리해 둔다. 실제 경로가 확정되면 아래 주석을 풀면 된다.
+    #
+    # vg10_pallet_node = VG10PalletNode(
+    #     world=my_world,
+    #     pallet_path=PALLET_PRIM_PATH,
+    #     battery_paths=PALLET_BATTERY_PRIM_PATHS,
+    #     order=PALLET_BATTERY_ORDER,
+    #     conveyor_destination=CONVEYOR_DESTINATION_POSITION,
+    #     controller_kwargs=dict(
+    #         world=my_world,
+    #         robot_articulation=vg10_pallet_robot,
+    #         gripper=vg10_pallet_robot.gripper,
+    #         ee_path=task._vg10_pallet_ee_path,
+    #         urdf_path=M0609_URDF_PATH,
+    #         robot_description_path=M0609_DESCRIPTION_PATH,
+    #         rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
+    #         end_effector_frame_name=M0609_EE_LINK_NAME,
+    #         tool_length_m=float(VG10_SURFACE_LOCAL_OFFSET[2]),
+    #         battery_mass_kg=BATTERY_MASS_KG,
+    #     ),
+    # )
+
     print("\n" + "=" * 60)
     print("[MASTER READY]")
     print("Task       : BatteryFactoryTask 1개")
     print("Controller : 여러 파일에서 추가")
+    print("VG10 작업대: /vg10_worktable/run_pick_place service 대기 중")
+    print("VG10 팔레트: TODO - 경로 확정 후 활성화 (주석 참고)")
     print("=" * 60 + "\n")
 
     was_playing = False
     process_done = False
 
     while simulation_app.is_running():
+        rclpy.spin_once(vg10_worktable_node, timeout_sec=0.0)
         my_world.step(render=True)
         time.sleep(0.01)
 
@@ -828,8 +1078,14 @@ def main() -> None:
                 robot=vg10_robot,
                 world=my_world,
             )
+            initialize_robot(
+                robot=vg10_pallet_robot,
+                world=my_world,
+            )
 
             reset_controllers(controllers)
+            vg10_worktable_node.reset_controller()
+            # vg10_pallet_node.reset_controller()  # 활성화 시 주석 해제
             process_done = False
 
         if is_playing and not process_done:
@@ -845,6 +1101,8 @@ def main() -> None:
 
         was_playing = is_playing
 
+    vg10_worktable_node.destroy_node()
+    rclpy.shutdown()
     simulation_app.close()
 
 
