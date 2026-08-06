@@ -83,11 +83,11 @@ from vg10_worktable_node import VG10WorktableNode
 #
 # <장치명>_USD_PATH
 #     장치가 들어 있는 USD 파일 경로
-FACTORY_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "battery_factory.usd")
-M0609_RG2_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_rg2_cube.usd")
+FACTORY_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "factory_clean.usd")
+M0609_RG2_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_camera_cube.usd")
 M0609_VG10_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_vg10_cube.usd")
 M0609_SCREW_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_screw_cube.usd")
-WORK_TABLE_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "work_table.usd")
+WORK_TABLE_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "Collected_work_table" / "work_table.usd")
 BATTERY_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "good_battery.usd")
 # 1번(팔레트 -> 컨베이어 적재) 전용 VG10. usd 에셋은 4번 VG10과 동일한 파일을 재사용한다.
 M0609_VG10_PALLET_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_vg10_cube.usd")
@@ -109,14 +109,15 @@ M0609_VG10_PALLET_PRIM_PATH = "/World/m0609_vg10_pallet"
 
 # <장치명>_POSITION / _SCALE
 #     Stage 배치 시 사용할 Local Translate / Scale 값
-M0609_RG2_POSITION = np.array([3.75, 7.4, 0.0035])
-M0609_VG10_POSITION = np.array([2.2, 7.0, 0.0035])
-M0609_SCREW_POSITION = np.array([3.75, 6.4, 0.0035])
+M0609_RG2_POSITION = np.array([2.26772, 6.573, 0.00228])
+M0609_VG10_POSITION = np.array([1.25851, 6.70887, 0.00227])
+M0609_SCREW_POSITION = np.array([1.78904, 5.71838, 0.00228])
+
 # TODO: factory_work_set.usd의 팔레트 구역(Pallet_A 등) 근처 실제 좌표로 교체 필요.
-M0609_VG10_PALLET_POSITION = np.array([0.0, 0.0, 0.0035])
+M0609_VG10_PALLET_POSITION = np.array([0.22590169234536872, -0.2402201520116727, 0.0022747409529983997])
 
 WORK_TABLE_POSITION = np.array([-1.45938, -1.9134, 0.0])
-WORK_TABLE_SCALE = np.array([1.23622, 2.93456, 2.75608])
+WORK_TABLE_SCALE = np.array([1.759287260456191, 6.557225540962836, 0.0022743009030817946])
 
 M0609_SCENE_NAME = "m0609_robot"
 M0609_VG10_PALLET_SCENE_NAME = "m0609_vg10_pallet_robot"
@@ -445,7 +446,7 @@ class BatteryFactoryTask(BaseTask):
         work_table_xform.AddTranslateOp().Set(Gf.Vec3d(*WORK_TABLE_POSITION))
         work_table_xform.AddScaleOp().Set(Gf.Vec3f(*WORK_TABLE_SCALE))
 
-        UsdGeom.Xformable(stage.GetPrimAtPath(BATTERY_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*BATTERY_INITIAL_POSITION))
+        # UsdGeom.Xformable(stage.GetPrimAtPath(BATTERY_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*BATTERY_INITIAL_POSITION))
 
         for _ in range(15):
             simulation_app.update()
@@ -455,7 +456,7 @@ class BatteryFactoryTask(BaseTask):
         print(f"  [OK] {M0609_SCREW_USD_PATH}")
         print(f"  [OK] {M0609_VG10_PALLET_USD_PATH}")
         print(f"  [OK] {WORK_TABLE_USD_PATH}")
-        print(f"  [OK] {BATTERY_USD_PATH}")
+
 
     # --------------------------------------------------------
     # 8-2. DISCOVER
