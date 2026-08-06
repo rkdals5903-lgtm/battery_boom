@@ -116,8 +116,9 @@ M0609_SCREW_POSITION = np.array([1.78904, 5.71838, 0.00228])
 # TODO: factory_work_set.usd의 팔레트 구역(Pallet_A 등) 근처 실제 좌표로 교체 필요.
 M0609_VG10_PALLET_POSITION = np.array([0.22590169234536872, -0.2402201520116727, 0.0022747409529983997])
 
-WORK_TABLE_POSITION = np.array([-1.45938, -1.9134, 0.0])
-WORK_TABLE_SCALE = np.array([1.759287260456191, 6.557225540962836, 0.0022743009030817946])
+WORK_TABLE_POSITION = np.array([1.759287260456191, 6.557225540962836, 0.0022743009030817946])
+WORK_TABLE_SCALE = np.array([1.0, 1.0, 1.0])
+WORK_TABLE_ROTATION_Z_DEG = -90.0
 
 M0609_SCENE_NAME = "m0609_robot"
 M0609_VG10_PALLET_SCENE_NAME = "m0609_vg10_pallet_robot"
@@ -444,6 +445,7 @@ class BatteryFactoryTask(BaseTask):
 
         work_table_xform = UsdGeom.Xformable(stage.GetPrimAtPath(WORK_TABLE_PRIM_PATH))
         work_table_xform.AddTranslateOp().Set(Gf.Vec3d(*WORK_TABLE_POSITION))
+        work_table_xform.AddRotateZOp().Set(WORK_TABLE_ROTATION_Z_DEG)
         work_table_xform.AddScaleOp().Set(Gf.Vec3f(*WORK_TABLE_SCALE))
 
         # UsdGeom.Xformable(stage.GetPrimAtPath(BATTERY_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*BATTERY_INITIAL_POSITION))
