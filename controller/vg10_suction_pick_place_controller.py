@@ -11,9 +11,9 @@ from m0609_rmpflow_controller import RMPFlowController
 
 # ── EE 목표 자세 (Isaac Sim 쿼터니언 순서 = [qw, qx, qy, qz], scalar-first) ──
 # euler_angles_to_quat()의 각도 입력 단위는 라디안(radian)이다.
-# roll=0, pitch=π(=180deg), yaw=0 → VG10 흡착판(EE +Z)이 아래(-Z)를 향하는 자세.
-PICK_ORIENTATION = euler_angles_to_quat(np.array([0.0, np.pi, 0.0]))   # radian
-PLACE_ORIENTATION = euler_angles_to_quat(np.array([0.0, np.pi, np.pi / 2]))  # radian, yaw=90
+# roll=0, pitch=π(=180deg) → VG10 흡착판(EE +Z)이 아래(-Z)를 향하는 자세.
+# pick 쪽 yaw는 배터리의 실제 놓인 방향(bbox)에 맞춰 forward()가 매 호출 계산하고,
+# place 쪽 yaw만 place_yaw_deg로 인스턴스 생성 시 고정한다.
 
 
 # ============================================================
@@ -59,25 +59,11 @@ _STATE_ORDER = [
     PickPlaceState.RETURN_HOME,
 ]
 
-# Event(State)별 사용 자세 매핑.
-#   Event 0~4 (PICK_ABOVE~PICK_LIFT)   : PICK_ORIENTATION  — 접근/파지/들어올리기(배터리 원래 yaw 유지)
-#   Event 5~9 (ROTATE_J1~RETURN_HOME)  : PLACE_ORIENTATION — J1 회전 이후부터는 틀 yaw(180도 반대)로 전환
+# Event(State)별 사용 자세.
+#   Event 0~4 (PICK_ABOVE~PICK_LIFT)   : forward()가 pick_yaw_deg로 매 호출 계산(배터리 실제 방향)
+#   Event 5~9 (ROTATE_J1~RETURN_HOME)  : self._state_orientation(place_yaw_deg로 __init__에서 고정)
 # INIT_HOME / ROTATE_J1 / RETURN_HOME은 관절을 직접 제어하는 구간이라 RMPFlow에
-# orientation을 전달하지 않지만(=RMPFlow 미사용), 로그 표기 일관성을 위해 값은
-# 채워 둔다.
-_STATE_ORIENTATION = {
-    PickPlaceState.INIT_HOME:   PICK_ORIENTATION,
-    PickPlaceState.PICK_ABOVE:  PICK_ORIENTATION,   # Event 0: Pick 위치 위 접근
-    PickPlaceState.PICK_DOWN:   PICK_ORIENTATION,   # Event 1: Pick 위치로 하강
-    PickPlaceState.GRIP:        PICK_ORIENTATION,   # Event 2~3: 파지 대기 + 흡착 ON
-    PickPlaceState.PICK_LIFT:   PICK_ORIENTATION,   # Event 4: 물체를 들고 수직 상승(아직 pick 쪽 yaw)
-    PickPlaceState.ROTATE_J1:   PLACE_ORIENTATION,  # Event 5 전반: J1 회전(관절 직접 제어)
-    PickPlaceState.PLACE_ABOVE: PLACE_ORIENTATION,  # Event 5 후반: Place 위치 위로 이동(틀 yaw로 전환)
-    PickPlaceState.PLACE_DOWN:  PLACE_ORIENTATION,  # Event 6: Place 위치로 수직 하강
-    PickPlaceState.RELEASE:     PLACE_ORIENTATION,  # Event 7: 흡착 OFF
-    PickPlaceState.RETREAT:     PLACE_ORIENTATION,  # Event 8: Place 위치에서 수직 상승
-    PickPlaceState.RETURN_HOME: PLACE_ORIENTATION,  # Event 9: 종료/복귀 자세
-}
+# orientation을 전달하지 않는다(=RMPFlow 미사용).
 
 # RMPFlow(Cartesian) 구간의 "최대 대기(타임아웃)" 프레임 수 — 아래 실제 도달 여부
 # 확인(_CARTESIAN_TOLERANCE)이 주 판정 기준이고, 이건 그래도 못 도달했을 때
@@ -93,6 +79,17 @@ _CARTESIAN_STEPS = {
 }
 # 목표 지점에 "도달했다"고 판정할 위치 오차 허용치(m).
 _CARTESIAN_TOLERANCE = 0.02
+# 목표 자세에 "도달했다"고 판정할 각도 오차 허용치(rad, 약 3도).
+# 위치만 확인하면, RMPFlow가 위치는 다 왔는데 yaw 회전(PICK_ORIENTATION ->
+# place_orientation)이 아직 덜 끝난 채로 다음 단계(RELEASE)로 넘어가
+# 배터리가 덜 돌아간 자세로 놓이는 문제가 생긴다.
+_ORIENTATION_TOLERANCE = 0.05
+
+
+def _quat_angle_diff(q1: np.ndarray, q2: np.ndarray) -> float:
+    """두 쿼터니언 사이의 최소 회전각(rad). 부호(이중 표현) 차이는 무시한다."""
+    dot = float(np.clip(np.abs(np.dot(np.asarray(q1), np.asarray(q2))), -1.0, 1.0))
+    return 2.0 * np.arccos(dot)
 
 # 관절 직접 제어 구간의 목표 오차 허용치(rad)와, 못 미쳐도 강제로 넘어갈
 # 최대 프레임(타임아웃, 안전장치).
@@ -131,6 +128,8 @@ class SuctionStatePickPlaceController(BaseController):
         home_joints_deg: np.ndarray = None,
         j1_place_deg: float = 0.0,
         approach_height: float = 0.25,
+        place_drop_height: float = 0.0,
+        place_yaw_deg: float = 90.0,
     ) -> None:
         super().__init__(name=name)
 
@@ -152,6 +151,23 @@ class SuctionStatePickPlaceController(BaseController):
         )
         self._j1_place = np.deg2rad(j1_place_deg)
         self._approach_height = approach_height
+        # place 쪽은 정확한 접촉 지점까지 완전히 내려가지 않고, 이만큼(m) 위에서
+        # 흡착을 풀어 그냥 떨어뜨린다 — 특히 이미 쌓여 있는 배터리 위에 놓을 때
+        # 정확한 접촉 높이까지 수렴시키려다 로봇이 계속 높은 채로 멈춰있는 문제를
+        # 피하기 위함.
+        self._place_drop_height = place_drop_height
+
+        # PICK 쪽(PICK_ABOVE/PICK_DOWN/GRIP/PICK_LIFT)은 forward()가 매 호출 받는
+        # pick_yaw_deg로 그때그때 계산하므로 여기서는 place 쪽만 고정해서 들고 있는다.
+        place_orientation = euler_angles_to_quat(
+            np.array([0.0, np.pi, np.deg2rad(place_yaw_deg)])
+        )
+        self._state_orientation = {
+            PickPlaceState.PLACE_ABOVE: place_orientation,
+            PickPlaceState.PLACE_DOWN:  place_orientation,
+            PickPlaceState.RELEASE:     place_orientation,
+            PickPlaceState.RETREAT:     place_orientation,
+        }
 
         self._state_index = 0
         self._step_in_state = 0
@@ -223,12 +239,19 @@ class SuctionStatePickPlaceController(BaseController):
         placing_position: np.ndarray,
         current_joint_positions: np.ndarray,
         end_effector_offset: np.ndarray = None,
+        pick_yaw_deg: float = 0.0,
     ) -> ArticulationAction:
         if end_effector_offset is None:
             end_effector_offset = np.zeros(3)
 
         state = self._state
         self._step_in_state += 1
+        # 배터리가 컨베이어/팔레트 위에 놓인 실제 방향(bbox 긴 변 기준)에 맞춰
+        # 흡착 각도를 맞추려고, PICK 쪽 orientation은 매 프레임 호출부가 넘기는
+        # pick_yaw_deg로 새로 계산한다(place 쪽처럼 __init__에서 고정하지 않음).
+        pick_orientation = euler_angles_to_quat(
+            np.array([0.0, np.pi, np.deg2rad(pick_yaw_deg)])
+        )
 
         # ---------------- DONE ----------------
         if state == PickPlaceState.DONE:
@@ -275,7 +298,7 @@ class SuctionStatePickPlaceController(BaseController):
                 self._pick_target = picking_position + end_effector_offset
 
             target_position = self._pick_target
-            target_orientation = _STATE_ORIENTATION[state]  # Event 2~3: PICK_ORIENTATION
+            target_orientation = pick_orientation  # Event 2~3: bbox 기준 pick 각도
 
             action = self._cspace_controller.forward(
                 target_end_effector_position=target_position,
@@ -303,8 +326,9 @@ class SuctionStatePickPlaceController(BaseController):
         if state == PickPlaceState.RELEASE:
             self._gripper.open()
 
-            target_position = placing_position + end_effector_offset
-            target_orientation = _STATE_ORIENTATION[state]  # Event 7: PLACE_ORIENTATION
+            drop_up = np.array([0.0, 0.0, self._place_drop_height])
+            target_position = placing_position + end_effector_offset + drop_up
+            target_orientation = self._state_orientation[state]  # Event 7: place_orientation
 
             action = self._cspace_controller.forward(
                 target_end_effector_position=target_position,
@@ -331,13 +355,22 @@ class SuctionStatePickPlaceController(BaseController):
         elif state == PickPlaceState.PLACE_ABOVE:
             target_position = place_target + up           # Event 5: Place 위치 위로 수평 이동
         elif state == PickPlaceState.PLACE_DOWN:
-            target_position = place_target                # Event 6: Place 위치로 수직 하강
+            # 정확한 접촉 지점까지 내려가지 않고 place_drop_height만큼 위에서 멈춘다
+            # (RELEASE에서 이 높이 그대로 흡착만 풀어 떨어뜨린다).
+            target_position = place_target + np.array([0.0, 0.0, self._place_drop_height])
         elif state == PickPlaceState.RETREAT:
             target_position = place_target + up           # Event 8: Place 위치에서 수직 상승
         else:
             raise RuntimeError(f"처리되지 않은 상태: {state}")
 
-        target_orientation = _STATE_ORIENTATION[state]
+        if state in (
+            PickPlaceState.PICK_ABOVE,
+            PickPlaceState.PICK_DOWN,
+            PickPlaceState.PICK_LIFT,
+        ):
+            target_orientation = pick_orientation
+        else:
+            target_orientation = self._state_orientation[state]
 
         action = self._cspace_controller.forward(
             target_end_effector_position=target_position,
@@ -349,12 +382,19 @@ class SuctionStatePickPlaceController(BaseController):
         # 수렴하지 않았는데(특히 목표가 로봇 리치 경계에 걸린 place 쪽) 다음
         # 단계(예: RELEASE)로 넘어가 "이동 다 끝나기도 전에 놓는" 문제가 생긴다.
         # 실제 end_effector 위치를 target_position과 비교해 도달을 확인한다.
-        ee_pos, _ = self._robot_articulation.end_effector.get_world_pose()
+        ee_pos, ee_orientation = self._robot_articulation.end_effector.get_world_pose()
         position_error = float(np.linalg.norm(np.asarray(ee_pos) - target_position))
-        reached = position_error < _CARTESIAN_TOLERANCE
+        orientation_error = _quat_angle_diff(ee_orientation, target_orientation)
+        reached = (
+            position_error < _CARTESIAN_TOLERANCE
+            and orientation_error < _ORIENTATION_TOLERANCE
+        )
         timed_out = self._step_in_state >= _CARTESIAN_STEPS[state]
         if timed_out and not reached:
-            print(f"  [경고] {state.name} 타임아웃 — 오차 {position_error:.4f}m 남은 채로 진행합니다.")
+            print(
+                f"  [경고] {state.name} 타임아웃 — 위치오차 {position_error:.4f}m, "
+                f"자세오차 {np.degrees(orientation_error):.1f}도 남은 채로 진행합니다."
+            )
         if reached or timed_out:
             tag = "REACHED" if reached else "TIMEOUT"
             print(

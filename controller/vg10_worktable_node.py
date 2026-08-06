@@ -26,6 +26,8 @@ class VG10WorktableNode(Node):
         controller_kwargs: dict,
         node_name: str = "vg10_worktable_node",
         service_name: str = "/vg10_worktable/run_pick_place",
+        clear_active_battery: Optional[Callable[[], None]] = None,
+        get_pick_yaw_deg: Optional[Callable[[], float]] = None,
     ) -> None:
         super().__init__(node_name)
 
@@ -34,6 +36,8 @@ class VG10WorktableNode(Node):
         self._get_picking_position = get_picking_position
         self._placing_position = np.asarray(placing_position, dtype=float)
         self._end_effector_offset = np.asarray(end_effector_offset, dtype=float)
+        self._clear_active_battery = clear_active_battery
+        self._get_pick_yaw_deg = get_pick_yaw_deg
 
         self._controller = SuctionStatePickPlaceController(**controller_kwargs)
 
@@ -49,24 +53,39 @@ class VG10WorktableNode(Node):
         self.get_logger().info("[REQUEST] VG10 worktable pick & place 시작")
         self._controller.reset()
 
-        while self._world.is_playing() and not self._controller.is_done():
-            picking_position = self._get_picking_position()
-            current_joint_positions = self._robot.get_joint_positions()
+        try:
+            while self._world.is_playing() and not self._controller.is_done():
+                picking_position = self._get_picking_position()
+                current_joint_positions = self._robot.get_joint_positions()
+                pick_yaw_deg = (
+                    self._get_pick_yaw_deg() if self._get_pick_yaw_deg is not None else 0.0
+                )
 
-            actions = self._controller.forward(
-                picking_position=picking_position,
-                placing_position=self._placing_position,
-                current_joint_positions=current_joint_positions,
-                end_effector_offset=self._end_effector_offset,
+                actions = self._controller.forward(
+                    picking_position=picking_position,
+                    placing_position=self._placing_position,
+                    current_joint_positions=current_joint_positions,
+                    end_effector_offset=self._end_effector_offset,
+                    pick_yaw_deg=pick_yaw_deg,
+                )
+                self._robot.apply_action(actions)
+                self._world.step(render=True)
+
+            response.success = bool(self._controller.is_done())
+            response.message = (
+                "VG10 worktable pick & place 완료"
+                if response.success
+                else "world가 재생 중이 아니어서 중단됨"
             )
-            self._robot.apply_action(actions)
-            self._world.step(render=True)
+            if response.success and self._clear_active_battery is not None:
+                # 다 옮긴 배터리를 계속 "감지된 배터리"로 남겨두면, 트리거가 같은
+                # 배터리에 대해 서비스를 또 호출했을 때 이미 치워진 위치를 그대로
+                # 써서 로봇이 완료 후 다시 움직인다.
+                self._clear_active_battery()
+        except Exception as exc:
+            response.success = False
+            response.message = f"실패: {exc}"
+            self.get_logger().error(response.message)
 
-        response.success = bool(self._controller.is_done())
-        response.message = (
-            "VG10 worktable pick & place 완료"
-            if response.success
-            else "world가 재생 중이 아니어서 중단됨"
-        )
         self.get_logger().info(f"[RESPONSE] success={response.success}")
         return response
