@@ -832,17 +832,21 @@ def create_controllers(robot, vg10_robot):
     # --------------------------------------------------------
     # Pick & Place Controller (RG2)
     # --------------------------------------------------------
-    controllers["rg2_pick_place"] = PickPlaceController(
-        name="m0609_rg2_pick_place_controller",
-        gripper=robot.gripper,
-        robot_articulation=robot,
-        end_effector_initial_height=0.30,
-        events_dt=EVENTS_DT,
-        urdf_path=M0609_URDF_PATH,
-        robot_description_path=M0609_DESCRIPTION_PATH,
-        rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
-        end_effector_frame_name=M0609_EE_LINK_NAME,
-    )
+    # VG10 데모 전용 실행 스코프에서는 비활성화한다. RG2가 자동으로 돌다가
+    # is_done()이 되면 my_world.pause()가 걸려 VG10 서비스 호출 도중
+    # 시뮬레이션이 멈출 수 있다 (docs/superpowers/specs/2026-08-06-vg10-demo-only-design.md).
+    #
+    # controllers["rg2_pick_place"] = PickPlaceController(
+    #     name="m0609_rg2_pick_place_controller",
+    #     gripper=robot.gripper,
+    #     robot_articulation=robot,
+    #     end_effector_initial_height=0.30,
+    #     events_dt=EVENTS_DT,
+    #     urdf_path=M0609_URDF_PATH,
+    #     robot_description_path=M0609_DESCRIPTION_PATH,
+    #     rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
+    #     end_effector_frame_name=M0609_EE_LINK_NAME,
+    # )
 
     # --------------------------------------------------------
     # 조원별 Controller 생성 예시
