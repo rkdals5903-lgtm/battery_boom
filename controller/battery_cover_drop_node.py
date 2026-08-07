@@ -86,12 +86,15 @@ class BatteryCoverDropNode(Node):
                 self._robot.apply_action(actions)
                 self._world.step(render=True)
 
-            response.success = bool(self._controller.is_done())
-            response.message = (
-                "배터리 폐기 완료"
-                if response.success
-                else "world가 재생 중이 아니어서 중단됨"
-            )
+            is_done = self._controller.is_done()
+            picked = self._controller.did_pick_succeed()
+            response.success = is_done and picked
+            if response.success:
+                response.message = "배터리 폐기 완료"
+            elif not is_done:
+                response.message = "world가 재생 중이 아니어서 중단됨"
+            else:
+                response.message = "흡착 실패로 배터리를 집지 못해 폐기 중단"
             if response.success and self._clear_last_placed_battery is not None:
                 # 비우지 않으면 다음 나사 분해 트리거가 이미 버려진 배터리
                 # 경로를 계속 참조하게 된다.

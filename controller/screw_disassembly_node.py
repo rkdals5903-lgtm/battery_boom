@@ -151,6 +151,8 @@ class ScrewDisassemblyNode(Node):
 
     def _handle_run(self, request, response) -> Trigger.Response:
         self.get_logger().info("[REQUEST] 나사 분해 시작")
+        kinematic_attr = None
+        kinematic_was_enabled = False
         try:
             battery_screw_paths = self._get_battery_screw_prim_paths()
             if not battery_screw_paths:
@@ -171,6 +173,7 @@ class ScrewDisassemblyNode(Node):
             battery_top_prim = stage.GetPrimAtPath(battery_top_path)
             kinematic_attr = battery_top_prim.GetAttribute("physics:kinematicEnabled")
             if kinematic_attr.IsValid():
+                kinematic_was_enabled = bool(kinematic_attr.Get())
                 kinematic_attr.Set(True)
 
             screw_positions = [
@@ -181,13 +184,6 @@ class ScrewDisassemblyNode(Node):
 
             self._run_state_machine(screw_prims)
 
-            # 나사 분해 동안 걸어 둔 kinematic 고정을 풀어 다시 동적 rigid
-            # body로 되돌린다. 이걸 안 풀면 BatteryCoverDropNode의 흡착
-            # 그리퍼(attach joint)로 끌어올려도 kinematic body는 힘을 받지
-            # 않아 움직이지도, 놓았을 때 낙하하지도 않는다.
-            if kinematic_attr.IsValid():
-                kinematic_attr.Set(False)
-
             response.success = True
             response.message = "나사 분해 완료"
             self._trigger_cover_drop()
@@ -195,6 +191,12 @@ class ScrewDisassemblyNode(Node):
             response.success = False
             response.message = f"실패: {exc}"
             self.get_logger().error(response.message)
+        finally:
+            # 정상 종료든 예외든 반드시 원래 상태로 되돌린다. 여기가 실행 안 되면
+            # kinematic이 True로 남아 BatteryCoverDropNode의 흡착 그리퍼로
+            # 끌어올려도 body가 힘을 받지 않아 움직이지도, 낙하하지도 않는다.
+            if kinematic_attr is not None and kinematic_attr.IsValid():
+                kinematic_attr.Set(kinematic_was_enabled)
 
         self.get_logger().info(f"[RESPONSE] success={response.success}")
         return response

@@ -187,6 +187,16 @@ class SuctionStatePickPlaceController(BaseController):
     def is_done(self) -> bool:
         return self._state == PickPlaceState.DONE
 
+    def did_pick_succeed(self) -> bool:
+        """GRIP 상태에서 흡착이 실제로 붙어(SETTLE_STEPS만큼 유지) 성공했는지.
+
+        is_done()은 상태머신이 끝까지 진행됐는지만 보고, GRIP 타임아웃으로
+        흡착 없이 강제로 다음 단계로 넘어간 경우도 True가 된다 — 물체를
+        못 집었는데도 pick&place가 "성공"으로 보고되는 걸 막으려면 이것도
+        같이 확인해야 한다.
+        """
+        return self._gripped_steps >= _GRIPPER_SETTLE_STEPS
+
     def reset(self) -> None:
         self._cspace_controller.reset()
         self._state_index = 0
