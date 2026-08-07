@@ -76,6 +76,8 @@ RMPFLOW_DIR = PROJECT_DIR / "rmpflow"
 from pick_place_controller import PickPlaceController
 from vg10_worktable_node import VG10WorktableNode
 from vg10_pallet_node import VG10PalletNode
+from screw_control import ScrewDriverController
+from screw_disassembly_node import ScrewDisassemblyNode
 
 # from screwdriver_controller import ScrewdriverController
 # from inspection_controller import InspectionController
@@ -93,7 +95,7 @@ FACTORY_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "factory_clean.usd")
 M0609_RG2_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_camera_cube.usd")
 M0609_VG10_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_vg10_cube.usd")
 M0609_SCREW_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_screw_cube.usd")
-WORK_TABLE_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "Collected_work_table" / "work_table.usd")
+WORK_TABLE_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "Collected_new_work_table" / "work_table.usd")
 # 1번(팔레트 -> 컨베이어 적재) 전용 VG10. usd 에셋은 4번 VG10과 동일한 파일을 재사용한다.
 M0609_VG10_PALLET_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_vg10_cube.usd")
 
@@ -115,7 +117,20 @@ M0609_VG10_PALLET_PRIM_PATH = "/World/m0609_vg10_pallet"
 #     Stage 배치 시 사용할 Local Translate / Scale 값
 M0609_RG2_POSITION = np.array([2.26772, 6.573, 0.00228])
 M0609_VG10_POSITION = np.array([1.25851, 6.70887, 0.00227])
-M0609_SCREW_POSITION = np.array([1.78904, 5.71838, 0.00228])
+M0609_SCREW_POSITION = np.array([1.77609, 5.83839, 0.0])
+M0609_SCREW_POSITION_ROTATION_Z_DEG = -180.0
+
+# m0609_screw_cube.usd를 M0609_SCREW_PRIM_PATH 아래에 참조로 붙였을 때의 실제
+# articulation 루트/드라이버 tip 경로. screw_disassembly/run_screw_disassembly.py가
+# 자기 씬에서 쓰던 것과 동일한 하위 구조다(USD 내부 구조 자체는 같은 파일이라 안 바뀜).
+M0609_SCREW_ROBOT_PRIM_PATH = f"{M0609_SCREW_PRIM_PATH}/Xform_robot/m0609/Xform_robot/m0609/m0609"
+M0609_SCREW_TIP_PRIM_PATH = (
+    f"{M0609_SCREW_ROBOT_PRIM_PATH}/tool0/assembly_screw/assembly_screw/tn__Part1_f5"
+)
+M0609_SCREW_SCENE_NAME = "m0609_screw_robot"
+# run_screw_disassembly.py의 init_joint_positions([0, -1.2, 1.8, 0, 1.2, 0] rad)와
+# 동일한 자세(전부 0도인 특이 자세를 피해 팔꿈치를 미리 굽혀 둠).
+M0609_SCREW_INITIAL_JOINT_DEGREES = {"joint_2": -45.0, "joint_3": 90.0, "joint_5": 90.0}
 
 M0609_VG10_PALLET_POSITION = np.array([0.22590169234536872, -0.2402201520116727, 0.0022747409529983997])
 # pallet_to_conveyor_clean.py의 INITIAL_JOINT_POSITIONS_DEG_BY_NAME과 동일.
@@ -421,7 +436,15 @@ def initialize_robot(robot, world, initial_joint_degrees_by_name: Optional[dict]
     """
     robot.initialize()
 
-    if isinstance(robot.gripper, SurfaceGripper):
+    if robot.gripper is None:
+        # 나사 분해 로봇(M0609_SCREW)처럼 그리퍼 없이 관절만 있는 팔.
+        joint_positions = np.zeros(robot.num_dof)
+        if initial_joint_degrees_by_name:
+            dof_names = list(robot.dof_names)
+            for name, value_deg in initial_joint_degrees_by_name.items():
+                joint_positions[dof_names.index(name)] = math.radians(value_deg)
+        robot.set_joint_positions(joint_positions)
+    elif isinstance(robot.gripper, SurfaceGripper):
         joint_positions = np.zeros(robot.num_dof)
         if initial_joint_degrees_by_name:
             dof_names = list(robot.dof_names)
@@ -468,11 +491,17 @@ class BatteryFactoryTask(BaseTask):
         self._vg10_pallet_robot = None
         self._vg10_pallet_ee_path: Optional[str] = None
 
+        self._screw_ee_path: Optional[str] = None
+
         self._battery_prims: dict = {}
         self._battery_dimensions_by_path: dict = {}
         self._active_battery_path: Optional[str] = None
         self._conveyor_stop_deadline: Optional[float] = None
         self._conveyor_triggered_battery_paths: set = set()
+        # 작업대 로봇이 마지막으로 내려놓은 배터리 경로. clear_active_battery()가
+        # _active_battery_path를 None으로 비운 뒤에도, 나사 분해 로봇이 "지금
+        # 작업대 위에 있는 배터리가 몇 번인지" 알아야 해서 별도로 기억해 둔다.
+        self._last_placed_battery_path: Optional[str] = None
 
         # self._component_paths: Dict[str, str] = {}
 
@@ -530,7 +559,9 @@ class BatteryFactoryTask(BaseTask):
         # 장치별 배치 좌표 설정
         UsdGeom.Xformable(stage.GetPrimAtPath(M0609_RG2_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_RG2_POSITION))
         UsdGeom.Xformable(stage.GetPrimAtPath(M0609_VG10_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_VG10_POSITION))
-        UsdGeom.Xformable(stage.GetPrimAtPath(M0609_SCREW_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_SCREW_POSITION))
+        m0609_screw_xform = UsdGeom.Xformable(stage.GetPrimAtPath(M0609_SCREW_PRIM_PATH))
+        m0609_screw_xform.AddTranslateOp().Set(Gf.Vec3d(*M0609_SCREW_POSITION))
+        m0609_screw_xform.AddRotateZOp().Set(M0609_SCREW_POSITION_ROTATION_Z_DEG)
         UsdGeom.Xformable(stage.GetPrimAtPath(M0609_VG10_PALLET_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_VG10_PALLET_POSITION))
 
         work_table_xform = UsdGeom.Xformable(stage.GetPrimAtPath(WORK_TABLE_PRIM_PATH))
@@ -620,6 +651,22 @@ class BatteryFactoryTask(BaseTask):
                 f"{M0609_VG10_PALLET_PRIM_PATH} 아래에서 "
                 f"{M0609_EE_LINK_NAME}을 찾을 수 없습니다."
             )
+
+        # 나사 분해 로봇(M0609_SCREW)도 다른 3개 로봇과 동일한 방식으로 —
+        # 참조 최상위 경로 아래에서 link_6을 이름으로 검색해서 찾는다.
+        # (내부 중첩 구조를 직접 경로로 추측하는 건 참조 방식이 바뀌면 깨지기 쉽다.)
+        self._screw_ee_path = find_prim_path_by_name(
+            M0609_SCREW_PRIM_PATH,
+            M0609_EE_LINK_NAME,
+        )
+
+        if self._screw_ee_path is None:
+            raise RuntimeError(
+                f"{M0609_SCREW_PRIM_PATH} 아래에서 "
+                f"{M0609_EE_LINK_NAME}을 찾을 수 없습니다."
+            )
+
+        print(f"  나사 분해 로봇 EE = {self._screw_ee_path}")
 
         print(f"  VG10(팔레트) EE = {self._vg10_pallet_ee_path}")
 
@@ -828,6 +875,20 @@ class BatteryFactoryTask(BaseTask):
         print(f"  [OK] VG10(팔레트) 등록: {M0609_VG10_PALLET_PRIM_PATH}")
         print(f"  [OK] VG10(팔레트) Surface Gripper: {self._vg10_pallet_surface_gripper_path}")
 
+        # --------------------------------------------------------
+        # 나사 분해 로봇(M0609_SCREW) 등록 — 그리퍼 없이 관절만 있는 팔.
+        # 드라이버 tool(ScrewDriverController)은 흡착/파지가 아니라 별도 회전
+        # 애니메이션이라 SurfaceGripper/ParallelGripper 어느 쪽도 필요 없다.
+        # --------------------------------------------------------
+        self._m0609_screw_robot = scene.add(
+            SingleManipulator(
+                prim_path=M0609_SCREW_PRIM_PATH,
+                name=M0609_SCREW_SCENE_NAME,
+                end_effector_prim_path=self._screw_ee_path,
+            )
+        )
+        print(f"  [OK] 나사 분해 로봇 등록: {M0609_SCREW_PRIM_PATH}")
+
         # 조원별 객체 등록 예시
         #
         # self._conveyor = scene.add(...)
@@ -960,7 +1021,22 @@ class BatteryFactoryTask(BaseTask):
         비운다. 안 비우면, 트리거가 같은 배터리에 대해 서비스를 또 호출했을 때(원본
         Sensor_Trigger가 여러 번 enter를 발생시키는 경우 등) 이미 작업대로 옮겨진
         배터리의 오래된 위치를 그대로 써서 로봇이 엉뚱한 곳으로 다시 움직인다."""
+        self._last_placed_battery_path = self._active_battery_path
         self._active_battery_path = None
+
+    def get_battery_screw_prim_paths(self) -> Optional[list]:
+        """작업대에 마지막으로 놓인 배터리의 나사 4개 prim 경로를 반환한다.
+        ScrewDisassemblyNode 전용. 아직 작업대에 배터리가 놓인 적이 없으면 None.
+        """
+        if self._last_placed_battery_path is None:
+            return None
+        base = self._last_placed_battery_path
+        return [
+            f"{base}/good_battery/tn__Part19_g6",
+            f"{base}/good_battery/tn__Part19_1_i8",
+            f"{base}/good_battery/tn__Part19_2_i8",
+            f"{base}/good_battery/tn__Part19_3_i8",
+        ]
 
     def update_conveyor_gate(self, step_size: float = 0.0) -> None:
         """배터리(번호 무관)가 ConveyorTrack_03 벨트~Sensor_Trigger 구간에 들어오면
@@ -1039,6 +1115,7 @@ class BatteryFactoryTask(BaseTask):
         self._conveyor_triggered_battery_paths = set()
         self._active_battery_path = None
         self._conveyor_stop_deadline = None
+        self._last_placed_battery_path = None
 
 
 # ============================================================
@@ -1224,6 +1301,9 @@ def main() -> None:
     vg10_pallet_robot = my_world.scene.get_object(
         M0609_VG10_PALLET_SCENE_NAME
     )
+    m0609_screw_robot = my_world.scene.get_object(
+        M0609_SCREW_SCENE_NAME
+    )
 
     initialize_robot(
         robot=robot,
@@ -1237,6 +1317,11 @@ def main() -> None:
         robot=vg10_pallet_robot,
         world=my_world,
         initial_joint_degrees_by_name=M0609_VG10_PALLET_INITIAL_JOINT_DEGREES,
+    )
+    initialize_robot(
+        robot=m0609_screw_robot,
+        world=my_world,
+        initial_joint_degrees_by_name=M0609_SCREW_INITIAL_JOINT_DEGREES,
     )
 
     # Controller는 여러 개 생성한다. (RG2는 아직 예시용 placeholder)
@@ -1306,12 +1391,38 @@ def main() -> None:
         ),
     )
 
+    # --------------------------------------------------------
+    # 나사 분해 로봇도 같은 방식으로 service node를 만든다. screw_disassembly/의
+    # 원래 스크립트(run_screw_disassembly.py + ros_bridge_node.py)는 완전히
+    # 별도 프로세스 2개로 나뉘어 있었는데, 그 안의 상태머신 로직만
+    # controller/screw_disassembly_node.py로 옮겨와 main.py 자신의 World/robot을
+    # 그대로 쓰도록 통합한다. 서비스 이름(/start_screw_process)은
+    # VG10WorktableNode가 이미 클라이언트로 호출하도록 만들어 둔 것과 동일하다.
+    # screw_disassembly/ 안의 원본 파일은 건드리지 않았다 — 독립 실행용으로 그대로 둔다.
+    # --------------------------------------------------------
+    screw_tool = ScrewDriverController(prim_path=M0609_SCREW_TIP_PRIM_PATH)
+    screw_disassembly_node = ScrewDisassemblyNode(
+        world=my_world,
+        robot=m0609_screw_robot,
+        screw_tool=screw_tool,
+        get_battery_screw_prim_paths=task.get_battery_screw_prim_paths,
+        controller_kwargs=dict(
+            name="m0609_screw_cspace_controller",
+            robot_articulation=m0609_screw_robot,
+            urdf_path=M0609_URDF_PATH,
+            robot_description_path=M0609_DESCRIPTION_PATH,
+            rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
+            end_effector_frame_name=M0609_EE_LINK_NAME,
+        ),
+    )
+
     print("\n" + "=" * 60)
     print("[MASTER READY]")
     print("Task       : BatteryFactoryTask 1개")
     print("Controller : 여러 파일에서 추가")
     print("VG10 작업대: /vg10_worktable/run_pick_place service 대기 중")
     print("VG10 팔레트: /vg10_pallet/run_pallet_to_conveyor service 대기 중")
+    print("나사 분해  : /start_screw_process service 대기 중")
     print("=" * 60 + "\n")
 
     was_playing = False
@@ -1320,6 +1431,7 @@ def main() -> None:
     while simulation_app.is_running():
         rclpy.spin_once(vg10_worktable_node, timeout_sec=0.0)
         rclpy.spin_once(vg10_pallet_node, timeout_sec=0.0)
+        rclpy.spin_once(screw_disassembly_node, timeout_sec=0.0)
         my_world.step(render=True)
         time.sleep(0.01)
 
@@ -1341,10 +1453,16 @@ def main() -> None:
                 world=my_world,
                 initial_joint_degrees_by_name=M0609_VG10_PALLET_INITIAL_JOINT_DEGREES,
             )
+            initialize_robot(
+                robot=m0609_screw_robot,
+                world=my_world,
+                initial_joint_degrees_by_name=M0609_SCREW_INITIAL_JOINT_DEGREES,
+            )
 
             reset_controllers(controllers)
             vg10_worktable_node.reset_controller()
             vg10_pallet_node.reset_controller()
+            screw_disassembly_node.reset_controller()
             process_done = False
 
         if is_playing and not process_done:
@@ -1362,6 +1480,7 @@ def main() -> None:
 
     vg10_worktable_node.destroy_node()
     vg10_pallet_node.destroy_node()
+    screw_disassembly_node.destroy_node()
     rclpy.shutdown()
     simulation_app.close()
 

@@ -4,6 +4,7 @@ from isaacsim import SimulationApp
 simulation_app = SimulationApp({"headless": False})
 
 import os
+import sys
 import time
 import numpy as np
 import omni.usd
@@ -15,9 +16,15 @@ from isaacsim.robot.manipulators.manipulators import SingleManipulator
 from isaacsim.core.utils.types import ArticulationAction
 
 from omni.isaac.motion_generation import RmpFlow, ArticulationMotionPolicy
-from screw_control import ScrewDriverController
 
 _THIS_DIR = Path(__file__).resolve().parent if '__file__' in locals() else Path.cwd()
+
+# 컨트롤러는 main.py와 공용으로 쓰는 프로젝트 루트의 controller/ 폴더에 둔다.
+_CONTROLLER_DIR = str(_THIS_DIR.parent / "controller")
+if _CONTROLLER_DIR not in sys.path:
+    sys.path.insert(0, _CONTROLLER_DIR)
+
+from screw_control import ScrewDriverController
 
 
 

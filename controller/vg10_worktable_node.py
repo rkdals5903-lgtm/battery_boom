@@ -28,6 +28,7 @@ class VG10WorktableNode(Node):
         service_name: str = "/vg10_worktable/run_pick_place",
         clear_active_battery: Optional[Callable[[], None]] = None,
         get_pick_yaw_deg: Optional[Callable[[], float]] = None,
+        screw_trigger_service_name: str = "/start_screw_process",
     ) -> None:
         super().__init__(node_name)
 
@@ -46,8 +47,33 @@ class VG10WorktableNode(Node):
         )
         self.get_logger().info(f"[READY] service={service_name}")
 
+        # 작업대 로봇이 배터리를 놓고 home으로 복귀하면(=완료), 별도 프로세스로
+        # 떠 있는 나사 분해 시뮬레이터(run_screw_disassembly.py)를 깨우는
+        # 서비스. 그 프로세스는 ros_bridge_node.py가 띄운 이 서비스가 호출돼야
+        # /tmp/screw_trigger.flag를 만들고 WAIT_TRIGGER 상태에서 빠져나온다.
+        self._screw_trigger_client = self.create_client(
+            Trigger, screw_trigger_service_name
+        )
+        self._screw_trigger_service_name = screw_trigger_service_name
+
     def reset_controller(self) -> None:
         self._controller.reset()
+
+    def _trigger_screw_process(self) -> None:
+        """home 복귀까지 끝난 뒤, 별도 프로세스의 나사 분해 시뮬레이터를 깨운다.
+        응답을 기다리면(spin_until_future_complete) 이 노드의 executor가 이미
+        이 콜백을 처리하느라 막혀 있어 응답을 받을 스핀 기회가 없다(교착 상태
+        위험). 그래서 결과를 기다리지 않고 요청만 보내는 fire-and-forget으로
+        호출한다 — 트리거 성공 여부를 여기서 확인할 필요는 없다.
+        """
+        if not self._screw_trigger_client.service_is_ready():
+            self.get_logger().warn(
+                f"[SCREW] {self._screw_trigger_service_name} 서비스가 아직 안 떠 있음 — "
+                "나사 분해 프로세스(ros_bridge_node.py)가 실행 중인지 확인 필요"
+            )
+            return
+        self._screw_trigger_client.call_async(Trigger.Request())
+        self.get_logger().info(f"[SCREW] {self._screw_trigger_service_name} 호출함")
 
     def _handle_run(self, request, response) -> Trigger.Response:
         self.get_logger().info("[REQUEST] VG10 worktable pick & place 시작")
@@ -57,9 +83,16 @@ class VG10WorktableNode(Node):
             while self._world.is_playing() and not self._controller.is_done():
                 picking_position = self._get_picking_position()
                 current_joint_positions = self._robot.get_joint_positions()
-                pick_yaw_deg = (
-                    self._get_pick_yaw_deg() if self._get_pick_yaw_deg is not None else 0.0
-                )
+                pick_yaw_deg = 0.0
+                if self._get_pick_yaw_deg is not None:
+                    try:
+                        pick_yaw_deg = self._get_pick_yaw_deg()
+                    except Exception as exc:
+                        # bbox 조회가 매 프레임 도는데(특히 PLACE 쪽 상태에서는 이미
+                        # 집은 뒤라 값이 안 쓰이는데도 계속 호출됨), 여기서 한번
+                        # 실패한다고 전체 pick&place를 중단시키면 안 된다 — 로봇이
+                        # 그 자리에서 멈추고 home으로도 못 돌아가게 된다.
+                        self.get_logger().warn(f"[PICK YAW] 조회 실패, 0도로 대체: {exc}")
 
                 actions = self._controller.forward(
                     picking_position=picking_position,
@@ -82,6 +115,8 @@ class VG10WorktableNode(Node):
                 # 배터리에 대해 서비스를 또 호출했을 때 이미 치워진 위치를 그대로
                 # 써서 로봇이 완료 후 다시 움직인다.
                 self._clear_active_battery()
+            if response.success:
+                self._trigger_screw_process()
         except Exception as exc:
             response.success = False
             response.message = f"실패: {exc}"

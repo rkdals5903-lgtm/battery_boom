@@ -63,11 +63,15 @@ class VG10PalletNode(Node):
         while self._world.is_playing() and not self._controller.is_done():
             picking_position = self._get_battery_position(battery_path)
             current_joint_positions = self._robot.get_joint_positions()
-            pick_yaw_deg = (
-                self._get_pick_yaw_deg(battery_path)
-                if self._get_pick_yaw_deg is not None
-                else 0.0
-            )
+            pick_yaw_deg = 0.0
+            if self._get_pick_yaw_deg is not None:
+                try:
+                    pick_yaw_deg = self._get_pick_yaw_deg(battery_path)
+                except Exception as exc:
+                    # bbox 조회가 매 프레임 도는데, 여기서 한번 실패한다고 전체
+                    # pick&place를 중단시키면 안 된다 — 로봇이 그 자리에서 멈추고
+                    # home으로도 못 돌아가게 된다.
+                    self.get_logger().warn(f"[PICK YAW] 조회 실패, 0도로 대체: {exc}")
 
             actions = self._controller.forward(
                 picking_position=picking_position,
