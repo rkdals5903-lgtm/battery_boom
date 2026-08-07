@@ -255,7 +255,8 @@ class SuctionStatePickPlaceController(BaseController):
 
         # ---------------- DONE ----------------
         if state == PickPlaceState.DONE:
-            self._log_event(state, target_position=None, target_orientation=None)
+            if self._step_in_state == 1:
+                self._log_event(state, target_position=None, target_orientation=None)
             return ArticulationAction(
                 joint_positions=[None] * current_joint_positions.shape[0]
             )
@@ -263,11 +264,12 @@ class SuctionStatePickPlaceController(BaseController):
         # ---------------- 관절 직접 제어 구간 (RMPFlow 미사용 → EE orientation 개념 없음) ----------------
         if state in (PickPlaceState.INIT_HOME, PickPlaceState.RETURN_HOME):
             action, reached = self._joint_action(current_joint_positions, self._home_joints)
-            self._log_event(
-                state,
-                target_position=self._home_joints,  # 관절-공간 목표 (Cartesian 목표 아님)
-                target_orientation="N/A (joint-space control)",
-            )
+            if self._step_in_state == 1:
+                self._log_event(
+                    state,
+                    target_position=self._home_joints,  # 관절-공간 목표 (Cartesian 목표 아님)
+                    target_orientation="N/A (joint-space control)",
+                )
             if reached or self._step_in_state >= _JOINT_TIMEOUT_STEPS[state]:
                 self._advance()
             return action
@@ -282,11 +284,12 @@ class SuctionStatePickPlaceController(BaseController):
             action, reached = self._joint_action(
                 current_joint_positions, target, joint_indices=[0]
             )
-            self._log_event(
-                state,
-                target_position=target,  # 관절-공간 목표 (Cartesian 목표 아님)
-                target_orientation="N/A (joint-space control)",
-            )
+            if self._step_in_state == 1:
+                self._log_event(
+                    state,
+                    target_position=target,  # 관절-공간 목표 (Cartesian 목표 아님)
+                    target_orientation="N/A (joint-space control)",
+                )
             if reached or self._step_in_state >= _JOINT_TIMEOUT_STEPS[state]:
                 self._advance()
             return action
@@ -304,7 +307,8 @@ class SuctionStatePickPlaceController(BaseController):
                 target_end_effector_position=target_position,
                 target_end_effector_orientation=target_orientation,
             )
-            self._log_event(state, target_position, target_orientation, gripper_cmd="CLOSE")
+            if self._step_in_state == 1:
+                self._log_event(state, target_position, target_orientation, gripper_cmd="CLOSE")
 
             # close()를 호출했다고 곧바로 붙은 게 아니다 — SurfaceGripper는 실제로
             # 표면에 닿을 때까지 내부적으로 재시도한다. is_closed()로 실제 부착
@@ -334,7 +338,8 @@ class SuctionStatePickPlaceController(BaseController):
                 target_end_effector_position=target_position,
                 target_end_effector_orientation=target_orientation,
             )
-            self._log_event(state, target_position, target_orientation, gripper_cmd="OPEN")
+            if self._step_in_state == 1:
+                self._log_event(state, target_position, target_orientation, gripper_cmd="OPEN")
             if self._step_in_state >= _GRIPPER_HOLD_STEPS[state]:
                 self._advance()
             return action
@@ -376,7 +381,8 @@ class SuctionStatePickPlaceController(BaseController):
             target_end_effector_position=target_position,
             target_end_effector_orientation=target_orientation,
         )
-        self._log_event(state, target_position, target_orientation)
+        if self._step_in_state == 1:
+            self._log_event(state, target_position, target_orientation)
 
         # step_in_state가 타임아웃을 넘겼다고 무조건 넘어가면, RMPFlow가 아직
         # 수렴하지 않았는데(특히 목표가 로봇 리치 경계에 걸린 place 쪽) 다음

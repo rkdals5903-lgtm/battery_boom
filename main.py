@@ -92,7 +92,7 @@ from battery_cover_drop_node import BatteryCoverDropNode
 #
 # <장치명>_USD_PATH
 #     장치가 들어 있는 USD 파일 경로
-FACTORY_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "factory_clean.usd")
+FACTORY_USD_PATH = str(PROJECT_DIR / "usd" / "factory" / "factory_clean_2.usd")
 M0609_RG2_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_camera_cube.usd")
 M0609_VG10_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_vg10_cube.usd")
 M0609_SCREW_USD_PATH = str(PROJECT_DIR / "usd" / "m0609" / "m0609_screw_cube.usd")
@@ -178,7 +178,7 @@ VG10_PALLET_SURFACE_GRIPPER_JOINT_PATH = f"{M0609_VG10_PALLET_PRIM_PATH}/Surface
 VG10_SURFACE_LOCAL_OFFSET = np.array([0.0, 0.0, 0.14])
 # 1번(팔레트) VG10 전용. pallet_to_conveyor_clean.py의 VG10_TOOL_LENGTH_M(검증된 값)과
 # 동일하다 — 같은 VG10이라도 개체마다 실측값이 달라 4번 로봇과 공유하지 않는다.
-M0609_VG10_PALLET_SURFACE_LOCAL_OFFSET = np.array([0.0, 0.0, 0.1])
+M0609_VG10_PALLET_SURFACE_LOCAL_OFFSET = np.array([0.0, 0.0, 0.14])
 VG10_SURFACE_MAX_GRIP_DISTANCE = 0.05
 VG10_SURFACE_COAXIAL_FORCE_LIMIT = 1000.0
 VG10_SURFACE_SHEAR_FORCE_LIMIT = 1000.0
@@ -195,8 +195,10 @@ BATTERY_MASS_KG = 6.0  # TODO: 실제 배터리 무게로 교체
 # ------------------------------------------------------------
 # ConveyorTrack_03은 배터리가 벨트 위(bbox 겹침)에 들어오면 CONVEYOR_STOP_DURATION_S초간
 # 멈췄다가 재개한다. Play 버튼이 아니라 실제 배터리 도착(트리거)이 신호다.
-CONVEYOR_TRACK_03_GRAPH_PRIM_PATH = "/World/Xform/ConveyorTrack_03/ConveyorBeltGraph"
-CONVEYOR_TRACK_03_BELT_PRIM_PATH = "/World/Xform/ConveyorTrack_03/Belt"
+# factory_clean_2.usd에서 ConveyorTrack_01~06이 /World/Xform 밑에서
+# /World/beltTrack 밑으로 옮겨졌다(factory_clean.usd는 /World/Xform 그대로).
+CONVEYOR_TRACK_03_GRAPH_PRIM_PATH = "/World/beltTrack/ConveyorTrack_03/ConveyorBeltGraph"
+CONVEYOR_TRACK_03_BELT_PRIM_PATH = "/World/beltTrack/ConveyorTrack_03/Belt"
 SENSOR_TRIGGER_PRIM_PATH = "/World/Sensor_Trigger"
 CONVEYOR_RUN_VELOCITY = 0.5
 CONVEYOR_STOP_DURATION_S = 10.0
@@ -395,7 +397,7 @@ def ensure_all_conveyor_belts_running(stage) -> None:
     똑같이 정상 속도로 시작하고, 정지는 BatteryFactoryTask.update_conveyor_gate()가
     배터리 도착(트리거)에 반응해서 런타임에 처리한다.
     """
-    for graph_prim in Usd.PrimRange(stage.GetPrimAtPath("/World/Xform")):
+    for graph_prim in Usd.PrimRange(stage.GetPrimAtPath("/World")):
         if graph_prim.GetTypeName() != "OmniGraph" or graph_prim.GetName() != "ConveyorBeltGraph":
             continue
         target_velocity = CONVEYOR_RUN_VELOCITY
@@ -518,6 +520,11 @@ class BatteryFactoryTask(BaseTask):
         # _active_battery_path를 None으로 비운 뒤에도, 나사 분해 로봇이 "지금
         # 작업대 위에 있는 배터리가 몇 번인지" 알아야 해서 별도로 기억해 둔다.
         self._last_placed_battery_path: Optional[str] = None
+
+        # [임시 진단] getVelocities 텐서 개수 불일치(expected 12, got 18) 원인을
+        # 찾기 위해, rigid body들의 kinematic 상태가 바뀌는 순간을 감시한다.
+        # 원인이 확인되면 이 블록은 제거한다.
+        self._debug_kinematic_state: dict = {}
 
         # self._component_paths: Dict[str, str] = {}
 
@@ -1075,6 +1082,33 @@ class BatteryFactoryTask(BaseTask):
             f"{base}/good_battery/tn__Part19_3_i8",
         ]
 
+    def debug_log_rigid_body_state(self, step_size: float = 0.0) -> None:
+        """[임시 진단] omni.physx.tensors의 getVelocities 개수 불일치(expected
+        12, got 18) 에러가 어느 prim 때문인지 찾기 위한 코드. 배터리들과
+        start_pallet_cube의 physics:kinematicEnabled 값이 바뀌는 순간을
+        감시해서 로그로 남긴다 — 에러가 뜨는 시점과 겹치는지 대조하면 된다.
+        원인이 확인되면 이 메서드와 main()의 physics_callback 등록을 제거한다.
+        """
+        stage = omni.usd.get_context().get_stage()
+        watch_paths = list(self._battery_prims.keys()) + ["/World/start_pallet_cube"]
+        for path in watch_paths:
+            prim = stage.GetPrimAtPath(path)
+            if not prim.IsValid():
+                continue
+            attr = prim.GetAttribute("physics:kinematicEnabled")
+            current = bool(attr.Get()) if attr.IsValid() and attr.Get() is not None else False
+            previous = self._debug_kinematic_state.get(path)
+            if previous is None:
+                self._debug_kinematic_state[path] = current
+                continue
+            if previous != current:
+                print(
+                    f"[RIGID BODY DEBUG] {path}: kinematicEnabled {previous} -> {current} "
+                    f"(t={time.monotonic():.2f})",
+                    flush=True,
+                )
+                self._debug_kinematic_state[path] = current
+
     def update_conveyor_gate(self, step_size: float = 0.0) -> None:
         """배터리(번호 무관)가 ConveyorTrack_03 벨트~Sensor_Trigger 구간에 들어오면
         CONVEYOR_STOP_DURATION_S초간 세운다. 어떤 배터리가 감지됐는지는
@@ -1153,6 +1187,7 @@ class BatteryFactoryTask(BaseTask):
         self._active_battery_path = None
         self._conveyor_stop_deadline = None
         self._last_placed_battery_path = None
+        self._debug_kinematic_state = {}
 
 
 # ============================================================
@@ -1328,6 +1363,8 @@ def main() -> None:
     # 서비스 노드(_handle_run)들이 자기 내부에서 world.step()을 반복하며 메인 루프를
     # 블로킹하는 동안에도 컨베이어 게이트가 계속 체크되도록 물리 콜백으로 등록한다.
     my_world.add_physics_callback("conveyor_gate", task.update_conveyor_gate)
+    # [임시 진단] getVelocities 텐서 개수 불일치 원인 확인용. 확인되면 제거.
+    my_world.add_physics_callback("rigid_body_debug", task.debug_log_rigid_body_state)
 
     robot = my_world.scene.get_object(
         M0609_SCENE_NAME
