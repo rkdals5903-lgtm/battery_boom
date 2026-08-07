@@ -61,6 +61,7 @@ class ScrewDisassemblyNode(Node):
         controller_kwargs: dict,
         node_name: str = "screw_disassembly_node",
         service_name: str = "/start_screw_process",
+        cover_drop_trigger_service_name: str = "/start_battery_cover_drop",
     ) -> None:
         super().__init__(node_name)
 
@@ -116,8 +117,27 @@ class ScrewDisassemblyNode(Node):
         self._service = self.create_service(Trigger, service_name, self._handle_run)
         self.get_logger().info(f"[READY] service={service_name}")
 
+        # 나사 분해가 끝나면(=RETURN_HOME까지 완료) 배터리 폐기(뚜껑 투하) 노드를
+        # 깨운다. VG10WorktableNode가 이 노드를 깨울 때와 동일한 fire-and-forget
+        # 패턴이다 — 응답을 기다리면 이 콜백을 처리 중인 executor가 막혀 있어
+        # 응답을 받을 스핀 기회가 없다.
+        self._cover_drop_trigger_client = self.create_client(
+            Trigger, cover_drop_trigger_service_name
+        )
+        self._cover_drop_trigger_service_name = cover_drop_trigger_service_name
+
     def reset_controller(self) -> None:
         self._cspace_controller.reset()
+
+    def _trigger_cover_drop(self) -> None:
+        if not self._cover_drop_trigger_client.service_is_ready():
+            self.get_logger().warn(
+                f"[COVER DROP] {self._cover_drop_trigger_service_name} 서비스가 아직 안 떠 있음 — "
+                "BatteryCoverDropNode가 main.py에 등록됐는지 확인 필요"
+            )
+            return
+        self._cover_drop_trigger_client.call_async(Trigger.Request())
+        self.get_logger().info(f"[COVER DROP] {self._cover_drop_trigger_service_name} 호출함")
 
     # --------------------------------------------------------
     def _observe_screw_position(self, screw_prims, index: int) -> np.ndarray:
@@ -161,8 +181,16 @@ class ScrewDisassemblyNode(Node):
 
             self._run_state_machine(screw_prims)
 
+            # 나사 분해 동안 걸어 둔 kinematic 고정을 풀어 다시 동적 rigid
+            # body로 되돌린다. 이걸 안 풀면 BatteryCoverDropNode의 흡착
+            # 그리퍼(attach joint)로 끌어올려도 kinematic body는 힘을 받지
+            # 않아 움직이지도, 놓았을 때 낙하하지도 않는다.
+            if kinematic_attr.IsValid():
+                kinematic_attr.Set(False)
+
             response.success = True
             response.message = "나사 분해 완료"
+            self._trigger_cover_drop()
         except Exception as exc:
             response.success = False
             response.message = f"실패: {exc}"

@@ -78,6 +78,7 @@ from vg10_worktable_node import VG10WorktableNode
 from vg10_pallet_node import VG10PalletNode
 from screw_control import ScrewDriverController
 from screw_disassembly_node import ScrewDisassemblyNode
+from battery_cover_drop_node import BatteryCoverDropNode
 
 # from screwdriver_controller import ScrewdriverController
 # from inspection_controller import InspectionController
@@ -261,6 +262,21 @@ ROBOT_PHYSICS_CONFIGS = [
 # Isaac Sim에서 재측정 후 교체해야 한다. pick 위치는 배터리 prim에서 매 프레임
 # bbox로 계산하므로(BatteryFactoryTask.get_battery_pick_surface_position) 별도 상수가 없다.
 VG10_WORKTABLE_PLACE_POSITION = np.array([1.74629, 6.44173, 1.0123])
+
+# ------------------------------------------------------------
+# 6-1b. VG10(작업대) 배터리 폐기(나사 분해 후 바닥 투하) 파라미터
+# ------------------------------------------------------------
+# 나사 분해가 끝난 배터리를 같은 VG10 팔로 다시 집어 공장 바닥에 버리는 지점
+# (battery_open_sasumi_portable/batteryfactory/battery_open_sasumi.py의
+# FACTORY_FLOOR_DROP_TCP와 같은 취지 — 작업 영역 밖 바닥에 투하).
+# work_table.usd bbox(로컬 x:[-0.53,0.53], y:[-0.27,0.27], z:[0,1.03])를
+# WORK_TABLE_POSITION/ROTATION_Z_DEG(-90도)로 변환하면 테이블은 world
+# x:[1.49,2.03], y:[6.03,7.09]를 차지한다. VG10 작업대 로봇 베이스
+# (M0609_VG10_POSITION, x=1.259)를 기준으로 테이블 반대쪽(서쪽, x가 더 작은
+# 방향)의 열린 바닥으로 잡았다 — 실측 좌표가 아니라 리치 계산상 추정값이므로
+# Isaac Sim에서 직접 돌려보면서 재조정이 필요할 가능성이 높다.
+BATTERY_DISCARD_POSITION = np.array([0.70, 6.70, 0.05])
+BATTERY_DISCARD_DROP_HEIGHT = 0.20
 
 # ------------------------------------------------------------
 # 6-2. VG10(팔레트 -> 컨베이어) 파라미터
@@ -1024,6 +1040,27 @@ class BatteryFactoryTask(BaseTask):
         self._last_placed_battery_path = self._active_battery_path
         self._active_battery_path = None
 
+    def get_last_placed_battery_position(self) -> np.ndarray:
+        """작업대에 마지막으로 놓인 배터리(나사 분해 대상)의 현재 위치.
+        BatteryCoverDropNode 전용 — 나사 분해가 끝난 뒤 그 배터리를 다시
+        집어 버릴 때 쓴다."""
+        if self._last_placed_battery_path is None:
+            raise RuntimeError("작업대에 아직 배터리가 놓인 적이 없습니다.")
+        return self.get_battery_top_center_position(self._last_placed_battery_path)
+
+    def get_last_placed_battery_pick_yaw_deg(self) -> float:
+        """get_last_placed_battery_position()과 짝을 이루는 pick 각도 버전.
+        BatteryCoverDropNode 전용."""
+        if self._last_placed_battery_path is None:
+            raise RuntimeError("작업대에 아직 배터리가 놓인 적이 없습니다.")
+        return self.get_battery_pick_yaw_deg(self._last_placed_battery_path)
+
+    def clear_last_placed_battery(self) -> None:
+        """BatteryCoverDropNode가 배터리를 공장 바닥에 버리고 나면 호출해서
+        _last_placed_battery_path를 비운다. 안 비우면 다음 나사 분해 트리거가
+        이미 버려진 배터리 경로를 계속 참조하게 된다."""
+        self._last_placed_battery_path = None
+
     def get_battery_screw_prim_paths(self) -> Optional[list]:
         """작업대에 마지막으로 놓인 배터리의 나사 4개 prim 경로를 반환한다.
         ScrewDisassemblyNode 전용. 아직 작업대에 배터리가 놓인 적이 없으면 None.
@@ -1416,6 +1453,35 @@ def main() -> None:
         ),
     )
 
+    # --------------------------------------------------------
+    # 나사 분해가 끝난 배터리를 같은 작업대 VG10 팔로 다시 집어 공장 바닥에
+    # 버리는 노드. battery_open_sasumi_portable의 "casecover 흡착 후 바닥
+    # 투하" 동작을 이 프로젝트의 배터리(단일 rigid body)에 맞게 옮긴 것이다.
+    # ScrewDisassemblyNode가 나사 분해를 끝내면 이 서비스(/start_battery_cover_drop)를
+    # 깨운다. 로봇은 vg10_worktable_node와 동일한 vg10_robot을 재사용한다 —
+    # 서비스 호출 순서(배치 -> 나사 분해 -> 폐기)로 실행이 직렬화돼 있어
+    # 두 노드가 동시에 이 팔을 움직이는 일은 없다.
+    # --------------------------------------------------------
+    battery_cover_drop_node = BatteryCoverDropNode(
+        world=my_world,
+        robot=vg10_robot,
+        get_picking_position=task.get_last_placed_battery_position,
+        placing_position=BATTERY_DISCARD_POSITION,
+        end_effector_offset=VG10_SURFACE_LOCAL_OFFSET,
+        clear_last_placed_battery=task.clear_last_placed_battery,
+        get_pick_yaw_deg=task.get_last_placed_battery_pick_yaw_deg,
+        controller_kwargs=dict(
+            name="m0609_vg10_cover_drop_controller",
+            gripper=vg10_robot.gripper,
+            robot_articulation=vg10_robot,
+            urdf_path=M0609_URDF_PATH,
+            robot_description_path=M0609_DESCRIPTION_PATH,
+            rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
+            end_effector_frame_name=M0609_EE_LINK_NAME,
+            place_drop_height=BATTERY_DISCARD_DROP_HEIGHT,
+        ),
+    )
+
     print("\n" + "=" * 60)
     print("[MASTER READY]")
     print("Task       : BatteryFactoryTask 1개")
@@ -1423,6 +1489,7 @@ def main() -> None:
     print("VG10 작업대: /vg10_worktable/run_pick_place service 대기 중")
     print("VG10 팔레트: /vg10_pallet/run_pallet_to_conveyor service 대기 중")
     print("나사 분해  : /start_screw_process service 대기 중")
+    print("배터리 폐기: /start_battery_cover_drop service 대기 중")
     print("=" * 60 + "\n")
 
     was_playing = False
@@ -1432,6 +1499,7 @@ def main() -> None:
         rclpy.spin_once(vg10_worktable_node, timeout_sec=0.0)
         rclpy.spin_once(vg10_pallet_node, timeout_sec=0.0)
         rclpy.spin_once(screw_disassembly_node, timeout_sec=0.0)
+        rclpy.spin_once(battery_cover_drop_node, timeout_sec=0.0)
         my_world.step(render=True)
         time.sleep(0.01)
 
@@ -1463,6 +1531,7 @@ def main() -> None:
             vg10_worktable_node.reset_controller()
             vg10_pallet_node.reset_controller()
             screw_disassembly_node.reset_controller()
+            battery_cover_drop_node.reset_controller()
             process_done = False
 
         if is_playing and not process_done:
@@ -1481,6 +1550,7 @@ def main() -> None:
     vg10_worktable_node.destroy_node()
     vg10_pallet_node.destroy_node()
     screw_disassembly_node.destroy_node()
+    battery_cover_drop_node.destroy_node()
     rclpy.shutdown()
     simulation_app.close()
 

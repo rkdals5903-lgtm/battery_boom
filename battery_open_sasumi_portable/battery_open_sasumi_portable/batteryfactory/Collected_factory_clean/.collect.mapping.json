@@ -1,0 +1,497 @@
+{
+    "version": "1.0",
+    "file_records": [
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Painted/T_MetalPainted_White_Glossy_A_Albedo.png",
+            "source_hash": "8ea91bc2d833a1fd67622984cf0b74c5f9946ce5",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Painted/T_MetalPainted_White_Glossy_A_Albedo.png",
+            "target_hash": "f3eec80a258611ed1970762d5e82099bc4a007be"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Painted/T_MetalPainted_White_Glossy_A_Normal.png",
+            "source_hash": "a208ba9d8132e5e06ec6c3dadb434b6666ac06ab",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Painted/T_MetalPainted_White_Glossy_A_Normal.png",
+            "target_hash": "6d5cde2a030e1eaf64b37d3377b47a2cd00d31d3"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Painted/T_MetalPainted_White_Glossy_A_ORM.png",
+            "source_hash": "005ca29651075d29b3dd5f043c85dc18528f579c",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Painted/T_MetalPainted_White_Glossy_A_ORM.png",
+            "target_hash": "8a1d696aee8c06f2d82595a98083b53b817e0aea"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Safety_Fences_Export.usd",
+            "source_hash": "b310515e682364dd2927e53acb80089dda5be579",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Safety_Fences_Export.usd",
+            "target_hash": "3bf1b258ecb562b17b33a94fc856b7857285ddb9"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/Grid_Roughness_B.png",
+            "source_hash": "067ca653dbb6d49d67963f49697e3b90d3d9cae3",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/Grid_Roughness_B.png",
+            "target_hash": "d7b610ae1718e5c8ef1cbd3f969b990dedb43f38"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_C1_Normal.png",
+            "source_hash": "a31ee010fa3b060a9036f9a9f0cbe511fbacf7b2",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_C1_Normal.png",
+            "target_hash": "ae484b1952a600425a81c3254e204371a93656ee"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorsBelt_A01_Decal_Albedo.png",
+            "source_hash": "85d640a1cded20d1d701f68bbb1287cf1d796cd6",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorsBelt_A01_Decal_Albedo.png",
+            "target_hash": "327b37e013a3e0184871e4d08681e016d3cbc11a"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorsBelt_A01_Decal_Alpha.png",
+            "source_hash": "c1b4af2c1ad444a602e880553b83d9e57ef58403",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorsBelt_A01_Decal_Alpha.png",
+            "target_hash": "e6c4e6352912e7421a4abfcd0e623b992ed90dab"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorsBelt_A01_Decal_ORM.png",
+            "source_hash": "ddbafaf1cc8d0739b7cf76b1cd4af51a1b8623de",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorsBelt_A01_Decal_ORM.png",
+            "target_hash": "8d6f1607d5078c91141583310ac423d1de5d198c"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/Gradient_Backdrop.exr",
+            "source_hash": "07484eca78ab2f92132145472d6add50da15ff58",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/Gradient_Backdrop.exr",
+            "target_hash": "b5dcc54880149df6ff41f121dce3542fdb7cb436"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorBelt_A01_Belt_Albedo.png",
+            "source_hash": "fef72a5f180b23c2d934a655e9cdc9ebf0c10c2d",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorBelt_A01_Belt_Albedo.png",
+            "target_hash": "7f043decf6ec6b7a7297f1dd1a6bae5d83e53743"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorBelt_A01_Belt_Normal.png",
+            "source_hash": "f751b0003cef5c84e68fdc5ef13f35d98b36c075",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorBelt_A01_Belt_Normal.png",
+            "target_hash": "ec14ea2d5ef143caef87ce41dabdc7213e490240"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorBelt_A01_Belt_ORM.png",
+            "source_hash": "f87788b274c6c55a86a70184234f5bf6159b5ba1",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Textures/T_ConveyorBelt_A01_Belt_ORM.png",
+            "target_hash": "61b8334d8d5c9ea6babe47ee625772f21ba46705"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Painted/MetalPainted_White_Glossy_A.mdl",
+            "source_hash": "86f88074d52d021dffa20457d88b8f63415a9263",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Painted/MetalPainted_White_Glossy_A.mdl",
+            "target_hash": "2e060b69fd93ee8da351415b1aa7eb03be5da5fa"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/materials/OmniGridExplorer.mdl",
+            "source_hash": "a5b9567e00f673d306366b66bce381f4a2de6adb",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/materials/OmniGridExplorer.mdl",
+            "target_hash": "a2a2e8fb15a2625549c4d151279fca9a0a340cfb"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Steel/Steel_A.mdl",
+            "source_hash": "5134ad6051fa70d70dd79b5b3b5a903b4942cd2d",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Steel/Steel_A.mdl",
+            "target_hash": "0676d88c197423f02692ce80cbcaeef1c93eb8a7"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Misc/Plastic_Rough_Black_A.mdl",
+            "source_hash": "c67a4e99f594cf0399837d696cb0c444b8697371",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Misc/Plastic_Rough_Black_A.mdl",
+            "target_hash": "7db4d2c7becd4f80bc1fc25ffbc36d8887262ca0"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Misc/Plastic_Orange_A.mdl",
+            "source_hash": "44d3a3fe1bac58a04e5e524e22e01e59f3df3d77",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Misc/Plastic_Orange_A.mdl",
+            "target_hash": "b4adb565834cbb32823413f3bb0df0b0d28bff63"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Pedestal_Export.usd",
+            "source_hash": "e413cb2fd63325ef5e029895bc888a1ab8a184be",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Pedestal_Export.usd",
+            "target_hash": "1f3af02749aa60941480e870825759e3f7044ee6"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/Metal_Cast_ORM.png",
+            "source_hash": "13e07902c16490db8af011c082bddca64acee6e4",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/Metal_Cast_ORM.png",
+            "target_hash": "64cb64350feddc57bd2fe86ca4ddc91a91271b18"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_Floor_A1_Albedo.png",
+            "source_hash": "370c8ff9a3e3ef06905fb2593e6675ace5574aec",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_Floor_A1_Albedo.png",
+            "target_hash": "f45551becab223ea05ec39e3b8d3637814fa9016"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_Floor_A1_Normal.png",
+            "source_hash": "1900482259943c679b56330e5113328d26e60d28",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_Floor_A1_Normal.png",
+            "target_hash": "f73f1b51bb985f433ef81ba6410c2979eaae0ed7"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_Floor_A1_ORM.png",
+            "source_hash": "fdc3591667bb20009403843af6255549cb077870",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_Floor_A1_ORM.png",
+            "target_hash": "3ebadcf7c37b4f7ceb5bda0e3ab8638f62163990"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_A1_Albedo.png",
+            "source_hash": "8e72c03ce877c2ec3f60ee46252fce38bf08efb7",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_A1_Albedo.png",
+            "target_hash": "5199eb04d6706252bae3195fa4bd47c52fe49317"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_A1_Normal.png",
+            "source_hash": "c369a0c67286058708180f127dd454b909cab7d9",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_A1_Normal.png",
+            "target_hash": "badbc21f831a8ddc7c36654feda5a2fb6d29db89"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_A1_ORM.png",
+            "source_hash": "d6cf38f1ae408659d6acaf4eba65f27a62a472af",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_A1_ORM.png",
+            "target_hash": "89bdaa025d21b6d51d2984db213ec2c4db2f2f8e"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_C1_Albedo.png",
+            "source_hash": "dd2c058ea47a5fe3b53e7eea49d7852ca55f1533",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_C1_Albedo.png",
+            "target_hash": "5a3cce5ac5c52fbdaedc5250e80a96efe0479bc2"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_C1_ORM.png",
+            "source_hash": "baed595d9dbafecef5b642071e4e3f604b3a7c32",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_GlossyMetal_C1_ORM.png",
+            "target_hash": "4e0e2d420836395fb4d52e35a4d17919753f3cb1"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_MetalFencing_A_Albedo.png",
+            "source_hash": "6f694453e42b0e36e8e74aecdef083ae1f900473",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_MetalFencing_A_Albedo.png",
+            "target_hash": "56f3990655351450bb068cbf8c18e0e9ec1472f6"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_MetalFencing_A_Normal.png",
+            "source_hash": "f2b75219351f08e7429c47711c32c58ad80c3e63",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_MetalFencing_A_Normal.png",
+            "target_hash": "133487e51190876184c1d9d618c9366d27d6a3e1"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_MetalFencing_A_ORM.png",
+            "source_hash": "76536ad867b31fb9f806bae815c9a091e6cb8fc1",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_MetalFencing_A_ORM.png",
+            "target_hash": "dfc415822a651cdb5dfe21e1c3f17b07c0d8dfe5"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampLong_A1_Albedo.png",
+            "source_hash": "df07ff4f17e97c7be0fd9a101fb2728ed9dfa025",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampLong_A1_Albedo.png",
+            "target_hash": "0551d8a4ab59d9026d2e68aa95ac99f1bd0e936d"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampLong_A1_Normal.png",
+            "source_hash": "bc9c8dfbc8bed126ce17f1862f315ea320acafb6",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampLong_A1_Normal.png",
+            "target_hash": "d58d45fbbbaf331a81ffb459d7984e0e72f3213f"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampLong_A1_ORM.png",
+            "source_hash": "c382a98f0f62d1eb613d7ec751dcabf3912c6409",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampLong_A1_ORM.png",
+            "target_hash": "655dfa2e80ab86a7effe91f907190c6a471caabd"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampShort_A1_Albedo.png",
+            "source_hash": "05d23b13d590df8d0e07eca8409ec699503923b3",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampShort_A1_Albedo.png",
+            "target_hash": "356bc00b59f84ccd6c31ec9f7de2f6fad66ad155"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampShort_A1_Normal.png",
+            "source_hash": "8344d9ee0113ec59f913777aa37dc038ed2b9694",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampShort_A1_Normal.png",
+            "target_hash": "64fd02be173417bc5b89246848ee03e16833b7a1"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampShort_A1_ORM.png",
+            "source_hash": "91938ac0dd0f3c1ba94549b3cccaa762b1c697ba",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_RampShort_A1_ORM.png",
+            "target_hash": "39fc70dbaedaf1399cb44b5d8a5cc47d23fbec99"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_YellowPaint_A1_Albedo.png",
+            "source_hash": "b3241963385c756268762eebf879efdc3d822f89",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_YellowPaint_A1_Albedo.png",
+            "target_hash": "e7decc957f4d503ae9712563f8690d2fda9ce08e"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_YellowPaint_A1_Normal.png",
+            "source_hash": "61acac1ddc8cd9b8199e6596b030b24ffb486e73",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_YellowPaint_A1_Normal.png",
+            "target_hash": "a84be9bbee221a55c00abee608b60d52c7fba610"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_YellowPaint_A1_ORM.png",
+            "source_hash": "2a4d614b53dd48c99c2bf2795d51d8a855e73f61",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/T_YellowPaint_A1_ORM.png",
+            "target_hash": "e51c5b1a73c72ac6f2b68cce46a35b6e49a5b3e5"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Vehicle_Hanger_Export.usd",
+            "source_hash": "3dc43f1519ad3c7149d3da9d5e0306ea4bb15066",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Vehicle_Hanger_Export.usd",
+            "target_hash": "2212fc5cebb974484818e38c8f2fbd72f8e35b75"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Car_Lift_Export.usd",
+            "source_hash": "cae181b9a7d4648007b00019b8061fe7efc9668b",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Car_Lift_Export.usd",
+            "target_hash": "b6233b49834de4fdee75020819ea5bb6fb80d274"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/ov_plastic_grain_b_01_normal.png",
+            "source_hash": "0cc5c13e128e42838759421263ec81b655047283",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/ov_plastic_grain_b_01_normal.png",
+            "target_hash": "e9e0c7e031053f6661fcc6661691d50d4dc1c398"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Materials_Samples_1.usd",
+            "source_hash": "316d6bc862eaf8a7f08e2101efce98030ec893dd",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Materials_Samples_1.usd",
+            "target_hash": "a9eb1eeaf2b14bb9f69852ac3ece857896b143fd"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Robot_Arm_Export.usd",
+            "source_hash": "22fa92b012653a24bd2503b1241cf5a41962e481",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Robot_Arm_Export.usd",
+            "target_hash": "ef4056d521d7017b5cc3090a8d275538f5948652"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Bridge_Wires_A.usd",
+            "source_hash": "f061fa09c1706dd1c87b159e8f1fb7a5d80d0712",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Bridge_Wires_A.usd",
+            "target_hash": "2f9e6c21a87ba63ac02f03f027dc59312c2964a4"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Parts_Rack_01_SidePanels.usd",
+            "source_hash": "121db17dbfe395f251766fc642ab466a11c51886",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Parts_Rack_01_SidePanels.usd",
+            "target_hash": "5e3d3ad180d332ea3ea0557dc8122735bde6c1f3"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Roof_Rack_01.usd",
+            "source_hash": "5e746ec2b289dddf38ea435d029c5710a5226d75",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Roof_Rack_01.usd",
+            "target_hash": "2f007b74c7e134f605603d2d3be52ed6bc2cdcdf"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Straight_conduit.usd",
+            "source_hash": "d18197f4a4d05cb0fa94bf5cafc17cc932545220",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/Straight_conduit.usd",
+            "target_hash": "994c90d93d64a6427b2151045d8e41267c7bd06a"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/T_conduit.usd",
+            "source_hash": "e7a9662c5d59fea42bc1c55bfeae33c309897d55",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/T_conduit.usd",
+            "target_hash": "a8e41c6dbdf597dd3d8c2a93a0c62e86a920db88"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/ground_junction_box.usd",
+            "source_hash": "4d35975de43c1c69b9931430bec36c15f35b1d80",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/ground_junction_box.usd",
+            "target_hash": "8128f33e45a679e5109065036cf333f299622d7e"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/pillar_wires.usd",
+            "source_hash": "8c153293c9d31269e6efe9eea0e058114e428183",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/pillar_wires.usd",
+            "target_hash": "bc9c1d2ee15873b5e749dda9f81d69a45e2f16a7"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/MetalFencing_A1.usd",
+            "source_hash": "9c5a094b702e7596636d8d20e55ed4b04faa1f6c",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/MetalFencing_A1.usd",
+            "target_hash": "52081f0ae1855519af3ed0a264c7dafcf73eac21"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/MetalFencing_A2.usd",
+            "source_hash": "55fa5e214660850afe68fa5746427d3cb525a999",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/MetalFencing_A2.usd",
+            "target_hash": "3fc285951f17038b302edc32526632290eadfa1f"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/MetalFencing_A3.usd",
+            "source_hash": "ce4871184694670b3c8366884f4cca99428d4ae1",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/MetalFencing_A3.usd",
+            "target_hash": "62a81dd0168ea60e06cccd1009e03570114ea3a0"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/RampLong_A1.usd",
+            "source_hash": "1412396dc835bde3f7a42b47e8f1ba95da01b857",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/RampLong_A1.usd",
+            "target_hash": "7b3501d2e7c79b252b8e46d6b4b8a3da12df4aba"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/RampShort_A1.usd",
+            "source_hash": "62a38c497b48dda77de0574837dd948c05e2a411",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/RampShort_A1.usd",
+            "target_hash": "409dfb939ac19c3a2d28ff25bc65a100204744d6"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/warn_black_01.png",
+            "source_hash": "68fb648c49601ed4084acb9ff06a3fe59ac7d21e",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/warn_black_01.png",
+            "target_hash": "c4c9bcbdd103b670b2a6058c5b698578d2a97be9"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/warn_red_01.png",
+            "source_hash": "911222514bf7e2c8457e8a766d1623976edf1857",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/warn_red_01.png",
+            "target_hash": "89dbbfe516890ddf1b80d4f993533c9d14619bba"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/warn_yellow_01.png",
+            "source_hash": "3c3ebf97d50299d9cb3e4a8cb2cc8bdc109b2702",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/warn_yellow_01.png",
+            "target_hash": "a80ad69fc59e3ada12671f2c3388a4fce3f32634"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/hood.usd",
+            "source_hash": "edfb3bee3a8279d22e192724e9aadcaaba5ed069",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/hood.usd",
+            "target_hash": "0d1d06c242268925230e2515c8b9d7467c5171cc"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/hood_rack_base.usd",
+            "source_hash": "f8ef1778dc47c9839550a97c7980476a6b9c39c7",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/hood_rack_base.usd",
+            "target_hash": "b3aa25229d667086317b083bf454ec78e836d945"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Textures/T_Steel_A1_Albedo.png",
+            "source_hash": "e60d376f194a182e3c56575e4cfe224e64caa1c3",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Textures/T_Steel_A1_Albedo.png",
+            "target_hash": "ce901821b029520a77e8bd1e9b59f69072b5dbb8"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Textures/T_Steel_A1_Normal.png",
+            "source_hash": "17330f6769d05f164c6e892a68c097006982ad0d",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Textures/T_Steel_A1_Normal.png",
+            "target_hash": "b76f1b4ae81d59af095122eeadfcfceed4c42803"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Textures/T_Steel_A1_ORM.png",
+            "source_hash": "be0161986ce5f05fecb29a70ed3f72a9e97816a2",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Metal/Textures/T_Steel_A1_ORM.png",
+            "target_hash": "a6926487a9c73cb51e61b59681eb506bece8a54d"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/EPDM_color.jpg",
+            "source_hash": "f89fc6048dab80f8531be951e10ba0ba93cee900",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/EPDM_color.jpg",
+            "target_hash": "66d8dee06aea460440849e3f9743ccea4eaf9614"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/texture_rough_height.png",
+            "source_hash": "729b34fccd88435fa36900c32f0251a9883cb25c",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/texture_rough_height.png",
+            "target_hash": "e6a651f74c01cfbf1efba4881b1be84714bd318a"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/PartRack_A.usd",
+            "source_hash": "a74a51393dbcb0cdf7dc16301f3b927ee495ffe9",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/PartRack_A.usd",
+            "target_hash": "794c3fbab164548f50e5205e40cb8d1528b309af"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/PassengerSidePanel.usd",
+            "source_hash": "94926963c5062e8459a0369fe61fc5d4d090da83",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/PassengerSidePanel.usd",
+            "target_hash": "f0386376e32aa875507f35a993ae561d942bab55"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Orange_A_Albedo.png",
+            "source_hash": "5e79a7b3804f698e6f5fc5a9e3a9c31175c551e0",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Orange_A_Albedo.png",
+            "target_hash": "c27d0bab1234dab6ef7e389e8612f8f02a4cceff"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/connectors.usd",
+            "source_hash": "07bba383ad68ed65e722571b6b2897b1421732b8",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/connectors.usd",
+            "target_hash": "892f42abe6531590f25e847f40f57c6826590683"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/insulation.usd",
+            "source_hash": "7342e5c662eeca920382bd793ee724aae8e1b03c",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/insulation.usd",
+            "target_hash": "fcfe56100a2c992bf426d10dd194400b69030f48"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/junctionbox.usd",
+            "source_hash": "6565bfaf4c3759434b19da63ec272e3c9cfdf299",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/junctionbox.usd",
+            "target_hash": "b42c0f53033b157da809a3025e3ff0dae808f740"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/wires.usd",
+            "source_hash": "3baa15608fa30a78e6db8a997574753db74402f5",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/wires.usd",
+            "target_hash": "83fab73522a2f0fec49c687be54e8bd683b3a428"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Orange_A_ORM.png",
+            "source_hash": "67d49fb0811c768877a08e9ae182d667f1e35f3a",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Orange_A_ORM.png",
+            "target_hash": "317526d4648bc274a10955d822a51e9b03db9bc0"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Orange_A_Normal.png",
+            "source_hash": "9b02a4e115e6504a00df6294fe9deec4581fd7f5",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Orange_A_Normal.png",
+            "target_hash": "cdc834dec64e50780477b67ad0484096286caf77"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/RoofPiece.usd",
+            "source_hash": "7eab7607a93029b7f01dfa885b495de8dd182548",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/RoofPiece.usd",
+            "target_hash": "df636a1dcf5b80e0d181a4fec555ed247d7a5f0b"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/RoofRack.usd",
+            "source_hash": "34f1fbf73e4894e2c88fd28c2fcbb4e7453b7703",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/RoofRack.usd",
+            "target_hash": "561893f9dd5c10b155c01bc5552bad62315d4123"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Rough_Black_A_Albedo.png",
+            "source_hash": "dd6050c76510ac79ae2df7ec70988ab4ab6e8416",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Rough_Black_A_Albedo.png",
+            "target_hash": "bd27124db5bb11215f895c135656694af968400c"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Rough_Black_A_ORM.png",
+            "source_hash": "d068fe64a034acf346795cf57c65102f13fc02fb",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Rough_Black_A_ORM.png",
+            "target_hash": "5275f93126010c8fb4dd8ee0834c3128b2392f6a"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Rough_Black_A_Normal.png",
+            "source_hash": "b564403e36f8ec8dfa4e410577af88537d2eaeaf",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/Props/Conveyors/Material Library/Plastic/Textures/T_Plastic_Rough_Black_A_Normal.png",
+            "target_hash": "495431e53384c6d79f5ee2612b0203ddbbee5d86"
+        },
+        {
+            "source_url": "/home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/OmniGridExplorer/units_icon.png",
+            "source_hash": "9f0289d3d4c631fd2fdf47b2c5ea24854c245119",
+            "target_url": "./home/rokey/factory/Usd_Explorer/Samples/Examples/2023_2/Factory/SubUSDs/textures/OmniGridExplorer/units_icon.png",
+            "target_hash": "f335986b8688a044f4d9b9c2930b1e7479a62c73"
+        }
+    ]
+}
