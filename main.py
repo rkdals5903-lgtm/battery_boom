@@ -122,7 +122,7 @@ WORK_TABLE_SURFACE_PRIM_PATH = "/World/work_table/packing_table/new_ws_table"
 # get_vg10_worktable_place_position()의 bbox 중심 계산값을 비교해서 얻었다(X/Z는
 # 완전히 일치, Y만 어긋남). bbox 자체가 틀린 게 아니라 인쇄된 표시가 표면 중심에서
 # 벗어난 위치에 있는 것뿐이라, bbox 계산 위에 이 오프셋만 더한다.
-WORK_TABLE_PLACE_Y_OFFSET = -0.08371278093038825
+WORK_TABLE_PLACE_Y_OFFSET = -0.0971278093038825
 
 # 1번(팔레트 -> 컨베이어 적재) 전용 VG10. 4번(컨베이어 -> 작업대) VG10과는
 # 별도의 로봇이다.
@@ -822,22 +822,6 @@ class BatteryFactoryTask(BaseTask):
                     drive_count += 1
 
         print(f"  [OK] M0609 Drive 설정:{drive_count}")
-
-        # RG2 finger_joint는 위 루프에서 stiffness 1e8로 사실상 무한강성 drive가
-        # 됐지만, 나머지 5개 knuckle/finger 관절은 DriveAPI가 없고 PhysxMimicJointAPI
-        # (finger_joint 추종)로만 구동된다. 이 mimic 관절의 dampingRatio가 onrobot_rg2
-        # 원본 자산 기본값(~0.005, 사실상 무감쇠)이라, finger_joint가 순간적으로
-        # 급가속하는 구간(파지 직후 하강 시작 등)에서 나머지 손가락들이 target을
-        # 오버슈트했다가 되돌아오며 "잡기 전 살짝 좁아졌다가 하강하며 다시 벌어지는"
-        # 현상으로 보인다. 임계감쇠(1.0)에 가깝게 올려 오버슈트를 없앤다.
-        rg2_prim = stage.GetPrimAtPath(M0609_RG2_PRIM_PATH)
-        mimic_damping_count = 0
-        for prim in Usd.PrimRange(rg2_prim):
-            damping_attr = prim.GetAttribute("physxMimicJoint:rot:dampingRatio")
-            if damping_attr and damping_attr.IsValid():
-                damping_attr.Set(1.0)
-                mimic_damping_count += 1
-        print(f"  [OK] RG2 mimic joint dampingRatio 보정: {mimic_damping_count}")
 
         # 조원별 Physics 설정 위치
         #
