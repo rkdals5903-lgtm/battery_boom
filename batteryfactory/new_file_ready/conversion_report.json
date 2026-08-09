@@ -1,0 +1,938 @@
+[
+  {
+    "file": "billow_battery_1.usd",
+    "centered_part_count": 10,
+    "part_origins": {
+      "/SmallCellBattery/casecover": [
+        0.155,
+        0.105,
+        0.1010066
+      ],
+      "/SmallCellBattery/nasa_1": [
+        0.005,
+        0.00499467,
+        0.0985666
+      ],
+      "/SmallCellBattery/nasa_2": [
+        0.005,
+        0.20499467,
+        0.09858211
+      ],
+      "/SmallCellBattery/nasa_3": [
+        0.305,
+        0.00499467,
+        0.09852975
+      ],
+      "/SmallCellBattery/nasa_4": [
+        0.305,
+        0.20500533,
+        0.09858338
+      ],
+      "/SmallCellBattery/cell_1": [
+        0.08,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/cell_2": [
+        0.08,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_3": [
+        0.23,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_4": [
+        0.23,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/casebase": [
+        0.155,
+        0.1035,
+        0.048
+      ]
+    },
+    "colored_mesh_count": 14,
+    "cell_colors": {
+      "/SmallCellBattery/cell_1/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_1/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ]
+    },
+    "adjusted_joint_anchor_count": 18,
+    "world_geometry_preserved": true
+  },
+  {
+    "file": "billow_battery_2.usd",
+    "centered_part_count": 10,
+    "part_origins": {
+      "/SmallCellBattery/casecover": [
+        0.155,
+        0.105,
+        0.10104043
+      ],
+      "/SmallCellBattery/nasa_1": [
+        0.005,
+        0.00499467,
+        0.09859061
+      ],
+      "/SmallCellBattery/nasa_2": [
+        0.005,
+        0.20499467,
+        0.0986219
+      ],
+      "/SmallCellBattery/nasa_3": [
+        0.305,
+        0.00499467,
+        0.09860135
+      ],
+      "/SmallCellBattery/nasa_4": [
+        0.305,
+        0.20500533,
+        0.09864147
+      ],
+      "/SmallCellBattery/cell_1": [
+        0.08,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_2": [
+        0.08,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/cell_3": [
+        0.23,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_4": [
+        0.23,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/casebase": [
+        0.155,
+        0.1035,
+        0.048
+      ]
+    },
+    "colored_mesh_count": 14,
+    "cell_colors": {
+      "/SmallCellBattery/cell_1/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_1/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ]
+    },
+    "adjusted_joint_anchor_count": 18,
+    "world_geometry_preserved": true
+  },
+  {
+    "file": "billow_battery_3.usd",
+    "centered_part_count": 10,
+    "part_origins": {
+      "/SmallCellBattery/casecover": [
+        0.155,
+        0.105,
+        0.10093939
+      ],
+      "/SmallCellBattery/nasa_1": [
+        0.005,
+        0.00499467,
+        0.0985666
+      ],
+      "/SmallCellBattery/nasa_2": [
+        0.005,
+        0.20499467,
+        0.09858211
+      ],
+      "/SmallCellBattery/nasa_3": [
+        0.305,
+        0.00499467,
+        0.09852975
+      ],
+      "/SmallCellBattery/nasa_4": [
+        0.305,
+        0.20500533,
+        0.09858338
+      ],
+      "/SmallCellBattery/cell_1": [
+        0.08,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_2": [
+        0.08,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/cell_3": [
+        0.23,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/cell_4": [
+        0.23,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/casebase": [
+        0.155,
+        0.1035,
+        0.048
+      ]
+    },
+    "colored_mesh_count": 14,
+    "cell_colors": {
+      "/SmallCellBattery/cell_1/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_1/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ]
+    },
+    "adjusted_joint_anchor_count": 18,
+    "world_geometry_preserved": true
+  },
+  {
+    "file": "billow_battery_4.usd",
+    "centered_part_count": 10,
+    "part_origins": {
+      "/SmallCellBattery/casecover": [
+        0.155,
+        0.105,
+        0.10104006
+      ],
+      "/SmallCellBattery/nasa_1": [
+        0.005,
+        0.00499467,
+        0.0985666
+      ],
+      "/SmallCellBattery/nasa_2": [
+        0.005,
+        0.20499467,
+        0.09858211
+      ],
+      "/SmallCellBattery/nasa_3": [
+        0.305,
+        0.00499467,
+        0.09852975
+      ],
+      "/SmallCellBattery/nasa_4": [
+        0.305,
+        0.20500533,
+        0.09858338
+      ],
+      "/SmallCellBattery/cell_1": [
+        0.08,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_2": [
+        0.08,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/cell_3": [
+        0.23,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_4": [
+        0.23,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/casebase": [
+        0.155,
+        0.1035,
+        0.048
+      ]
+    },
+    "colored_mesh_count": 14,
+    "cell_colors": {
+      "/SmallCellBattery/cell_1/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_1/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ]
+    },
+    "adjusted_joint_anchor_count": 18,
+    "world_geometry_preserved": true
+  },
+  {
+    "file": "boom_battery_1.usd",
+    "centered_part_count": 10,
+    "part_origins": {
+      "/SmallCellBattery/casecover": [
+        0.155,
+        0.105,
+        0.10099131
+      ],
+      "/SmallCellBattery/nasa_1": [
+        0.005,
+        0.00499467,
+        0.09849231
+      ],
+      "/SmallCellBattery/nasa_2": [
+        0.005,
+        0.20499467,
+        0.0985269
+      ],
+      "/SmallCellBattery/nasa_3": [
+        0.305,
+        0.00499467,
+        0.09851849
+      ],
+      "/SmallCellBattery/nasa_4": [
+        0.305,
+        0.20500533,
+        0.09855616
+      ],
+      "/SmallCellBattery/cell_1": [
+        0.08,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_2": [
+        0.08009848,
+        0.1473098,
+        0.051
+      ],
+      "/SmallCellBattery/cell_3": [
+        0.23,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_4": [
+        0.23,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/casebase": [
+        0.155,
+        0.1035,
+        0.048
+      ]
+    },
+    "colored_mesh_count": 14,
+    "cell_colors": {
+      "/SmallCellBattery/cell_1/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_1/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ]
+    },
+    "adjusted_joint_anchor_count": 18,
+    "world_geometry_preserved": true
+  },
+  {
+    "file": "boom_battery_2.usd",
+    "centered_part_count": 10,
+    "part_origins": {
+      "/SmallCellBattery/casecover": [
+        0.155,
+        0.105,
+        0.10104474
+      ],
+      "/SmallCellBattery/nasa_1": [
+        0.005,
+        0.00499467,
+        0.09849231
+      ],
+      "/SmallCellBattery/nasa_2": [
+        0.005,
+        0.20499467,
+        0.0985269
+      ],
+      "/SmallCellBattery/nasa_3": [
+        0.305,
+        0.00499467,
+        0.09851849
+      ],
+      "/SmallCellBattery/nasa_4": [
+        0.305,
+        0.20500533,
+        0.09855616
+      ],
+      "/SmallCellBattery/cell_1": [
+        0.08009848,
+        0.0623098,
+        0.051
+      ],
+      "/SmallCellBattery/cell_2": [
+        0.08,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/cell_3": [
+        0.23,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_4": [
+        0.23,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/casebase": [
+        0.155,
+        0.1035,
+        0.048
+      ]
+    },
+    "colored_mesh_count": 14,
+    "cell_colors": {
+      "/SmallCellBattery/cell_1/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_1/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ]
+    },
+    "adjusted_joint_anchor_count": 18,
+    "world_geometry_preserved": true
+  },
+  {
+    "file": "boom_battery_3.usd",
+    "centered_part_count": 10,
+    "part_origins": {
+      "/SmallCellBattery/casecover": [
+        0.155,
+        0.105,
+        0.10098629
+      ],
+      "/SmallCellBattery/nasa_1": [
+        0.005,
+        0.00499467,
+        0.09849231
+      ],
+      "/SmallCellBattery/nasa_2": [
+        0.005,
+        0.20499467,
+        0.0985269
+      ],
+      "/SmallCellBattery/nasa_3": [
+        0.305,
+        0.00499467,
+        0.09851849
+      ],
+      "/SmallCellBattery/nasa_4": [
+        0.305,
+        0.20500533,
+        0.09855616
+      ],
+      "/SmallCellBattery/cell_1": [
+        0.08,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_2": [
+        0.08,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/cell_3": [
+        0.23,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_4": [
+        0.23009848,
+        0.1473098,
+        0.051
+      ],
+      "/SmallCellBattery/casebase": [
+        0.155,
+        0.1035,
+        0.048
+      ]
+    },
+    "colored_mesh_count": 14,
+    "cell_colors": {
+      "/SmallCellBattery/cell_1/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_1/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ]
+    },
+    "adjusted_joint_anchor_count": 18,
+    "world_geometry_preserved": true
+  },
+  {
+    "file": "boom_battery_4.usd",
+    "centered_part_count": 10,
+    "part_origins": {
+      "/SmallCellBattery/casecover": [
+        0.155,
+        0.105,
+        0.10101275
+      ],
+      "/SmallCellBattery/nasa_1": [
+        0.005,
+        0.00499467,
+        0.09849231
+      ],
+      "/SmallCellBattery/nasa_2": [
+        0.005,
+        0.20499467,
+        0.0985269
+      ],
+      "/SmallCellBattery/nasa_3": [
+        0.305,
+        0.00499467,
+        0.09851849
+      ],
+      "/SmallCellBattery/nasa_4": [
+        0.305,
+        0.20500533,
+        0.09855616
+      ],
+      "/SmallCellBattery/cell_1": [
+        0.08,
+        0.0625,
+        0.051
+      ],
+      "/SmallCellBattery/cell_2": [
+        0.08,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/cell_3": [
+        0.23009848,
+        0.0623098,
+        0.051
+      ],
+      "/SmallCellBattery/cell_4": [
+        0.23,
+        0.1475,
+        0.051
+      ],
+      "/SmallCellBattery/casebase": [
+        0.155,
+        0.1035,
+        0.048
+      ]
+    },
+    "colored_mesh_count": 14,
+    "cell_colors": {
+      "/SmallCellBattery/cell_1/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_1/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_2/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_3/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellbase_mesh": [
+        [
+          0.1,
+          0.25,
+          0.48
+        ]
+      ],
+      "/SmallCellBattery/cell_4/cellcover_mesh": [
+        [
+          0.16,
+          0.42,
+          0.72
+        ]
+      ]
+    },
+    "adjusted_joint_anchor_count": 18,
+    "world_geometry_preserved": true
+  }
+]

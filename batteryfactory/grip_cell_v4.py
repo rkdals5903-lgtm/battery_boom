@@ -1,0 +1,1450 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""M0609 camera/RG2: pick cell_1, request ROS2 inspection, then sort it.
+
+This is a standalone entry point (no ROS).  It deliberately reuses only the
+locally validated M0609 RmpFlow/scene helpers from battery_cells_to_new_case.py.
+The source USD is never saved; STEP conversion is cached beside this script.
+"""
+
+from pathlib import Path
+import asyncio
+import os
+import re
+import subprocess
+import sys
+import traceback
+
+import numpy as np
+
+# Importing this validated helper starts SimulationApp before omni/pxr imports.
+THIS_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(THIS_DIR))
+import battery_cells_to_new_case as transfer
+
+from pxr import Gf, Usd, UsdGeom, UsdPhysics
+import omni.timeline
+from omni.isaac.core.utils.types import ArticulationAction
+from isaacsim.core.api import World
+from isaacsim.core.prims import SingleArticulation, SingleRigidPrim, SingleXFormPrim
+
+
+SCENE_PATH = transfer.SCENE_PATH
+STEP_PATH = Path("/home/rokey/Downloads/new_ws_table.step")
+TABLE_USD_PATH = THIS_DIR / "_generated_new_ws_table.usd"
+TABLE_PRIM_PATH = "/World/NewWSTable"
+
+ROBOT_ROOT = "/World/m0609_camera_cube"
+CELL_PATH = "/World/good_battery/cell_1"
+CELL_VISUAL_PROXY_PATH = "/World/grip_cell_visual_proxy"
+CELL_ASSET_PATH = THIS_DIR / "Collected_factory_clean/small_cell_battery_staged_meters.usd"
+CELL_JOINT_PATH = "/World/good_battery/AssemblyJoints/cell_1_to_casebase"
+OLD_CASEBASE_PATH = "/World/good_battery/casebase"
+NEW_CASEBASE_PATH = "/World/new_case/casebase"
+BATTERY_ASSEMBLIES = ("good_battery", "new_case")
+DISABLED_ASSEMBLY_JOINTS = [
+    f"/World/{assembly}/AssemblyJoints/{joint_name}"
+    for assembly in BATTERY_ASSEMBLIES
+    for joint_name in (
+        "casecover_to_casebase",
+        *(f"nasa_{index}_to_casecover" for index in range(1, 5)),
+        *(f"cell_{index}_to_casebase" for index in range(1, 5)),
+    )
+]
+STATIONARY_BATTERY_PRIMS = [
+    f"/World/{assembly}/{part_name}"
+    for assembly in BATTERY_ASSEMBLIES
+    for part_name in ("casebase", *(f"cell_{index}" for index in range(1, 5)))
+]
+SOURCE_CARRY_COLLISION_TARGETS = [
+    OLD_CASEBASE_PATH,
+    "/World/good_battery/cell_2",
+    "/World/good_battery/cell_3",
+    "/World/good_battery/cell_4",
+]
+RG2_CARRY_COLLISION_TARGETS = [
+    f"{ROBOT_ROOT}/Xform/m0609_camera/m0609/onrobot_rg2ft/{name}"
+    for name in (
+        "gripper_body",
+        "right_outer_knuckle", "right_inner_finger", "right_inner_knuckle",
+        "left_outer_knuckle", "left_inner_finger", "left_inner_knuckle",
+    )
+]
+# new_ws_table.step is 1.0 x 0.5 m.  This transform places it on the existing
+# factory work surface.  The earlier [1.30, 6.00] placement put the inspection
+# boss at the edge of the camera robot's reach (J2 saturated near +93 deg).
+# Move it toward the robot to avoid the wrist/shoulder singular posture.
+TABLE_WORLD_TRANSLATION = np.array([1.45, 6.10, 1.00], dtype=float)
+
+# Parsed from the STEP geometry: the 4 mm boss spans approximately
+# X=0.215..0.280, Y=0.200..0.300, with its top at local Z=0.054 m.
+FOUR_MM_BOSS_LOCAL_CENTER = np.array([0.2475, 0.2500, 0.0540], dtype=float)
+
+PICK_CLEARANCE = 0.14
+GAP_ENTRY_CLEARANCE = 0.025
+INSPECTION_CLEARANCE = 0.16
+PLACE_CLEARANCE = 0.14
+# High clearance used for horizontal travel after the service result. Keep the
+# gripper/cell above the casebase and neighboring cells until over destination.
+POST_SERVICE_TRANSFER_CLEARANCE_M = 0.20
+# True-result destination is defined directly from the source cell root.
+NEW_CASE_Y_DELTA_FROM_SOURCE_M = -0.24127
+NEW_CASE_VERTICAL_APPROACH_M = 0.17
+NEW_CASE_FINAL_Z_OFFSET_M = 0.020
+NEW_CASE_APPROACH_TOLERANCE_M = 0.040
+NEW_CASE_PLACE_TOLERANCE_M = 0.025
+NEW_CASE_CELL_VERIFY_TOLERANCE_M = 0.025
+NEW_CASE_AXIS_VERIFY_TOLERANCE_M = 0.045
+NEW_CASE_APPROACH_VERIFY_TOLERANCE_M = 0.040
+INSPECTION_MOVE_TOLERANCE_M = 0.025
+INSPECTION_MOVE_TIMEOUT_ACCEPTANCE_M = 0.035
+# The relocated robot's overhead target leaves about 91 mm of measured lift;
+# accept that verified clearance while retaining the horizontal escape guard.
+INSPECTION_MIN_LIFT_M = 0.08
+INSPECTION_MIN_HORIZONTAL_ESCAPE_M = 0.12
+REJECT_JOINT1_OFFSET_RAD = np.deg2rad(-90.0)
+REJECT_VERTICAL_LIFT_M = 0.10
+FACTORY_FLOOR_Z_M = 0.0
+CELL_SURFACE_CLEARANCE = 0.002
+INSPECTION_HOLD_STEPS = 180
+INSPECTION_SERVICE_NAME = "/battery_inspection_result"
+SUCTION_OPEN_SERVICE_NAME = "/suction_cover_opened"
+SUCTION_CLOSE_SERVICE_NAME = "/suction_cover_close"
+# Requested inspection pose expressed in the current robot base frame.
+INSPECTION_SURFACE_IN_BASE = np.array([0.50824, 0.10532, 0.0], dtype=float)
+# Visual corrections requested in the active viewpoint/world frame. The first
+# test added +0.20 m on Y; the latest stopped pose adds X +0.02, Y +0.01,
+# Z -0.05 m, giving this cumulative correction.
+INSPECTION_VIEW_OFFSET_M = np.array([0.02, 0.21, -0.046], dtype=float)
+# The relocated robot's current service point still leaves the cell over the
+# battery. Advance the inspection station further along world/viewpoint +Y.
+INSPECTION_EXTRA_X_OFFSET_M = -0.02
+INSPECTION_EXTRA_Y_OFFSET_M = 0.234  # 검사장치 중심을 +9 mm Y 방향으로 보정
+# Per-cell voltage-station X calibration. Cells 1 and 3 intentionally retain
+# the common station target; only the measured cells 2 and 4 receive correction.
+INSPECTION_CELL_X_CORRECTION_M = {2: -0.00884, 4: -0.00831}
+# Rotate the fingers onto the cell's short Y dimension (55 mm).
+GRIPPER_YAW_OFFSET_RAD = np.deg2rad(90.0)
+# Put the RG2 fingertips beside the upper part of the cell instead of stopping
+# above its top face.  A 35 mm insertion leaves the fingers clear of the
+# casebase while providing a usable side-contact band on the 88~90 mm cell.
+FINGER_INSERTION_DEPTH_M = 0.035
+# With the verified -Y correction the fingertips visually align with the gaps,
+# while this wrist pose retains about 21 mm of RMPFlow position residual.
+GAP_ALIGNMENT_TOLERANCE_M = 0.022
+GAP_ALIGNMENT_TIMEOUT_ACCEPTANCE_M = 0.025
+# Visual alignment correction: shift the gripper toward world -Y so both
+# fingertips line up with the narrow front/rear corridors around cell_1.
+GRIPPER_PICK_Y_OFFSET_M = -0.005
+
+# All six RG2 DOFs have high-gain position drives in this articulation.  Drive
+# them together with the authored mimic signs so their targets do not fight.
+GRIPPER_JOINTS = [
+    "finger_joint",
+    "left_inner_knuckle_joint",
+    "left_outer_knuckle_joint",
+    "right_inner_knuckle_joint",
+    "right_inner_finger_joint",
+    "left_inner_finger_joint",
+]
+GRIPPER_MIMIC_SIGNS = np.array([1.0, -1.0, -1.0, 1.0, -1.0, -1.0], dtype=float)
+GRIPPER_OPEN = 0.60 * GRIPPER_MIMIC_SIGNS
+# The source gaps require the narrower 0.60-rad approach opening. Once the cell
+# is at the unobstructed inspection point, open wider for an obvious release.
+GRIPPER_INSPECTION_RELEASE = 0.42 * GRIPPER_MIMIC_SIGNS
+# The referenced RG2 asset has no usable fingertip collision geometry.  Do not
+# command through the cell hoping for a PhysX contact stop: halt at the visually
+# verified short-side contact pose and let the kinematic follower carry the cell.
+GRIPPER_CLOSED = 0.6864 * GRIPPER_MIMIC_SIGNS
+GRIPPER_CONTACT_MAX_RESIDUAL_RAD = 0.13
+# Repeated visual tests show valid cell contact at 0.6864 rad.
+# Robot relocation changes the first finger's final stop slightly; accept a
+# verified contact once it closes beyond this physical-contact band.
+GRIPPER_CONTACT_MIN_RAD = 0.62
+
+
+def convert_step_to_usd():
+    """Convert the STEP file with Isaac Sim's HOOPS converter when necessary."""
+    if not STEP_PATH.is_file():
+        raise FileNotFoundError(STEP_PATH)
+    if TABLE_USD_PATH.is_file() and TABLE_USD_PATH.stat().st_mtime >= STEP_PATH.stat().st_mtime:
+        print(f"[CAD] cached USD: {TABLE_USD_PATH}")
+        return True
+
+    try:
+        from omni.kit.converter.hoops_core import get_instance
+    except ImportError as exc:
+        print(
+            "[CAD WARN] CAD Converter is unavailable; using a procedural proxy "
+            "built from new_ws_table.step dimensions."
+        )
+        return False
+
+    options = {
+        "compositionStyle": "0",
+        "instancingStyle": "0",
+        "tessLOD": "2",
+        "upAxis": "2",
+        "iUpAxis": "2",
+        "dMetersPerUnit": "1.0",
+        "useMaterials": "true",
+        "useNormals": "true",
+        "convertHidden": "false",
+        "bOptimize": "true",
+    }
+
+    async def run_conversion():
+        converter = get_instance()
+        if converter is None:
+            raise RuntimeError("HOOPS converter instance is None")
+        return await converter.create_converter_task(
+            str(STEP_PATH.resolve()), str(TABLE_USD_PATH.resolve()), options
+        )
+
+    print(f"[CAD] converting {STEP_PATH} -> {TABLE_USD_PATH}")
+    future = asyncio.ensure_future(run_conversion())
+    while not future.done():
+        transfer.base.v6.simulation_app.update()
+    future.result()
+    for _ in range(30):
+        if TABLE_USD_PATH.is_file():
+            break
+        transfer.base.v6.simulation_app.update()
+    if not TABLE_USD_PATH.is_file():
+        raise RuntimeError(f"STEP conversion completed without output: {TABLE_USD_PATH}")
+    return True
+
+
+def add_inspection_table(stage, converted):
+    if stage.GetPrimAtPath(TABLE_PRIM_PATH).IsValid():
+        stage.RemovePrim(TABLE_PRIM_PATH)
+    if converted:
+        table = stage.DefinePrim(TABLE_PRIM_PATH, "Xform")
+        table.GetReferences().AddReference(str(TABLE_USD_PATH.resolve()))
+        xform = UsdGeom.Xformable(table)
+        xform.ClearXformOpOrder()
+        xform.AddTranslateOp().Set(Gf.Vec3d(*TABLE_WORLD_TRANSLATION.tolist()))
+    else:
+        print("[TABLE WARN] CAD converter unavailable; no inspection geometry added")
+    print(f"[TABLE] prim={TABLE_PRIM_PATH}, translation={TABLE_WORLD_TRANSLATION}")
+    print(
+        "[TABLE] 4 mm boss top world center="
+        f"{np.round(TABLE_WORLD_TRANSLATION + FOUR_MM_BOSS_LOCAL_CENTER, 5)}"
+    )
+
+
+def add_cell_visual_proxy(stage, proxy_path=CELL_VISUAL_PROXY_PATH):
+    """Create a non-physical rendered cell copy before PhysX views exist."""
+    if stage.GetPrimAtPath(proxy_path).IsValid():
+        stage.RemovePrim(proxy_path)
+    proxy = stage.DefinePrim(proxy_path, "Xform")
+    proxy.GetReferences().AddReference(
+        str(CELL_ASSET_PATH.resolve()), "/SmallCellBattery/cell_1"
+    )
+    # SingleXFormPrim(reset_xform_properties=False) requires authored transform
+    # ops. The referenced cell root has none of its own, so create the standard
+    # translate/orient/scale stack before constructing the runtime wrapper.
+    xform = UsdGeom.Xformable(proxy)
+    xform.ClearXformOpOrder()
+    xform.AddTranslateOp(UsdGeom.XformOp.PrecisionDouble).Set(Gf.Vec3d(0.0))
+    xform.AddOrientOp(UsdGeom.XformOp.PrecisionDouble).Set(
+        Gf.Quatd(1.0, Gf.Vec3d(0.0))
+    )
+    xform.AddScaleOp(UsdGeom.XformOp.PrecisionDouble).Set(Gf.Vec3d(1.0))
+    UsdPhysics.RigidBodyAPI.Apply(proxy).CreateRigidBodyEnabledAttr().Set(False)
+    for prim in Usd.PrimRange(proxy):
+        if prim.HasAPI(UsdPhysics.CollisionAPI):
+            UsdPhysics.CollisionAPI(prim).CreateCollisionEnabledAttr().Set(False)
+    UsdGeom.Imageable(proxy).MakeInvisible()
+    print(f"[CELL VISUAL] non-physical carry proxy prepared: {proxy_path}")
+
+
+def command_gripper(
+    world, robot, controller, dof_indices, target, label,
+    steps=180, tolerance=0.01, accept_contact=False,
+    contact_min_rad=GRIPPER_CONTACT_MIN_RAD,
+):
+    """Drive all RG2 DOFs with mutually consistent mimic-signed targets."""
+    target = np.asarray(target, dtype=float)
+    indices = np.asarray(dof_indices, dtype=np.int32)
+    current = np.full(target.shape, np.nan, dtype=float)
+    # Capture the position before issuing the first close command.  Reading it
+    # after world.step() loses the large first-frame motion and underestimates
+    # contact progress (0.60 -> 0.6864 was previously counted as < 0.08 rad).
+    positions_before_command = robot.get_joint_positions()
+    initial = (
+        np.asarray(positions_before_command, dtype=float)[indices].copy()
+        if positions_before_command is not None else None
+    )
+    previous = None
+    stalled_steps = 0
+    for step in range(steps):
+        controller.apply_action(ArticulationAction(
+            joint_positions=target.copy(),
+            joint_indices=indices,
+        ))
+        world.step(render=True)
+        all_positions = robot.get_joint_positions()
+        if all_positions is None:
+            continue
+        current = np.asarray(all_positions, dtype=float)[indices]
+        if initial is None:
+            initial = current.copy()
+        if np.max(np.abs(current - target)) <= tolerance:
+            status = "verified contact pose" if accept_contact else "reached"
+            print(f"[GRIPPER] {label} {status} at step {step}: {np.round(current, 4)}")
+            return
+        if accept_contact and previous is not None:
+            movement = float(np.max(np.abs(current - previous)))
+            stalled_steps = stalled_steps + 1 if movement < 5.0e-4 else 0
+            progress = float(np.max(current - initial))
+            # Do not mistake the initial slow linkage motion for contact.  The
+            # previous 30-step/0.03-rad rule accepted 0.6836 rad without grip.
+            if (
+                stalled_steps >= 60
+                and float(current[0]) >= contact_min_rad
+            ):
+                print(
+                    f"[GRIPPER] {label} contact accepted at step {step}: "
+                    f"actual={np.round(current, 4)}, progress={progress:.4f} rad"
+                )
+                return
+        previous = current.copy()
+    if accept_contact and initial is not None:
+        progress = float(np.max(current - initial))
+        residual = float(np.max(np.abs(target - current)))
+        if (
+            float(current[0]) >= contact_min_rad
+            and residual <= GRIPPER_CONTACT_MAX_RESIDUAL_RAD
+        ):
+            print(
+                f"[GRIPPER] {label} contact accepted at timeout: "
+                f"actual={np.round(current, 4)}, progress={progress:.4f} rad, "
+                f"residual={residual:.4f} rad"
+            )
+            return
+    raise TimeoutError(
+        f"RG2 {label} timeout: target={target}, actual={np.round(current, 4)}"
+    )
+
+
+def request_inspection_result(world):
+    """Call Trigger through the ROS2 CLI while Isaac keeps rendering.
+
+    Isaac's bundled Python does not include rclpy. The Humble CLI runs in its
+    own sourced process and waits until the test/real service replies.
+    """
+    command = (
+        "source /opt/ros/humble/setup.bash && "
+        f"ros2 service call {INSPECTION_SERVICE_NAME} std_srvs/srv/Trigger '{{}}'"
+    )
+    # Do not inherit Isaac Kit's Python 3.11 PYTHONHOME/PYTHONPATH. ROS2 Humble
+    # on this host uses the system Python and otherwise fails with SRE mismatch.
+    ros_environment = {
+        "HOME": os.environ.get("HOME", "/home/rokey"),
+        "USER": os.environ.get("USER", "rokey"),
+        "LANG": os.environ.get("LANG", "C.UTF-8"),
+        "LC_ALL": os.environ.get("LC_ALL", "C.UTF-8"),
+        "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    }
+    for name in ("ROS_DOMAIN_ID", "RMW_IMPLEMENTATION", "CYCLONEDDS_URI"):
+        if name in os.environ:
+            ros_environment[name] = os.environ[name]
+    print(f"[ROS2] waiting for service response: {INSPECTION_SERVICE_NAME}")
+    process = subprocess.Popen(
+        ["/bin/bash", "-lc", command],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        env=ros_environment,
+    )
+    try:
+        while process.poll() is None:
+            if not transfer.base.v6.simulation_app.is_running():
+                process.terminate()
+                raise KeyboardInterrupt
+            world.step(render=True)
+        output = process.stdout.read() if process.stdout is not None else ""
+        if process.returncode != 0:
+            raise RuntimeError(
+                f"ROS2 service call failed (exit={process.returncode}): {output.strip()}"
+            )
+        # ROS2 CLI output differs by distro: either YAML `success: true` or
+        # Python repr `Trigger_Response(success=True, ...)`.
+        match = re.search(r"success\s*[:=]\s*(true|false)", output, flags=re.IGNORECASE)
+        if match is None:
+            raise RuntimeError(f"ROS2 response has no success field: {output.strip()}")
+        result = match.group(1).lower() == "true"
+        print(f"[ROS2] inspection result={result}\n{output.strip()}")
+        return result
+    finally:
+        if process.poll() is None:
+            process.terminate()
+
+
+def wait_for_suction_open(world):
+    """Wait until the suction robot reports that its cover is open."""
+    command = (
+        "source /opt/ros/humble/setup.bash && "
+        f"ros2 service call {SUCTION_OPEN_SERVICE_NAME} std_srvs/srv/Trigger '{{}}'"
+    )
+    ros_environment = {
+        "HOME": os.environ.get("HOME", "/home/rokey"),
+        "USER": os.environ.get("USER", "rokey"),
+        "LANG": os.environ.get("LANG", "C.UTF-8"),
+        "LC_ALL": os.environ.get("LC_ALL", "C.UTF-8"),
+        "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    }
+    for name in ("ROS_DOMAIN_ID", "RMW_IMPLEMENTATION", "CYCLONEDDS_URI"):
+        if name in os.environ:
+            ros_environment[name] = os.environ[name]
+
+    while True:
+        print(f"[ROS2] waiting for suction open: {SUCTION_OPEN_SERVICE_NAME}")
+        process = subprocess.Popen(
+            ["/bin/bash", "-lc", command],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            env=ros_environment,
+        )
+        try:
+            while process.poll() is None:
+                if not transfer.base.v6.simulation_app.is_running():
+                    process.terminate()
+                    raise KeyboardInterrupt
+                world.step(render=True)
+            output = process.stdout.read() if process.stdout is not None else ""
+            if process.returncode != 0:
+                raise RuntimeError(
+                    f"ROS2 service call failed (exit={process.returncode}): {output.strip()}"
+                )
+            match = re.search(r"success\s*[:=]\s*(true|false)", output, flags=re.IGNORECASE)
+            if match is None:
+                raise RuntimeError(f"ROS2 response has no success field: {output.strip()}")
+            if match.group(1).lower() == "true":
+                print(f"[ROS2] suction cover opened\n{output.strip()}")
+                return
+            print(f"[ROS2] suction open not ready; waiting again\n{output.strip()}")
+        finally:
+            if process.poll() is None:
+                process.terminate()
+
+
+def trigger_suction_close(world):
+    """Send one close-cover Trigger request after the v4 transfer."""
+    command = (
+        "source /opt/ros/humble/setup.bash && "
+        f"ros2 service call {SUCTION_CLOSE_SERVICE_NAME} std_srvs/srv/Trigger '{{}}'"
+    )
+    ros_environment = {
+        "HOME": os.environ.get("HOME", "/home/rokey"),
+        "USER": os.environ.get("USER", "rokey"),
+        "LANG": os.environ.get("LANG", "C.UTF-8"),
+        "LC_ALL": os.environ.get("LC_ALL", "C.UTF-8"),
+        "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    }
+    for name in ("ROS_DOMAIN_ID", "RMW_IMPLEMENTATION", "CYCLONEDDS_URI"):
+        if name in os.environ:
+            ros_environment[name] = os.environ[name]
+    print(f"[ROS2] triggering suction close: {SUCTION_CLOSE_SERVICE_NAME}")
+    process = subprocess.Popen(
+        ["/bin/bash", "-lc", command],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        env=ros_environment,
+    )
+    try:
+        while process.poll() is None:
+            if not transfer.base.v6.simulation_app.is_running():
+                process.terminate()
+                raise KeyboardInterrupt
+            world.step(render=True)
+        output = process.stdout.read() if process.stdout is not None else ""
+        if process.returncode != 0:
+            raise RuntimeError(
+                f"ROS2 service call failed (exit={process.returncode}): {output.strip()}"
+            )
+        print(f"[ROS2] suction close response\n{output.strip()}")
+    finally:
+        if process.poll() is None:
+            process.terminate()
+
+
+def rotate_joint1_for_reject(world, robot, controller, follower, home_joint_pose):
+    """Rotate only joint_1 to home-90 deg, holding every other joint fixed."""
+    joint1_index = int(robot.get_dof_index("joint_1"))
+    current = np.asarray(robot.get_joint_positions(), dtype=float)
+    target = current.copy()
+    target[joint1_index] = home_joint_pose[joint1_index] + REJECT_JOINT1_OFFSET_RAD
+    max_step = 0.45 * transfer.base.PHYSICS_DT
+    print(
+        "\n[REJECT ROTATE] joint_1 -> "
+        f"{np.degrees(target[joint1_index]):.1f} deg (home -90 deg; joint_2~6 held)"
+    )
+    for step in range(int(30.0 / transfer.base.PHYSICS_DT)):
+        current = np.asarray(robot.get_joint_positions(), dtype=float)
+        error = target[joint1_index] - current[joint1_index]
+        command = current.copy()
+        command[joint1_index] += np.clip(error, -max_step, max_step)
+        controller.apply_action(ArticulationAction(joint_positions=command))
+        world.step(render=True)
+        follower.update()
+        if step % 120 == 0:
+            print(f"  t={step * transfer.base.PHYSICS_DT:4.1f}s error={np.degrees(abs(error)):5.1f} deg")
+        if abs(error) <= np.deg2rad(0.5):
+            print(f"  [ROTATED] joint_1={np.degrees(current[joint1_index]):.2f} deg")
+            return
+    raise TimeoutError("joint_1 reject rotation timeout")
+
+
+class PhysicsLinkCellFollower:
+    """Carry a kinematic cell using link_6's live pose with full 6-DOF tracking."""
+
+    def __init__(self, cell_object, link_object, initial_position, initial_orientation):
+        self.cell = cell_object
+        self.link = link_object
+        self.update_count = 0
+
+        link_pos, link_rot = self.link.get_world_pose()
+        q_link = Gf.Quatd(
+            float(link_rot[0]), float(link_rot[1]),
+            float(link_rot[2]), float(link_rot[3]),
+        )
+        link_mat = Gf.Matrix4d()
+        link_mat.SetRotate(Gf.Rotation(q_link))
+        link_mat.SetTranslateOnly(
+            Gf.Vec3d(float(link_pos[0]), float(link_pos[1]), float(link_pos[2]))
+        )
+
+        q_cell = Gf.Quatd(
+            float(initial_orientation[0]), float(initial_orientation[1]),
+            float(initial_orientation[2]), float(initial_orientation[3]),
+        )
+        cell_mat = Gf.Matrix4d()
+        cell_mat.SetRotate(Gf.Rotation(q_cell))
+        cell_mat.SetTranslateOnly(
+            Gf.Vec3d(
+                float(initial_position[0]),
+                float(initial_position[1]),
+                float(initial_position[2]),
+            )
+        )
+
+        # USD row-vector convention: preserve the complete relative transform.
+        self.local_offset_mat = cell_mat * link_mat.GetInverse()
+        self.initial_cell_position = np.asarray(initial_position, float).copy()
+        # Compatibility for center-based placement path: root-to-link translation
+        # at the instant the grasp is established.
+        self.center_offset = self.initial_cell_position - np.asarray(link_pos, float)
+
+    def update(self):
+        link_pos, link_rot = self.link.get_world_pose()
+        q_link = Gf.Quatd(
+            float(link_rot[0]), float(link_rot[1]),
+            float(link_rot[2]), float(link_rot[3]),
+        )
+        link_mat = Gf.Matrix4d()
+        link_mat.SetRotate(Gf.Rotation(q_link))
+        link_mat.SetTranslateOnly(
+            Gf.Vec3d(float(link_pos[0]), float(link_pos[1]), float(link_pos[2]))
+        )
+
+        current_cell_mat = self.local_offset_mat * link_mat
+        pos = current_cell_mat.ExtractTranslation()
+        rot = current_cell_mat.ExtractRotation().GetQuat()
+        new_pos = np.array([pos[0], pos[1], pos[2]])
+        new_rot = np.array([
+            rot.GetReal(),
+            rot.GetImaginary()[0],
+            rot.GetImaginary()[1],
+            rot.GetImaginary()[2],
+        ])
+        self.cell.set_world_pose(position=new_pos, orientation=new_rot)
+        self.update_count += 1
+        if self.update_count % 120 == 0:
+            actual_root, _ = self.cell.get_world_pose()
+            displacement = np.asarray(actual_root, float) - self.initial_cell_position
+            tracking_error = np.asarray(actual_root, float) - new_pos
+            print(
+                f"  [CELL FOLLOW] displacement={np.round(displacement, 5)}, "
+                f"tracking_error={np.round(tracking_error, 6)}"
+            )
+
+
+def move_position_only(
+    runner,
+    link6_target,
+    label,
+    tolerance,
+    step_callback=None,
+    timeout_acceptance=None,
+):
+    """Move link_6 without the unreachable fixed wrist-orientation constraint."""
+    target = np.asarray(link6_target, dtype=float)
+    stable = 0
+    best_error = float("inf")
+    max_steps = int(transfer.base.MOVE_TIMEOUT_S / transfer.base.PHYSICS_DT)
+    link6_prim = transfer.base.descendants_named(
+        runner.stage.GetPrimAtPath(ROBOT_ROOT), "link_6"
+    )[0]
+    print(f"\n[MOVE POSITION-ONLY] {label}: link6={np.round(target, 5)}")
+    for step in range(max_steps):
+        if not transfer.base.v6.simulation_app.is_running():
+            raise KeyboardInterrupt
+        # Omitting orientation lets RMPFlow choose a reachable wrist posture.
+        runner.rmpflow.set_end_effector_target(target)
+        action = runner.policy.get_next_articulation_action(transfer.base.PHYSICS_DT)
+        action = runner.guard.filter_action(action, transfer.base.PHYSICS_DT)
+        runner.controller.apply_action(action)
+        runner.world.step(render=True)
+        if step_callback is not None:
+            step_callback()
+        actual, _ = transfer.base.v6.get_prim_world_pose(
+            runner.stage, link6_prim.GetPath().pathString
+        )
+        error = float(np.linalg.norm(target - actual))
+        best_error = min(best_error, error)
+        stable = stable + 1 if error <= tolerance else 0
+        if step % 120 == 0:
+            print(f"  t={step * transfer.base.PHYSICS_DT:5.1f}s error={error * 1000:6.1f} mm")
+        if stable >= transfer.base.STABLE_STEPS:
+            print(f"  [ARRIVED] error={error * 1000:.2f} mm")
+            return
+    if timeout_acceptance is not None and best_error <= timeout_acceptance:
+        print(f"  [NEAR-ARRIVED] best error={best_error * 1000:.1f} mm")
+        return
+    raise TimeoutError(
+        f"{label} position-only timeout: best={best_error * 1000:.1f} mm, "
+        f"tolerance={tolerance * 1000:.1f} mm"
+    )
+
+
+def disable_cell_fixed_joint_before_physics(stage):
+    """Author the cell joint disabled before World/reset creates PhysX handles."""
+    joint_prim = stage.GetPrimAtPath(CELL_JOINT_PATH)
+    if not joint_prim.IsValid():
+        raise RuntimeError(f"cell FixedJoint not found: {CELL_JOINT_PATH}")
+
+    previous_target = stage.GetEditTarget()
+    stage.SetEditTarget(stage.GetSessionLayer())
+    # Both opinions are authored before physics starts, avoiding a live
+    # articulation/constraint topology change while the gripper is in contact.
+    UsdPhysics.Joint(joint_prim).CreateJointEnabledAttr().Set(False)
+    stage.OverridePrim(CELL_JOINT_PATH).SetActive(False)
+    stage.SetEditTarget(previous_target)
+
+    released = stage.GetPrimAtPath(CELL_JOINT_PATH)
+    if released.IsValid() and released.IsActive():
+        raise RuntimeError(f"cell FixedJoint release failed: {CELL_JOINT_PATH}")
+    print(f"[JOINT PREP] cell detached before physics startup: {CELL_JOINT_PATH}")
+
+
+def add_rg2_fingertip_proxy_colliders(stage):
+    """Restore missing RG2 inner-finger collision geometry from visual bounds."""
+    gripper_root = f"{ROBOT_ROOT}/Xform/m0609_camera/m0609/onrobot_rg2ft"
+    previous_target = stage.GetEditTarget()
+    stage.SetEditTarget(stage.GetSessionLayer())
+
+    # The referenced RG2 asset can be instanceable.  Its descendants are then
+    # instance proxies, and USD forbids authoring collision children below them.
+    # De-instance only the composed runtime stage (session layer), leaving the
+    # source robot USD untouched.
+    probe = stage.GetPrimAtPath(gripper_root)
+    instanceable_ancestors = []
+    while probe.IsValid() and not probe.IsPseudoRoot():
+        if probe.IsInstanceable() or probe.IsInstance():
+            instanceable_ancestors.append(probe.GetPath())
+        probe = probe.GetParent()
+
+    # Disable outer instances first because doing so may recompose and expose a
+    # nested instance that was previously represented only as an instance proxy.
+    for instance_path in reversed(instanceable_ancestors):
+        prim = stage.GetPrimAtPath(instance_path)
+        if prim.IsValid():
+            prim.SetInstanceable(False)
+            print(f"[FINGER COLLIDER] runtime de-instanced: {instance_path}")
+
+    # Re-scan after recomposition. Some referenced robot assets contain nested
+    # instanceable prims which are not visible until the outer instance is open.
+    for _ in range(8):
+        finger_probe = stage.GetPrimAtPath(f"{gripper_root}/right_inner_finger")
+        if finger_probe.IsValid() and not finger_probe.IsInstanceProxy():
+            break
+        probe = finger_probe
+        changed = False
+        while probe.IsValid() and not probe.IsPseudoRoot():
+            if probe.IsInstanceable() or probe.IsInstance():
+                path = probe.GetPath()
+                probe.SetInstanceable(False)
+                print(f"[FINGER COLLIDER] runtime de-instanced nested: {path}")
+                changed = True
+                break
+            probe = probe.GetParent()
+        if not changed:
+            break
+
+    finger_probe = stage.GetPrimAtPath(f"{gripper_root}/right_inner_finger")
+    if finger_probe.IsInstanceProxy():
+        stage.SetEditTarget(previous_target)
+        raise RuntimeError(
+            "RG2 finger remains an instance proxy after runtime de-instancing: "
+            f"{finger_probe.GetPath()}"
+        )
+
+    cache = UsdGeom.BBoxCache(
+        Usd.TimeCode.Default(), [UsdGeom.Tokens.default_], useExtentsHint=True
+    )
+    for name in ("right_inner_finger", "left_inner_finger"):
+        finger_path = f"{gripper_root}/{name}"
+        finger_prim = stage.GetPrimAtPath(finger_path)
+        if not finger_prim.IsValid():
+            raise RuntimeError(f"RG2 finger prim missing: {finger_path}")
+
+        # In this RG2 asset the nested `collisions` prim itself is an instance,
+        # even when the containing finger prim is not an instance proxy.
+        # Open that nested instance before adding its runtime collision child.
+        collisions_path = f"{finger_path}/collisions"
+        collisions_prim = stage.GetPrimAtPath(collisions_path)
+        if not collisions_prim.IsValid():
+            collisions_prim = stage.DefinePrim(collisions_path, "Xform")
+        probe = collisions_prim
+        nested_paths = []
+        while probe.IsValid() and probe.GetPath() != finger_prim.GetPath():
+            if probe.IsInstanceable() or probe.IsInstance():
+                nested_paths.append(probe.GetPath())
+            probe = probe.GetParent()
+        for nested_path in reversed(nested_paths):
+            nested = stage.GetPrimAtPath(nested_path)
+            if nested.IsValid():
+                nested.SetInstanceable(False)
+                print(f"[FINGER COLLIDER] opened nested instance: {nested_path}")
+
+        collisions_prim = stage.GetPrimAtPath(collisions_path)
+        if collisions_prim.IsInstanceProxy() or collisions_prim.IsInstance():
+            stage.SetEditTarget(previous_target)
+            raise RuntimeError(
+                "RG2 collisions prim remains instanced after runtime de-instancing: "
+                f"{collisions_path}"
+            )
+        bounds = cache.ComputeLocalBound(finger_prim).ComputeAlignedRange()
+        minimum = np.asarray(bounds.GetMin(), dtype=float)
+        maximum = np.asarray(bounds.GetMax(), dtype=float)
+        center = 0.5 * (minimum + maximum)
+        dimensions = maximum - minimum
+        if np.any(dimensions <= 0.0):
+            raise RuntimeError(f"invalid RG2 finger bounds: {name}, size={dimensions}")
+
+        proxy_path = f"{collisions_path}/runtime_box"
+        cube = UsdGeom.Cube.Define(stage, proxy_path)
+        cube.CreateSizeAttr(1.0)
+        xform = UsdGeom.Xformable(cube.GetPrim())
+        xform.ClearXformOpOrder()
+        xform.AddTranslateOp().Set(Gf.Vec3d(*center.tolist()))
+        xform.AddScaleOp().Set(Gf.Vec3d(*dimensions.tolist()))
+        cube.CreateVisibilityAttr().Set(UsdGeom.Tokens.invisible)
+        UsdPhysics.CollisionAPI.Apply(cube.GetPrim()).CreateCollisionEnabledAttr().Set(True)
+        print(
+            f"[FINGER COLLIDER] {name}: center={np.round(center, 5)}, "
+            f"size={np.round(dimensions, 5)}"
+        )
+    stage.SetEditTarget(previous_target)
+
+
+def configure_kinematic_carry_collision_filter(stage):
+    """Author filters before World creation so Fabric/PhysX receives them."""
+    missing = [
+        path for path in [*SOURCE_CARRY_COLLISION_TARGETS, *RG2_CARRY_COLLISION_TARGETS]
+        if not stage.GetPrimAtPath(path).IsValid()
+    ]
+    if missing:
+        raise RuntimeError("kinematic carry collision targets missing:\n  " + "\n  ".join(missing))
+    cell_prim = stage.GetPrimAtPath(CELL_PATH)
+    filtered = UsdPhysics.FilteredPairsAPI.Apply(cell_prim)
+    # Keep actual cell<->RG2 contact enabled for the initial physical grip.
+    targets = [path for path in SOURCE_CARRY_COLLISION_TARGETS if path != CELL_PATH]
+    filtered.CreateFilteredPairsRel().SetTargets(targets)
+    print("[COLLISION PREP] source extraction filters authored; RG2 contact enabled")
+
+
+def set_rg2_carry_collision_filter(stage, enabled):
+    """Toggle RG2 contact only after grip or immediately before release."""
+    cell_prim = stage.GetPrimAtPath(CELL_PATH)
+    relation = UsdPhysics.FilteredPairsAPI(cell_prim).GetFilteredPairsRel()
+    targets = [path for path in SOURCE_CARRY_COLLISION_TARGETS if path != CELL_PATH]
+    if enabled:
+        targets.extend(RG2_CARRY_COLLISION_TARGETS)
+    relation.SetTargets(targets)
+    print(f"[COLLISION] cell<->RG2 {'filtered for carry' if enabled else 'enabled for grip'}")
+
+
+def main():
+    global CELL_PATH, CELL_JOINT_PATH
+    if not SCENE_PATH.is_file():
+        raise FileNotFoundError(SCENE_PATH)
+
+    converted = convert_step_to_usd()
+
+    # Configure the already validated camera-RG2 M0609 RmpFlow setup.
+    transfer.base.ROBOT_ROOT = ROBOT_ROOT
+    transfer.base.v6.VG10_TOOL_LENGTH_M = transfer.TOOL_LENGTH_M
+    transfer.base.v6.MAX_JOINT_COMMAND_SPEED_RAD_S_BY_NAME.update({
+        "joint_1": 0.45, "joint_2": 0.45, "joint_3": 0.45,
+        "joint_4": 0.90, "joint_5": 1.00, "joint_6": 0.90,
+        "finger_joint": 0.50, "right_inner_knuckle_joint": 0.50,
+    })
+    # This +90 degree short-side grip reaches J5=+132.96 deg and requests
+    # +133.24 deg at lift start.  The shared ±135 deg policy leaves only a
+    # ±133 deg soft range, although the source M0609 URDF permits ±360 deg.
+    # Widen only this standalone v2 process enough to retain a safety buffer.
+    transfer.base.v6.JOINT_LIMITS_DEG["joint_5"] = (-140.0, 140.0)
+    # J4 reaches the periodic representation -360 deg in the +90 deg grasp.
+    # The shared ±360 range has a ±358 soft range, causing the guard to wrap
+    # every -360 deg target to 0 deg and command a full wrist revolution.
+    transfer.base.v6.JOINT_LIMITS_DEG["joint_4"] = (-365.0, 365.0)
+    transfer.base.v6.prepare_joint_limited_rmpflow_files()
+    for name in GRIPPER_JOINTS:
+        transfer.base.v6.JOINT_LIMITS_DEG[name] = (-360.0, 360.0)
+
+    stage = transfer.base.v6.open_stage(SCENE_PATH)
+    transfer.base.v6.configure_standalone_timeline(reset_time=True)
+
+    # Keep the open battery assemblies stable without relying on broken USD
+    # joints whose casecover/body targets no longer exist.
+    for joint_path in DISABLED_ASSEMBLY_JOINTS:
+        if stage.GetPrimAtPath(joint_path).IsValid():
+            transfer.deactivate_joint(stage, joint_path)
+            print(f"[USD] disabled battery assembly joint: {joint_path}")
+    # Every source cell is detached before physics starts; the active cell is
+    # selected dynamically inside the processing loop below.
+    for cell_index in range(1, 5):
+        CELL_PATH = f"/World/good_battery/cell_{cell_index}"
+        CELL_JOINT_PATH = f"/World/good_battery/AssemblyJoints/cell_{cell_index}_to_casebase"
+        if stage.GetPrimAtPath(CELL_JOINT_PATH).IsValid():
+            disable_cell_fixed_joint_before_physics(stage)
+    # Do not author children below the instanceable RG2 asset. De-instancing the
+    # gripper invalidates its articulation/PhysX view and makes the arm unstable.
+    # Cell transport below uses the verified kinematic follower instead.
+    for cell_index in range(1, 5):
+        CELL_PATH = f"/World/good_battery/cell_{cell_index}"
+        if stage.GetPrimAtPath(CELL_PATH).IsValid():
+            configure_kinematic_carry_collision_filter(stage)
+    CELL_PATH = "/World/good_battery/cell_1"
+    CELL_JOINT_PATH = "/World/good_battery/AssemblyJoints/cell_1_to_casebase"
+
+    for prim_path in STATIONARY_BATTERY_PRIMS:
+        if stage.GetPrimAtPath(prim_path).IsValid():
+            transfer.set_kinematic(stage, prim_path, True)
+            print(f"[PHYSICS] fixed against gravity: {prim_path}")
+
+    add_inspection_table(stage, converted)
+    add_cell_visual_proxy(stage)
+    for cell_index in range(2, 5):
+        add_cell_visual_proxy(stage, f"/World/grip_cell_visual_proxy_{cell_index}")
+    articulation_path, link6_path, base_path, _ = transfer.base.discover_v10_robot(stage)
+
+    required = [CELL_PATH, CELL_JOINT_PATH, OLD_CASEBASE_PATH, NEW_CASEBASE_PATH]
+    missing = [path for path in required if not stage.GetPrimAtPath(path).IsValid()]
+    if missing:
+        raise RuntimeError("Missing required prims:\n  " + "\n  ".join(missing))
+
+    initial_root_position, initial_orientation = transfer.pose(stage, CELL_PATH)
+    cell_min, cell_max = transfer.bbox(stage, CELL_PATH)
+    cell_center = 0.5 * (cell_min + cell_max)
+    cell_half_height = 0.5 * float(cell_max[2] - cell_min[2])
+    rear_cell_min, _ = transfer.bbox(stage, "/World/good_battery/cell_3")
+    # Side-grip target: descend the finger contact band below the cell top.
+    # The old version used cell_max[2] + 10 mm, which left the fingers above
+    # the cell and allowed the left finger to hang on the top edge.
+    pick_tcp = cell_center.copy()
+    pick_tcp[1] += GRIPPER_PICK_Y_OFFSET_M
+    pick_tcp[2] = cell_max[2] - FINGER_INSERTION_DEPTH_M
+    pick_overhead = pick_tcp + np.array([0.0, 0.0, PICK_CLEARANCE])
+    gap_entry_tcp = pick_tcp.copy()
+    gap_entry_tcp[2] = cell_max[2] + GAP_ENTRY_CLEARANCE
+
+    old_case_min, _ = transfer.bbox(stage, OLD_CASEBASE_PATH)
+    new_case_min, _ = transfer.bbox(stage, NEW_CASEBASE_PATH)
+    front_y_corridor = float(cell_min[1] - old_case_min[1])
+    rear_y_corridor = float(rear_cell_min[1] - cell_max[1])
+    case_delta = new_case_min - old_case_min
+    new_case_center = cell_center + case_delta
+    new_case_center[2] = new_case_min[2] + cell_half_height + 0.008
+
+    tcp_above_cell_center = pick_tcp - cell_center
+    base_position, base_orientation = transfer.pose(stage, base_path)
+    base_rotation_world = transfer.base.v6.quaternion_to_rotation_matrix(base_orientation)
+    inspection_surface_in_base = INSPECTION_SURFACE_IN_BASE.copy()
+    inspection_cell_center_in_base = inspection_surface_in_base.copy()
+    inspection_cell_center_in_base[2] += cell_half_height + CELL_SURFACE_CLEARANCE
+    inspection_cell_center = (
+        np.asarray(base_position, float)
+        + base_rotation_world @ inspection_cell_center_in_base
+    )
+    inspection_cell_center += INSPECTION_VIEW_OFFSET_M
+    inspection_cell_center[0] += INSPECTION_EXTRA_X_OFFSET_M
+    inspection_cell_center[1] += INSPECTION_EXTRA_Y_OFFSET_M
+    inspection_tcp = inspection_cell_center + tcp_above_cell_center
+    inspection_overhead = inspection_tcp + np.array([0.0, 0.0, INSPECTION_CLEARANCE])
+    inspection_safe_transfer = inspection_tcp + np.array(
+        [0.0, 0.0, POST_SERVICE_TRANSFER_CLEARANCE_M]
+    )
+    reject_center_in_base = INSPECTION_SURFACE_IN_BASE.copy()
+    reject_center_in_base[2] = cell_half_height + CELL_SURFACE_CLEARANCE
+    reject_cell_center = (
+        np.asarray(base_position, float)
+        + base_rotation_world @ reject_center_in_base
+    )
+    reject_cell_center += INSPECTION_VIEW_OFFSET_M
+    reject_cell_center[0] += INSPECTION_EXTRA_X_OFFSET_M
+    reject_cell_center[1] += INSPECTION_EXTRA_Y_OFFSET_M
+    new_case_tcp = new_case_center + tcp_above_cell_center
+    new_case_overhead = new_case_tcp + np.array([0.0, 0.0, PLACE_CLEARANCE])
+    new_case_safe_transfer = new_case_tcp + np.array(
+        [0.0, 0.0, POST_SERVICE_TRANSFER_CLEARANCE_M]
+    )
+
+    print("[TARGETS]")
+    print(f"  source pick       = {np.round(pick_tcp, 5)}")
+    print(f"  gap entry         = {np.round(gap_entry_tcp, 5)}")
+    print(f"  side insertion    = {FINGER_INSERTION_DEPTH_M * 1000:.1f} mm below cell top")
+    print(f"  gripper Y offset  = {GRIPPER_PICK_Y_OFFSET_M * 1000:+.1f} mm")
+    print(
+        f"  finger corridors  = Y-front {front_y_corridor * 1000:.1f} mm, "
+        f"Y-rear {rear_y_corridor * 1000:.1f} mm"
+    )
+    print(f"  inspection surface(base)= {inspection_surface_in_base}")
+    print(f"  viewpoint XYZ correction= {INSPECTION_VIEW_OFFSET_M} m")
+    print(f"  inspection cell(base)   = {np.round(inspection_cell_center_in_base, 5)}")
+    print(f"  inspection cell(world)= {np.round(inspection_cell_center, 5)}")
+    print(f"  inspection TCP(world)= {np.round(inspection_tcp, 5)}")
+    print(f"  new_case center   = {np.round(new_case_center, 5)}")
+    print(f"  new_case Y delta from source = {NEW_CASE_Y_DELTA_FROM_SOURCE_M:+.5f} m")
+
+    world = World(
+        stage_units_in_meters=1.0,
+        physics_dt=transfer.base.PHYSICS_DT,
+        rendering_dt=transfer.base.RENDERING_DT,
+    )
+    robot = world.scene.add(
+        SingleArticulation(prim_path=articulation_path, name="grip_cell_m0609_rg2")
+    )
+    cell_objects = {
+        cell_index: world.scene.add(
+            SingleRigidPrim(
+                prim_path=f"/World/good_battery/cell_{cell_index}",
+                name=f"grip_cell_cell_{cell_index}",
+            )
+        )
+        for cell_index in range(1, 5)
+    }
+    proxy_objects = {
+        1: SingleXFormPrim(
+            prim_path=CELL_VISUAL_PROXY_PATH,
+            name="grip_cell_cell_1_visual",
+            reset_xform_properties=False,
+        ),
+        **{
+            cell_index: SingleXFormPrim(
+                prim_path=f"/World/grip_cell_visual_proxy_{cell_index}",
+                name=f"grip_cell_cell_{cell_index}_visual",
+                reset_xform_properties=False,
+            )
+            for cell_index in range(2, 5)
+        },
+    }
+    for proxy in proxy_objects.values():
+        world.scene.add(proxy)
+    world.reset()
+    robot.initialize()
+    for cell_object in cell_objects.values():
+        cell_object.initialize()
+    # Read link_6 from its live PhysX rigid-body view.  USD Xform queries can
+    # remain at the authored pose while an articulation is moving in Fabric.
+    link6_object = SingleRigidPrim(
+        prim_path=link6_path,
+        name="grip_cell_live_link6",
+    )
+    link6_object.initialize()
+    gripper_dof_indices = [robot.get_dof_index(name) for name in GRIPPER_JOINTS]
+    if any(index is None or int(index) < 0 for index in gripper_dof_indices):
+        raise RuntimeError(
+            f"RG2 joints not found: names={GRIPPER_JOINTS}, "
+            f"indices={gripper_dof_indices}, robot_dofs={list(robot.dof_names)}"
+        )
+    gripper_dof_indices = [int(index) for index in gripper_dof_indices]
+    print(f"[GRIPPER] direct DOF control: {dict(zip(GRIPPER_JOINTS, gripper_dof_indices))}")
+    for dof_name in list(robot.dof_names):
+        transfer.base.v6.JOINT_LIMITS_DEG.setdefault(dof_name, (-360.0, 360.0))
+        transfer.base.v6.MAX_JOINT_COMMAND_SPEED_RAD_S_BY_NAME.setdefault(dof_name, 0.50)
+
+    controller = transfer.base.v6.configure_articulation_controller(robot)
+    transfer.base.v6.set_initial_joint_pose(robot, controller)
+    timeline = omni.timeline.get_timeline_interface()
+    timeline.set_end_time(3600.0)
+    world.play()
+    wait_for_suction_open(world)
+    timeline.play()
+    command_gripper(
+        world, robot, controller, gripper_dof_indices,
+        GRIPPER_OPEN, "initial side-grip open",
+    )
+    transfer.base.v6.step_world(world, 20)
+    home_joint_pose = np.asarray(robot.get_joint_positions(), dtype=float).copy()
+    runner = transfer.base.SimpleRmpRunner(world, stage, robot, base_path)
+
+    # Rotate onto the cell's short Y dimension while preserving the
+    # downward-facing approach direction.
+    base_rotation = transfer.base.v6.quaternion_to_rotation_matrix(runner.orientation)
+    yaw = GRIPPER_YAW_OFFSET_RAD
+    local_tool_yaw = np.array([
+        [np.cos(yaw), -np.sin(yaw), 0.0],
+        [np.sin(yaw),  np.cos(yaw), 0.0],
+        [0.0,          0.0,         1.0],
+    ], dtype=float)
+    runner.orientation = transfer.base.v6.rotation_matrix_to_quaternion(
+        base_rotation @ local_tool_yaw
+    )
+    grasp_orientation = np.asarray(runner.orientation, dtype=float).copy()
+    print("[GRIPPER] joint_6/tool yaw offset: +90.0 deg (grasping 55 mm short side)")
+
+    cell_count = 1
+    stack_count = 1
+    while stack_count <= 4:
+        if cell_count > 4:
+            print(
+                f"[STOP] no source cells remain: cell_count={cell_count}, "
+                f"stack_count={stack_count}"
+            )
+            break
+        current_cell_path = f"/World/good_battery/cell_{cell_count}"
+        CELL_PATH = current_cell_path
+        CELL_JOINT_PATH = (
+            f"/World/good_battery/AssemblyJoints/cell_{cell_count}_to_casebase"
+        )
+        if not stage.GetPrimAtPath(current_cell_path).IsValid():
+            raise RuntimeError(f"Missing required cell prim: {current_cell_path}")
+        if not stage.GetPrimAtPath(CELL_JOINT_PATH).IsValid():
+            raise RuntimeError(f"Missing required cell joint: {CELL_JOINT_PATH}")
+        transfer.deactivate_joint(stage, CELL_JOINT_PATH)
+        configure_kinematic_carry_collision_filter(stage)
+
+        initial_root_position, initial_orientation = transfer.pose(stage, CELL_PATH)
+        initial_root_position = np.asarray(initial_root_position, dtype=float)
+        cell_min, cell_max = transfer.bbox(stage, CELL_PATH)
+        cell_center = 0.5 * (cell_min + cell_max)
+        # The USD Xform pivot is not assumed to coincide with the mesh.  Robot
+        # targets stay in geometric-center space; this offset is used only when
+        # a center target must be converted back to a proxy Xform/root pose.
+        root_to_center_offset = cell_center - initial_root_position
+        cell_half_height = 0.5 * float(cell_max[2] - cell_min[2])
+        pick_tcp = cell_center.copy()
+        pick_tcp[1] += GRIPPER_PICK_Y_OFFSET_M
+        pick_tcp[2] = cell_max[2] - FINGER_INSERTION_DEPTH_M
+        pick_overhead = pick_tcp + np.array([0.0, 0.0, PICK_CLEARANCE])
+        gap_entry_tcp = pick_tcp.copy()
+        gap_entry_tcp[2] = cell_max[2] + GAP_ENTRY_CLEARANCE
+        tcp_above_cell_center = pick_tcp - cell_center
+
+        new_case_min, _ = transfer.bbox(stage, NEW_CASEBASE_PATH)
+        case_delta = new_case_min - old_case_min
+        new_case_center = cell_center + case_delta
+        new_case_center[2] = new_case_min[2] + cell_half_height + 0.008
+        inspection_cell_center_in_base = INSPECTION_SURFACE_IN_BASE.copy()
+        inspection_cell_center_in_base[2] += cell_half_height + CELL_SURFACE_CLEARANCE
+        inspection_cell_center = (
+            np.asarray(base_position, float)
+            + base_rotation_world @ inspection_cell_center_in_base
+        )
+        inspection_cell_center += INSPECTION_VIEW_OFFSET_M
+        inspection_cell_center[0] += INSPECTION_EXTRA_X_OFFSET_M
+        inspection_cell_center[1] += INSPECTION_EXTRA_Y_OFFSET_M
+        inspection_cell_center[0] += INSPECTION_CELL_X_CORRECTION_M.get(cell_count, 0.0)
+        inspection_tcp = inspection_cell_center + tcp_above_cell_center
+        inspection_overhead = inspection_tcp + np.array([0.0, 0.0, INSPECTION_CLEARANCE])
+        inspection_safe_transfer = inspection_tcp + np.array(
+            [0.0, 0.0, POST_SERVICE_TRANSFER_CLEARANCE_M]
+        )
+        new_case_tcp = new_case_center + tcp_above_cell_center
+        new_case_overhead = new_case_tcp + np.array([0.0, 0.0, PLACE_CLEARANCE])
+        new_case_safe_transfer = new_case_tcp + np.array(
+            [0.0, 0.0, POST_SERVICE_TRANSFER_CLEARANCE_M]
+        )
+        runner.orientation = grasp_orientation.copy()
+        current_proxy_path = (
+            CELL_VISUAL_PROXY_PATH
+            if cell_count == 1
+            else f"/World/grip_cell_visual_proxy_{cell_count}"
+        )
+        cell_visual = proxy_objects[cell_count]
+        print(
+            f"\n[CELL {cell_count}] source={CELL_PATH}, stack_slot={stack_count}, "
+            f"pick={np.round(pick_tcp, 5)}, place={np.round(new_case_center, 5)}"
+        )
+        print(
+            "[PIVOT] root_to_center_offset="
+            f"{np.round(root_to_center_offset, 5)}, case_delta={np.round(case_delta, 5)}"
+        )
+        UsdGeom.Imageable(stage.GetPrimAtPath(CELL_PATH)).MakeVisible()
+        UsdGeom.Imageable(stage.GetPrimAtPath(current_proxy_path)).MakeInvisible()
+        cell_visual.set_world_pose(
+            cell_center - root_to_center_offset, initial_orientation
+        )
+
+        # 1) Pick cell_{cell_count} from the open source case.
+        command_gripper(world, robot, controller, gripper_dof_indices, GRIPPER_OPEN, "open")
+        runner.move(
+            runner.tcp_to_link6(pick_overhead),
+            "cell_{cell_count} source overhead",
+            0.025,
+            timeout_acceptance=0.030,
+        )
+        # Finish alignment just above the cell before entering the narrow gaps.
+        # The -Y correction was visually verified; allow the pose's persistent
+        # RMPFlow residual so execution can continue to insertion and closing.
+        runner.move(
+            runner.tcp_to_link6(gap_entry_tcp),
+            "cell_{cell_count} gap entry alignment",
+            GAP_ALIGNMENT_TOLERANCE_M,
+            timeout_acceptance=GAP_ALIGNMENT_TIMEOUT_ACCEPTANCE_M,
+        )
+        runner.move(
+            runner.tcp_to_link6(pick_tcp),
+            "cell_{cell_count} vertical side insertion",
+            GAP_ALIGNMENT_TOLERANCE_M,
+            timeout_acceptance=GAP_ALIGNMENT_TIMEOUT_ACCEPTANCE_M,
+        )
+        command_gripper(
+            world, robot, controller, gripper_dof_indices,
+            GRIPPER_CLOSED, "closed on cell contact", accept_contact=True,
+            contact_min_rad=0.55,
+        )
+        set_rg2_carry_collision_filter(stage, True)
+        # The source joint was disabled before physics startup.  Keep cell_{cell_count}
+        # kinematic and move it through the PhysX transform API using the measured
+        # link_6 offset.  This avoids feeding any attachment force back into the
+        # robot articulation (the runtime FixedJoint caused uncontrolled rotation).
+        # Keep the original rigid body and all tensor views intact. Switch only the
+        # rendered representation to the pre-created non-physical carry proxy.
+        UsdGeom.Imageable(stage.GetPrimAtPath(CELL_PATH)).MakeInvisible()
+        for prim in Usd.PrimRange(stage.GetPrimAtPath(CELL_PATH)):
+            if prim.HasAPI(UsdPhysics.CollisionAPI):
+                UsdPhysics.CollisionAPI(prim).CreateCollisionEnabledAttr().Set(False)
+        UsdGeom.Imageable(stage.GetPrimAtPath(current_proxy_path)).MakeVisible()
+        cell_visual.set_world_pose(
+            cell_center - root_to_center_offset, initial_orientation
+        )
+        transfer.base.v6.step_world(world, 2)
+        follower = PhysicsLinkCellFollower(
+            cell_visual,
+            link6_object,
+            initial_root_position,
+            initial_orientation,
+        )
+        cell_before_lift, _ = cell_visual.get_world_pose()
+        print(f"[KINEMATIC ATTACH] follower active, root={np.round(cell_before_lift, 5)}")
+
+        # 2) Place on the STEP model's 4 mm raised inspection feature.
+        runner.move(runner.tcp_to_link6(pick_overhead), "lift from source", 0.045, follower.update, 0.07)
+        # set_world_pose() reports its commanded value immediately, even if a stale
+        # PhysX constraint restores the old pose on the next simulation frame. Keep
+        # enforcing the attachment across rendered physics frames, then validate the
+        # pose that actually survives simulation.
+        for _ in range(60):
+            follower.update()
+            world.step(render=True)
+            follower.update()
+        world.step(render=True)
+        cell_after_lift, _ = cell_visual.get_world_pose()
+        lift_displacement = np.asarray(cell_after_lift, float) - np.asarray(cell_before_lift, float)
+        print(f"[LIFT VERIFY AFTER PHYSICS] cell displacement={np.round(lift_displacement, 5)}")
+        if float(lift_displacement[2]) < 0.04:
+            raise RuntimeError(
+                "cell_{cell_count} did not rise with the gripper: "
+                f"dz={lift_displacement[2] * 1000:.1f} mm"
+            )
+        # 3) Keep gripping and move to the requested robot-base inspection point.
+        runner.move(
+            runner.tcp_to_link6(inspection_overhead),
+            "inspection overhead (robot base frame)",
+            INSPECTION_MOVE_TOLERANCE_M,
+            follower.update,
+            INSPECTION_MOVE_TIMEOUT_ACCEPTANCE_M,
+        )
+        runner.move(
+            runner.tcp_to_link6(inspection_tcp),
+            "inspection service pose (robot base frame)",
+            INSPECTION_MOVE_TOLERANCE_M,
+            follower.update,
+            INSPECTION_MOVE_TIMEOUT_ACCEPTANCE_M,
+        )
+        inspection_cell_position, inspection_cell_orientation = cell_visual.get_world_pose()
+        inspection_displacement = (
+            np.asarray(inspection_cell_position, dtype=float)
+            - np.asarray(cell_before_lift, dtype=float)
+        )
+        inspection_horizontal_escape = float(np.linalg.norm(inspection_displacement[:2]))
+        print(
+            "[INSPECTION ESCAPE VERIFY] displacement="
+            f"{np.round(inspection_displacement, 5)}, "
+            f"horizontal={inspection_horizontal_escape * 1000:.1f} mm"
+        )
+        if (
+            float(lift_displacement[2]) < INSPECTION_MIN_LIFT_M
+            or inspection_horizontal_escape < INSPECTION_MIN_HORIZONTAL_ESCAPE_M
+        ):
+            raise RuntimeError(
+                "cell이 casebase에서 충분히 빠져나오지 못해 service 호출을 중단합니다: "
+                f"dz={lift_displacement[2] * 1000:.1f} mm, "
+                f"horizontal={inspection_horizontal_escape * 1000:.1f} mm"
+            )
+        # Do not snap the cell to the nominal target here. RMPFlow can stop with a
+        # residual position error; the follower's current pose is the actual pose
+        # between the fingers and must be preserved during release.
+        set_rg2_carry_collision_filter(stage, False)
+        command_gripper(
+            world, robot, controller, gripper_dof_indices,
+            GRIPPER_INSPECTION_RELEASE, "inspection release before service",
+        )
+        print("[INSPECTION] cell released; waiting for ROS2 result")
+        inspection_ok = request_inspection_result(world)
+
+        # 4) True -> re-grip and move to new_case. False -> re-grip, carry to the
+        # factory-floor reject point, release there, then return the robot home.
+        if inspection_ok:
+            command_gripper(
+                world, robot, controller, gripper_dof_indices,
+                GRIPPER_CLOSED, "inspection re-grasp after service", accept_contact=True,
+                contact_min_rad=0.50,
+            )
+            set_rg2_carry_collision_filter(stage, True)
+            follower = PhysicsLinkCellFollower(
+                cell_visual,
+                link6_object,
+                inspection_cell_position,
+                inspection_cell_orientation,
+            )
+            # Preserve the wrist pose that physically re-grasped the cell.  A
+            # position-only target lets RMPFlow freely roll the wrist, while the
+            # carry proxy uses a fixed world-space grasp offset; that made the
+            # fingers visibly rotate away from the cell.  Holding this measured
+            # orientation keeps both the finger angle and grasp offset constant.
+            _, regrasp_link_orientation = link6_object.get_world_pose()
+            runner.orientation = np.asarray(regrasp_link_orientation, dtype=float)
+            print(
+                "[CARRY ORIENTATION LOCK] measured link6 quaternion="
+                f"{np.round(runner.orientation, 6)}"
+            )
+            runner.move(
+                runner.tcp_to_link6(inspection_safe_transfer),
+                "inspection high vertical retreat after re-grasp",
+                0.025,
+                follower.update,
+                0.035,
+            )
+            final_center = new_case_center.copy()
+            approach_center = final_center + np.array(
+                [0.0, 0.0, NEW_CASE_VERTICAL_APPROACH_M]
+            )
+            # During carry, the measured center-to-link6 transform is the
+            # authoritative grasp offset.  Converting the geometric center
+            # through it avoids confusing the tool-length offset with the
+            # approximately 50 mm side-grip offset.
+            approach_root = approach_center - root_to_center_offset
+            final_root = final_center - root_to_center_offset
+            approach_link6 = approach_root - follower.center_offset
+            final_link6 = final_root - follower.center_offset
+            print(
+                "[NEW_CASE CENTER TARGET] source="
+                f"{np.round(cell_center, 5)}, approach={np.round(approach_center, 5)}, "
+                f"final={np.round(final_center, 5)}"
+            )
+            # Avoid the RMPFlow local minimum seen on the long diagonal move from
+            # the inspection station.  At the safe height, align world X first and
+            # then world Y.  The second segment consequently ends exactly above
+            # the requested placement coordinate.
+            retreat_cell_root, _ = cell_visual.get_world_pose()
+            retreat_cell_center = (
+                np.asarray(retreat_cell_root, dtype=float) + root_to_center_offset
+            )
+            x_aligned_center = retreat_cell_center.copy()
+            x_aligned_center[0] = approach_center[0]
+            x_aligned_center[2] = approach_center[2]
+            x_aligned_root = x_aligned_center - root_to_center_offset
+            x_aligned_link6 = x_aligned_root - follower.center_offset
+            print(
+                "[NEW_CASE AXIS PATH] retreat="
+                f"{np.round(retreat_cell_center, 5)} -> X-aligned="
+                f"{np.round(x_aligned_center, 5)} -> XY-aligned={np.round(approach_center, 5)}"
+            )
+            runner.move(
+                x_aligned_link6,
+                "new_case safe-height X alignment",
+                NEW_CASE_APPROACH_TOLERANCE_M,
+                follower.update,
+                0.050,
+            )
+            x_actual_root, _ = cell_visual.get_world_pose()
+            x_actual_center = np.asarray(x_actual_root) + root_to_center_offset
+            x_error = np.asarray(x_aligned_center) - x_actual_center
+            print(
+                "[NEW_CASE X VERIFY] actual="
+                f"{np.round(x_actual_center, 5)}, error={np.round(x_error, 5)}"
+            )
+            if float(np.linalg.norm(x_error)) > NEW_CASE_AXIS_VERIFY_TOLERANCE_M:
+                raise RuntimeError(
+                    "new_case X 정렬에 도달하지 못해 Y 이동을 중단합니다: "
+                    f"cell error={np.linalg.norm(x_error) * 1000:.1f} mm"
+                )
+            runner.move(
+                approach_link6,
+                "new_case safe-height Y alignment",
+                NEW_CASE_APPROACH_TOLERANCE_M,
+                follower.update,
+                0.050,
+            )
+            approach_actual_root, _ = cell_visual.get_world_pose()
+            approach_actual_center = (
+                np.asarray(approach_actual_root) + root_to_center_offset
+            )
+            approach_error = np.asarray(approach_center) - approach_actual_center
+            print(
+                "[NEW_CASE APPROACH VERIFY] actual="
+                f"{np.round(approach_actual_center, 5)}, error={np.round(approach_error, 5)}"
+            )
+            if float(np.linalg.norm(approach_error)) > NEW_CASE_APPROACH_VERIFY_TOLERANCE_M:
+                raise RuntimeError(
+                    "new_case 상공 목표에 도달하지 못해 수직 하강을 중단합니다: "
+                    f"cell error={np.linalg.norm(approach_error) * 1000:.1f} mm"
+                )
+            runner.move(
+                final_link6,
+                "new_case exact XY vertical descent 17 cm",
+                NEW_CASE_PLACE_TOLERANCE_M,
+                follower.update,
+                0.035,
+            )
+            final_actual_root, _ = cell_visual.get_world_pose()
+            final_actual_center = np.asarray(final_actual_root) + root_to_center_offset
+            final_error = np.asarray(final_center) - final_actual_center
+            print(
+                "[NEW_CASE PLACE VERIFY] actual="
+                f"{np.round(final_actual_center, 5)}, error={np.round(final_error, 5)}"
+            )
+            if float(np.linalg.norm(final_error)) > NEW_CASE_CELL_VERIFY_TOLERANCE_M:
+                raise RuntimeError(
+                    "new_case 배치 좌표에 도달하지 못해 언그립을 중단합니다: "
+                    f"cell error={np.linalg.norm(final_error) * 1000:.1f} mm"
+                )
+            # The carry representation is intentionally non-physical.  Once the
+            # guarded placement error is acceptable, author the exact geometric
+            # center. set_world_pose() accepts the Xform root, so convert only here.
+            final_root = final_center - root_to_center_offset
+            cell_visual.set_world_pose(final_root, initial_orientation)
+            print(
+                f"[NEW_CASE FINAL SNAP] center={np.round(final_center, 5)}, "
+                f"root={np.round(final_root, 5)}"
+            )
+            set_rg2_carry_collision_filter(stage, False)
+            command_gripper(
+                world, robot, controller, gripper_dof_indices,
+                GRIPPER_OPEN, "final release in new_case", tolerance=0.08,
+            )
+            # Keep the released cell at the pose where it was actually placed. Move
+            # the empty gripper straight up before any joint-space home motion so it
+            # cannot sweep through the casebase or neighboring cells.
+            runner.move(
+                approach_link6,
+                "empty gripper vertical retreat from new_case (+17 cm)",
+                NEW_CASE_APPROACH_TOLERANCE_M,
+                timeout_acceptance=0.030,
+            )
+            result_label = "new_case"
+        else:
+            command_gripper(
+                world, robot, controller, gripper_dof_indices,
+                GRIPPER_CLOSED, "re-grasp rejected cell after service", accept_contact=True,
+                contact_min_rad=0.50,
+            )
+            set_rg2_carry_collision_filter(stage, True)
+            follower = PhysicsLinkCellFollower(
+                cell_visual,
+                link6_object,
+                inspection_cell_position,
+                inspection_cell_orientation,
+            )
+            reject_vertical_lift_tcp = inspection_tcp + np.array(
+                [0.0, 0.0, REJECT_VERTICAL_LIFT_M]
+            )
+            runner.move(
+                runner.tcp_to_link6(reject_vertical_lift_tcp),
+                "rejected cell vertical lift 10 cm",
+                0.05,
+                follower.update,
+                0.08,
+            )
+            rotate_joint1_for_reject(
+                world, robot, controller, follower, home_joint_pose
+            )
+            follower.update()
+            drop_start, drop_orientation = cell_visual.get_world_pose()
+            set_rg2_carry_collision_filter(stage, False)
+            command_gripper(
+                world, robot, controller, gripper_dof_indices,
+                GRIPPER_INSPECTION_RELEASE, "release rejected cell after joint_1 rotation",
+            )
+            # The carry proxy is intentionally non-physical; animate its fall so the
+            # rejected cell visibly reaches the factory floor after release.
+            drop_start_center = (
+                np.asarray(drop_start, dtype=float) + root_to_center_offset
+            )
+            drop_end_center = drop_start_center.copy()
+            drop_end_center[2] = FACTORY_FLOOR_Z_M + cell_half_height
+            for alpha in np.linspace(0.0, 1.0, 72):
+                animated_center = (
+                    (1.0 - alpha) * drop_start_center + alpha * drop_end_center
+                )
+                cell_visual.set_world_pose(
+                    animated_center - root_to_center_offset,
+                    drop_orientation,
+                )
+                world.step(render=True)
+            print(f"[REJECT DROP] cell center={np.round(drop_end_center, 5)}")
+            result_label = "factory floor reject"
+
+        print(
+            f"[COMPLETE] cell_{cell_count} inspection result={inspection_ok} "
+            f"-> {result_label}"
+        )
+        if inspection_ok:
+            stack_count += 1
+        cell_count += 1
+        if cell_count > 4 and stack_count <= 4:
+            print(
+                "[STOP] all four source cells processed before four successful placements: "
+                f"cell_count={cell_count}, stack_count={stack_count}"
+            )
+            break
+    if stack_count > 4:
+        trigger_suction_close(world)
+    else:
+        print("[STOP] suction close was not triggered because placement cycle was incomplete")
+    runner.move_joints(home_joint_pose, "return home after all four cells")
+    transfer.base.v6.step_world(world, 60)
+    print("[COMPLETE] four-cell inspection and placement cycle finished")
+
+    world.pause()
+    if transfer.base.KEEP_GUI_OPEN:
+        while transfer.base.v6.simulation_app.is_running():
+            transfer.base.v6.simulation_app.update()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as exc:
+        print("[FATAL]", exc)
+        traceback.print_exc()
+        transfer.base.v6.simulation_app.close()
+        raise
