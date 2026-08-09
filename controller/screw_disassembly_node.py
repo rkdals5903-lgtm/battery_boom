@@ -2,7 +2,7 @@ from typing import Callable, Optional, Sequence
 
 import numpy as np
 import omni.usd
-from pxr import UsdGeom
+from pxr import Usd, UsdGeom
 from rclpy.node import Node
 from scipy.spatial.transform import Rotation
 from std_srvs.srv import Trigger
@@ -141,12 +141,29 @@ class ScrewDisassemblyNode(Node):
 
     # --------------------------------------------------------
     def _observe_screw_position(self, screw_prims, index: int) -> np.ndarray:
-        cache = UsdGeom.XformCache()
-        position = np.asarray(
-            cache.GetLocalToWorldTransform(screw_prims[index]).ExtractTranslation(),
-            dtype=float,
+        """나사 prim의 실제 위치를 bbox로 관측한다.
+
+        nasa_1~4는 Xform의 translate 값이 전부 동일하지만(씬 저작 시 위치를
+        따로 옮기지 않고 복사한 것으로 보임), 실제 메시(geometry)는 각자
+        다른 위치에 있다. xform pivot 대신 bbox를 쓰면 4개 나사의 실제
+        위치를 구분해서 얻을 수 있다. Z는 bbox 중심이 아니라 최댓값(나사
+        머리 윗면)을 쓴다 — 중심을 쓰면 목표가 나사 머리보다 한참 아래로
+        내려가 너무 깊게 파고드는 문제가 생긴다.
+        """
+        bbox_cache = UsdGeom.BBoxCache(
+            Usd.TimeCode.Default(), [UsdGeom.Tokens.default_], useExtentsHint=False
         )
-        # Part19의 로컬 Y축이 배터리의 world Z축과 일치한다.
+        bbox_cache.Clear()
+        aligned_range = bbox_cache.ComputeWorldBound(screw_prims[index]).ComputeAlignedRange()
+        bbox_min = np.array(aligned_range.GetMin(), dtype=float)
+        bbox_max = np.array(aligned_range.GetMax(), dtype=float)
+        position = np.array(
+            [
+                (bbox_min[0] + bbox_max[0]) / 2.0,
+                (bbox_min[1] + bbox_max[1]) / 2.0,
+                bbox_max[2],
+            ]
+        )
         return position + np.array([0.0, 0.0, SCREW_HEAD_Z_OFFSET])
 
     def _handle_run(self, request, response) -> Trigger.Response:
@@ -169,7 +186,9 @@ class ScrewDisassemblyNode(Node):
 
             # 나사 분해 중 배터리가 밀리지 않도록 잠깐 kinematic으로 고정한다
             # (작업대에 있는 배터리는 원래 동적 rigid body라 흡착/충격에 밀릴 수 있음).
-            battery_top_path = battery_screw_paths[0].split("/good_battery/")[0]
+            # battery_screw_paths[0]은 "{배터리 최상위 경로}/nasa_1" 형태라
+            # 마지막 세그먼트만 잘라내면 배터리 최상위 경로가 된다.
+            battery_top_path = battery_screw_paths[0].rsplit("/", 1)[0]
             battery_top_prim = stage.GetPrimAtPath(battery_top_path)
             kinematic_attr = battery_top_prim.GetAttribute("physics:kinematicEnabled")
             if kinematic_attr.IsValid():

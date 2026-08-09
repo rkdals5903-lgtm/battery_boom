@@ -29,7 +29,7 @@ simulation_app.update()                         #Bridge 로딩 완료 대기 upd
 #######################################
 # 기본 import 
 from pathlib import Path
-from typing import Optional  # 모름
+from typing import Callable, Optional  # 모름
 import math
 import re
 import sys
@@ -38,7 +38,7 @@ import time
 import numpy as np
 import omni.usd
 import rclpy
-from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics, PhysxSchema # GF 모름
+from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics # GF 모름
 from usd.schema.isaac import robot_schema
 #######################################
 #isaac-sim.api import
@@ -73,12 +73,15 @@ RMPFLOW_DIR = PROJECT_DIR / "rmpflow"
 #
 # 예시:
 
-from pick_place_controller import PickPlaceController
 from vg10_worktable_node import VG10WorktableNode
 from vg10_pallet_node import VG10PalletNode
 from screw_control import ScrewDriverController
 from screw_disassembly_node import ScrewDisassemblyNode
 from battery_cover_drop_node import BatteryCoverDropNode
+from grip_cell_node import GripCellNode
+# BatteryVoltageServer는 이 프로세스에서 만들지 않는다(별도 프로세스로 실행) —
+# 여기서는 판정 임계값 상수(MEAN_VOLTAGE)만 클래스 속성으로 가져다 쓴다.
+from battery_voltage_server import BatteryVoltageServer
 
 # from screwdriver_controller import ScrewdriverController
 # from inspection_controller import InspectionController
@@ -109,6 +112,17 @@ M0609_RG2_PRIM_PATH = "/World/m0609_rg2"
 M0609_VG10_PRIM_PATH = "/World/m0609_vg10"
 M0609_SCREW_PRIM_PATH = "/World/m0609_screw"
 WORK_TABLE_PRIM_PATH = "/World/work_table"
+# VG10(컨베이어 -> 작업대)이 배터리를 내려놓는 실제 작업면(윗판) prim.
+# VG10_WORKTABLE_PLACE_POSITION을 이 prim의 bbox로 매 씬마다 다시 계산하는 데 쓴다.
+WORK_TABLE_SURFACE_PRIM_PATH = "/World/work_table/packing_table/new_ws_table"
+# new_ws_table 표면에 실제로 인쇄된 배치 목표 표시(노란 마커, 사용자가 뷰포트에서
+# 직접 확인)가 bbox 기하학적 중심과 정확히 일치하지 않아서 생기는 보정값이다.
+# 사용자가 뷰포트에서 마커를 노란 표시 위로 직접 옮겨서 읽은 world 좌표
+# (1.7606211181201843, 6.478689460697831, 1.0322742890505658)와
+# get_vg10_worktable_place_position()의 bbox 중심 계산값을 비교해서 얻었다(X/Z는
+# 완전히 일치, Y만 어긋남). bbox 자체가 틀린 게 아니라 인쇄된 표시가 표면 중심에서
+# 벗어난 위치에 있는 것뿐이라, bbox 계산 위에 이 오프셋만 더한다.
+WORK_TABLE_PLACE_Y_OFFSET = -0.08371278093038825
 
 # 1번(팔레트 -> 컨베이어 적재) 전용 VG10. 4번(컨베이어 -> 작업대) VG10과는
 # 별도의 로봇이다.
@@ -116,7 +130,25 @@ M0609_VG10_PALLET_PRIM_PATH = "/World/m0609_vg10_pallet"
 
 # <장치명>_POSITION / _SCALE
 #     Stage 배치 시 사용할 Local Translate / Scale 값
-M0609_RG2_POSITION = np.array([2.26772, 6.573, 0.00228])
+# rokey_d2_grip_cell_integration/factory_work_set_screw_3.usd(grip_cell_fianl.py를
+# 실제로 검증 실행했던 씬)의 /World/m0609_camera_cube 실측값. work_table/VG10
+# 좌표가 이 프로젝트와 소수점까지 일치하는 걸 보면 같은 팩토리 레이아웃의
+# 이전 스냅샷이다 — 이전 값(2.26772, 6.573, 0.00228)은 그 사이에 살짝 어긋난
+# 값이었고, 특히 회전(아래 ROTATION_Z_DEG)이 아예 빠져 있어서 grip_cell_node.py가
+# RMPFlow 목표에 25cm 못 미치고 멈추는 원인이 됐다.
+M0609_RG2_POSITION = np.array([2.2728877723348204, 6.480310518394355, 0.00227])
+# 위 실측 씬의 xformOp:orient=(~0,0,0,1) = Z축 180도 회전과 동일하다. 이 회전이
+# 없으면 로봇의 "정면" 기준이 반대가 되어, 실제로는 쉽게 닿는 방향의 목표도
+# 팔꿈치/손목을 반대로 꺾어야 하는 자세가 되어 관절 한계에 걸린다.
+M0609_RG2_POSITION_ROTATION_Z_DEG = 180.0
+# RG2 대기(초기) 자세. joint_1이 180도라 몸통이 new_case 쪽을 등지고 있다가,
+# GripCellNode가 서비스 신호를 받으면 M0609_RG2_PRE_GRIP_JOINT_DEGREES로
+# joint_1만 0도로 돌려 실제 작업 방향을 보게 한다.
+M0609_RG2_INITIAL_JOINT_DEGREES = {"joint_1": 180.0, "joint_3": 90.0, "joint_5": 90.0}
+# grip-cell 서비스 신호가 오면 실제 pick/place 동작(IntegratedRmpRunner) 전에
+# 먼저 관절 공간에서 이 자세로 이동한다 — joint_1만 180 -> 0으로 바뀌고
+# joint_3/joint_5는 초기 자세와 동일하게 유지한다.
+M0609_RG2_PRE_GRIP_JOINT_DEGREES = {"joint_1": 0.0, "joint_3": 90.0, "joint_5": 90.0}
 M0609_VG10_POSITION = np.array([1.25851, 6.70887, 0.00227])
 M0609_SCREW_POSITION = np.array([1.77609, 5.83839, 0.0])
 M0609_SCREW_POSITION_ROTATION_Z_DEG = -180.0
@@ -175,20 +207,16 @@ VG10_SURFACE_GRIPPER_JOINT_PATH = f"{M0609_VG10_PRIM_PATH}/SurfaceGripperAttachJ
 VG10_PALLET_SURFACE_GRIPPER_JOINT_PATH = f"{M0609_VG10_PALLET_PRIM_PATH}/SurfaceGripperAttachJoint"
 # EE(link_6) 원점에서 흡착면까지 거리. vg10_gamin.py에서 실측/검증된 값(2026-08-05)을 재사용한다.
 # 4번(작업대) VG10 전용. 이 값과 컨트롤러 호출부의 end_effector_offset은 반드시 함께 바꿔야 한다.
-VG10_SURFACE_LOCAL_OFFSET = np.array([0.0, 0.0, 0.14])
+VG10_SURFACE_LOCAL_OFFSET = np.array([0.0, 0.0, 0.15])
 # 1번(팔레트) VG10 전용. pallet_to_conveyor_clean.py의 VG10_TOOL_LENGTH_M(검증된 값)과
 # 동일하다 — 같은 VG10이라도 개체마다 실측값이 달라 4번 로봇과 공유하지 않는다.
-M0609_VG10_PALLET_SURFACE_LOCAL_OFFSET = np.array([0.0, 0.0, 0.14])
+M0609_VG10_PALLET_SURFACE_LOCAL_OFFSET = np.array([0.0, 0.0, 0.15])
 VG10_SURFACE_MAX_GRIP_DISTANCE = 0.05
-VG10_SURFACE_COAXIAL_FORCE_LIMIT = 1000.0
-VG10_SURFACE_SHEAR_FORCE_LIMIT = 1000.0
+VG10_SURFACE_COAXIAL_FORCE_LIMIT = 1500.0
+VG10_SURFACE_SHEAR_FORCE_LIMIT = 1500.0
 VG10_SURFACE_RETRY_INTERVAL = 1.0
 VG10_SURFACE_CLEARANCE_OFFSET = 0.008
 
-# ------------------------------------------------------------
-# 4-2b. 배터리 물리 파라미터 (vg10_gamin.py 실측값 재사용)
-# ------------------------------------------------------------
-BATTERY_MASS_KG = 6.0  # TODO: 실제 배터리 무게로 교체
 
 # ------------------------------------------------------------
 # 4-2c. 컨베이어 속도 / 정지 게이트
@@ -200,8 +228,18 @@ BATTERY_MASS_KG = 6.0  # TODO: 실제 배터리 무게로 교체
 CONVEYOR_TRACK_03_GRAPH_PRIM_PATH = "/World/beltTrack/ConveyorTrack_03/ConveyorBeltGraph"
 CONVEYOR_TRACK_03_BELT_PRIM_PATH = "/World/beltTrack/ConveyorTrack_03/Belt"
 SENSOR_TRIGGER_PRIM_PATH = "/World/Sensor_Trigger"
+# 사용자가 factory_clean_2.usd에 직접 추가한 오브젝트(참조하는 원본 에셋의
+# 로컬 원점이 바닥면이 아니라서 배치 시 공중에 뜬 채로 보임) — snap_prim_to_floor()로
+# bbox 최저점을 바닥면 높이에 맞춘다.
+FLOOR_REFERENCE_PRIM_PATH = "/World/Factory/Stage/Floor"
+FLOATING_BOX_PRIM_PATHS = ["/World/Box_trash", "/World/Box_casecover"]
+
 CONVEYOR_RUN_VELOCITY = 0.5
-CONVEYOR_STOP_DURATION_S = 10.0
+# PICK_ABOVE 등 경유점 허용치를 풀어 로봇 쪽 낭비 시간을 줄였지만, PICK_DOWN/GRIP은
+# 여전히 정밀 수렴 + 재시도(최대 3초)가 필요해 여유를 넉넉히 둔다. 여유가 부족하면
+# 흡착 직후 벨트가 재개돼(또는 재개 직전이라 배터리가 이미 관성/마찰로 움직이는 채로
+# 붙잡혀) 집자마자 배터리가 튀어나가는 문제가 생긴다.
+CONVEYOR_STOP_DURATION_S = 16.0
 # 감지 구간의 Y축(이동 방향) 범위: [트리거 위치 + START, 트리거 위치 + END].
 # 둘 다 조절하려면 이 두 값만 바꾸면 된다.
 CONVEYOR_GATE_START_OFFSET_M = 0.05
@@ -256,29 +294,53 @@ ROBOT_PHYSICS_CONFIGS = [
 # 6. Pick & Place 파라미터
 # ============================================================
 #
-# TODO: 실제 pick/place 좌표가 정해지면 아래 값을 교체한다.
-#
-# VG10(컨베이어 -> 작업대) 목표 배치 좌표.
-# vg10_gamin.py의 실측값(factory_clean_work_table.usd 기준)을 그대로 가져왔다.
-# TODO: main.py 통합 씬은 work_table 배치 좌표(WORK_TABLE_POSITION/SCALE)가 다르므로
-# Isaac Sim에서 재측정 후 교체해야 한다. pick 위치는 배터리 prim에서 매 프레임
-# bbox로 계산하므로(BatteryFactoryTask.get_battery_pick_surface_position) 별도 상수가 없다.
-VG10_WORKTABLE_PLACE_POSITION = np.array([1.74629, 6.44173, 1.0123])
+# VG10(컨베이어 -> 작업대) 목표 배치 좌표는 더 이상 상수로 고정하지 않는다.
+# 예전엔 vg10_gamin.py(다른 work_table 배치 좌표를 쓰는 별도 씬)의 실측값을
+# 그대로 가져다 썼는데, main.py 통합 씬은 work_table 위치/회전(WORK_TABLE_POSITION/
+# WORK_TABLE_ROTATION_Z_DEG)이 달라서 실제 작업대 윗면과 최대 12cm(Y)/2cm(Z, 심지어
+# 작업대 윗면보다 아래로) 어긋나 있었다 — 로봇이 배터리를 작업대 표면 안쪽으로
+# 파고들듯 내려놓아 강한 충돌이 생기고, 그게 조립체 분해의 원인 중 하나였다.
+# BatteryFactoryTask.get_vg10_worktable_place_position()이 WORK_TABLE_SURFACE_PRIM_PATH의
+# bbox를 실제로 계산해서 쓴다(pick 위치를 배터리 bbox로 매 프레임 계산하는 것과 같은 방식).
 
 # ------------------------------------------------------------
-# 6-1b. VG10(작업대) 배터리 폐기(나사 분해 후 바닥 투하) 파라미터
+# 6-1b. VG10(작업대) 배터리 폐기(나사 분해 후 뚜껑 투하) 파라미터
 # ------------------------------------------------------------
-# 나사 분해가 끝난 배터리를 같은 VG10 팔로 다시 집어 공장 바닥에 버리는 지점
-# (battery_open_sasumi_portable/batteryfactory/battery_open_sasumi.py의
-# FACTORY_FLOOR_DROP_TCP와 같은 취지 — 작업 영역 밖 바닥에 투하).
-# work_table.usd bbox(로컬 x:[-0.53,0.53], y:[-0.27,0.27], z:[0,1.03])를
-# WORK_TABLE_POSITION/ROTATION_Z_DEG(-90도)로 변환하면 테이블은 world
-# x:[1.49,2.03], y:[6.03,7.09]를 차지한다. VG10 작업대 로봇 베이스
-# (M0609_VG10_POSITION, x=1.259)를 기준으로 테이블 반대쪽(서쪽, x가 더 작은
-# 방향)의 열린 바닥으로 잡았다 — 실측 좌표가 아니라 리치 계산상 추정값이므로
-# Isaac Sim에서 직접 돌려보면서 재조정이 필요할 가능성이 높다.
-BATTERY_DISCARD_POSITION = np.array([0.70, 6.70, 0.05])
-BATTERY_DISCARD_DROP_HEIGHT = 0.20
+# 예전엔 battery_open_sasumi_portable/batteryfactory/battery_open_sasumi.py의
+# FACTORY_FLOOR_DROP_TCP(다른 씬, 다른 로봇 배치 기준)를 그대로 가져다 썼는데,
+# 이 씬의 vg10_robot 기준으로는 도달 범위 밖이었다(PLACE_ABOVE에서 위치오차
+# 0.3m/자세오차 51도로 타임아웃 — casecover를 제대로 붙잡고도 실패해서 흡착
+# 문제가 아니라 순수 리치 문제로 확인됨). 이제 뚜껑은 사용자가 배치한
+# Box_casecover(로봇이 닿을 수 있는 위치로 옮김) 안에 버린다.
+BATTERY_DISCARD_BOX_PRIM_PATH = "/World/Box_casecover"
+# 통 윗면(rim)에 걸리지 않도록, rim보다 이만큼 위에서 흡착을 풀어(자유낙하)
+# 떨어뜨린다.
+BATTERY_DISCARD_DROP_CLEARANCE_ABOVE_RIM = 0.08
+BATTERY_DISCARD_DROP_HEIGHT = 0.0
+# casecover를 집으러 내려갈 때 실측상 표면보다 살짝 높게(뜬 채로) 접근하는
+# 것 같아서, xform pivot 위치보다 이만큼 더 낮은 지점을 목표로 잡았었다.
+# 근데 SurfaceGripper 자체가 VG10_SURFACE_MAX_GRIP_DISTANCE(5cm) 반경 안에서는
+# 표면에 안 닿아도(겹치지 않아도) 알아서 흡착하도록 설계돼 있어서, 굳이
+# 파고들 필요가 없다 — 오히려 파고들면 컵과 뚜껑 메시가 겹친 채로 GRIP~
+# PLACE_DOWN 내내 유지되다가, RELEASE로 구속이 풀리는 순간 PhysX가 그 겹침을
+# 한꺼번에 밀어내면서 뚜껑이 하늘로 튕겨 나가는 원인이 됐다(공장 바닥 투하
+# 직전 관찰됨). 0으로 줄여서 겹치지 않고 접근만 하게 한다.
+BATTERY_COVER_PICK_Z_CLEARANCE = 0.0
+
+# ------------------------------------------------------------
+# 6-1c. RG2 셀 추출/전압검사(GripCellNode) 파라미터
+# ------------------------------------------------------------
+# 정상 판정된 cell을 채울 새 케이스. factory_clean_2.usd에 /World/new_case로
+# 이미 배치해 뒀다(casebase만 남기고 casecover/nasa_1~4/cell_1~4/AssemblyJoints는
+# 비활성화한 빈 케이스). 위치는 grip_cell_fianl.py를 실제로 검증 실행했던
+# factory_work_set_screw_3.usd의 /World/new_case 실측값
+# (1.60886, 6.11558, 1.00492)을 그대로 옮겨왔다 — RG2 위치/회전도 같은 씬
+# 기준으로 맞췄으니(M0609_RG2_POSITION 주석 참고) 이 조합 전체가 검증된 배치다.
+# GripCellNode._run_process()는 이 경로 아래에서 이름이 "casebase"인 Prim을
+# 찾아 bbox 기준으로 슬롯 좌표를 계산한다.
+NEW_CASE_ROOT_PRIM_PATH = "/World/new_case"
+# grip_cell_node.py(GripCellNode -> IntegratedRmpRunner)의 손끝-link_6 오프셋.
+RG2_TOOL_LENGTH_M = 0.20
 
 # ------------------------------------------------------------
 # 6-2. VG10(팔레트 -> 컨베이어) 파라미터
@@ -289,23 +351,6 @@ PALLET_BATTERY_PRIM_PATHS = {
 }
 PALLET_BATTERY_ORDER = ["good_battery_02", "good_battery_01"]
 CONVEYOR_DESTINATION_POSITION = np.array([0.667304, 0.300000, 0.95435])
-
-RG2_PICK_POSITION = np.array([0.30, 0.40, 0.0515 / 2.0])
-RG2_PLACE_POSITION = np.array([0.55, -0.35, 0.0])
-RG2_EE_OFFSET = np.array([0.0, 0.0, 0.20])
-
-EVENTS_DT = [
-    0.008,
-    0.005,
-    0.02,
-    0.1,
-    0.01,
-    0.01,
-    0.0025,
-    1.0,
-    0.008,
-    0.08,
-]
 
 
 # ============================================================
@@ -373,6 +418,37 @@ def compute_world_bbox(stage, prim_path: str):
         raise RuntimeError(f"Bounding Box 계산 결과가 유효하지 않습니다: {prim_path}")
 
     return bbox_min, bbox_max, (bbox_max - bbox_min)
+
+
+def snap_prim_to_floor(stage, prim_path: str, floor_z: float) -> None:
+    """prim_path의 bbox 최저점(Z)이 floor_z에 오도록 translate.z만 보정한다.
+
+    Box_trash/Box_casecover처럼 나중에 씬에 추가한 오브젝트가 참조하는 원본
+    에셋의 로컬 원점이 바닥면이 아닌 다른 곳(중심/윗면 등)에 있으면, 배치할 때
+    "translate.z=0"으로 맞춰도 실제 메시는 바닥에서 떠 있거나 파묻힌 채로
+    보인다. 에셋 내부 구조를 몰라도 되도록, 실제 계산된 world bbox를 기준으로
+    바닥에 딱 닿게 보정한다.
+    """
+    prim = stage.GetPrimAtPath(prim_path)
+    if not prim.IsValid():
+        return
+
+    bbox_min, _, _ = compute_world_bbox(stage, prim_path)
+    offset_z = floor_z - bbox_min[2]
+    if abs(offset_z) < 1e-6:
+        return
+
+    xformable = UsdGeom.Xformable(prim)
+    translate_op = None
+    for op in xformable.GetOrderedXformOps():
+        if op.GetOpType() == UsdGeom.XformOp.TypeTranslate:
+            translate_op = op
+            break
+    current = translate_op.Get() if translate_op is not None else Gf.Vec3d(0, 0, 0)
+    if translate_op is None:
+        translate_op = xformable.AddTranslateOp()
+    translate_op.Set(Gf.Vec3d(current[0], current[1], current[2] + offset_z))
+    print(f"  [OK] {prim_path}: 바닥에 맞춰 Z {offset_z:+.4f}m 보정", flush=True)
 
 
 def discover_battery_prim_paths(stage) -> list:
@@ -477,6 +553,15 @@ def initialize_robot(robot, world, initial_joint_degrees_by_name: Optional[dict]
             set_joint_positions_func=robot.set_joint_positions,
             dof_names=robot.dof_names,
         )
+        # ParallelGripper(RG2)는 위 gripper.initialize()가 필수(그리퍼 콜백 배선)라
+        # 위 두 분기처럼 통째로 건너뛸 수 없다 — gripper 초기화 뒤에 이어서
+        # 팔 관절 자세도 원하는 값으로 덮어쓴다.
+        if initial_joint_degrees_by_name:
+            joint_positions = np.zeros(robot.num_dof)
+            dof_names = list(robot.dof_names)
+            for name, value_deg in initial_joint_degrees_by_name.items():
+                joint_positions[dof_names.index(name)] = math.radians(value_deg)
+            robot.set_joint_positions(joint_positions)
 
 
 # ============================================================
@@ -512,10 +597,18 @@ class BatteryFactoryTask(BaseTask):
         self._screw_ee_path: Optional[str] = None
 
         self._battery_prims: dict = {}
-        self._battery_dimensions_by_path: dict = {}
         self._active_battery_path: Optional[str] = None
-        self._conveyor_stop_deadline: Optional[float] = None
+        # 실제 벽시계(time.monotonic()) 대신 물리 스텝의 step_size를 누적한
+        # "시뮬레이션 시간"으로 정지 시간을 센다. 렌더링/로깅 부하로 물리 스텝이
+        # 60Hz보다 느리게 도는 상황에서 벽시계 기준으로 재개시키면, 로봇의
+        # 상태머신(스텝 수 기준 타임아웃)은 실제로는 얼마 진행하지도 못했는데
+        # 벨트가 먼저 재개돼 버려 흡착 실패로 이어진다.
+        self._conveyor_stop_remaining_s: Optional[float] = None
         self._conveyor_triggered_battery_paths: set = set()
+        # 배터리를 새로 감지한 순간 VG10WorktableNode의 pick&place 서비스를
+        # 깨우는 콜백. main()에서 그 노드가 만들어진 뒤 set_pick_trigger()로
+        # 넣어준다(그 전까지는 아직 배터리가 감지될 일이 없다).
+        self._pick_trigger: Optional[Callable[[], None]] = None
         # 작업대 로봇이 마지막으로 내려놓은 배터리 경로. clear_active_battery()가
         # _active_battery_path를 None으로 비운 뒤에도, 나사 분해 로봇이 "지금
         # 작업대 위에 있는 배터리가 몇 번인지" 알아야 해서 별도로 기억해 둔다.
@@ -580,7 +673,9 @@ class BatteryFactoryTask(BaseTask):
         # (discover_battery_prim_paths, BatteryFactoryTask._create_scene 참고).
 
         # 장치별 배치 좌표 설정
-        UsdGeom.Xformable(stage.GetPrimAtPath(M0609_RG2_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_RG2_POSITION))
+        m0609_rg2_xform = UsdGeom.Xformable(stage.GetPrimAtPath(M0609_RG2_PRIM_PATH))
+        m0609_rg2_xform.AddTranslateOp().Set(Gf.Vec3d(*M0609_RG2_POSITION))
+        m0609_rg2_xform.AddRotateZOp().Set(M0609_RG2_POSITION_ROTATION_Z_DEG)
         UsdGeom.Xformable(stage.GetPrimAtPath(M0609_VG10_PRIM_PATH)).AddTranslateOp().Set(Gf.Vec3d(*M0609_VG10_POSITION))
         m0609_screw_xform = UsdGeom.Xformable(stage.GetPrimAtPath(M0609_SCREW_PRIM_PATH))
         m0609_screw_xform.AddTranslateOp().Set(Gf.Vec3d(*M0609_SCREW_POSITION))
@@ -592,11 +687,17 @@ class BatteryFactoryTask(BaseTask):
         work_table_xform.AddRotateZOp().Set(WORK_TABLE_ROTATION_Z_DEG)
         work_table_xform.AddScaleOp().Set(Gf.Vec3f(*WORK_TABLE_SCALE))
 
-        self._activate_sensor_trigger_graph(stage)
         ensure_all_conveyor_belts_running(stage)
 
         for _ in range(15):
             simulation_app.update()
+
+        # Box_trash/Box_casecover의 참조 에셋(payload)이 이제 막 로드됐으니,
+        # 여기서 bbox를 계산해 바닥에 맞춰 보정한다(로드 전에는 bbox가 비어 있어
+        # 계산이 안 된다).
+        floor_bbox_min, floor_bbox_max, _ = compute_world_bbox(stage, FLOOR_REFERENCE_PRIM_PATH)
+        for box_path in FLOATING_BOX_PRIM_PATHS:
+            snap_prim_to_floor(stage, box_path, floor_bbox_max[2])
 
         print(f"  [OK] {M0609_RG2_USD_PATH}")
         print(f"  [OK] {M0609_VG10_USD_PATH}")
@@ -604,33 +705,16 @@ class BatteryFactoryTask(BaseTask):
         print(f"  [OK] {M0609_VG10_PALLET_USD_PATH}")
         print(f"  [OK] {WORK_TABLE_USD_PATH}")
 
-    def _activate_sensor_trigger_graph(self, stage) -> None:
-        """factory_clean.usd의 /World/ActionGraph_01을 실제로 동작하게 고친다.
-
-        - /World/Sensor_Trigger에 PhysxTriggerAPI가 빠져 있어서(콜리전만 있는
-          상태) OnTriggerCollider 노드가 enter/leave 이벤트를 발생시키지
-          못했다.
-        - write_prim_attribute.inputs:execIn이 존재하지 않는 'once' 노드에
-          대한 끊어진 연결을 물고 있어서 그래프 로드 시 에러가 난다. 유효한
-          on_trigger 연결만 남긴다.
-        """
-        sensor_trigger_prim = stage.GetPrimAtPath("/World/Sensor_Trigger")
-        if sensor_trigger_prim.IsValid() and not sensor_trigger_prim.HasAPI(PhysxSchema.PhysxTriggerAPI):
-            PhysxSchema.PhysxTriggerAPI.Apply(sensor_trigger_prim)
-            print("  [OK] /World/Sensor_Trigger: PhysxTriggerAPI 적용")
-
-        write_prim_attribute_prim = stage.GetPrimAtPath("/World/ActionGraph_01/write_prim_attribute")
-        if write_prim_attribute_prim.IsValid():
-            exec_in_attr = write_prim_attribute_prim.GetAttribute("inputs:execIn")
-            if exec_in_attr.IsValid():
-                exec_in_attr.SetConnections(
-                    [Sdf.Path("/World/ActionGraph_01/on_trigger.outputs:enterExecOut")]
-                )
-                print("  [OK] ActionGraph_01/write_prim_attribute: 끊어진 'once' 연결 정리")
-
-        # 벨트 자동 정지/재개는 안 쓴다 — ConveyorTrack_03은 CONVEYOR_TRACK_03_VELOCITY로
-        # 항상 고정한다. 트리거 감지 + ROS2 서비스 호출(on_trigger -> ros2_service_client)은
-        # 이 그래프가 그대로 담당한다.
+    # factory_clean_2.usd의 /World/ActionGraph_01(on_trigger -> write_prim_attribute
+    # -> delay -> write_prim_attribute_01, on_trigger -> ros2_service_client)은
+    # 전부 비활성화해 뒀다. 배터리가 casecover/casebase/nasa_1~4/cell_1~4로 나뉜
+    # 독립 RigidBody 여러 개가 되면서, 이 PhysX 트리거 볼륨을 지나는 동안 부품마다
+    # 서로 다른 프레임에 enter 이벤트가 발생해 ros2_service_client가 pick&place
+    # 서비스를 중복/과호출했고(배터리가 아직 감지되기도 전에 호출돼 실패하는 경우도
+    # 있었다), write_prim_attribute/delay(10s) 체인도 update_conveyor_gate()의 정지
+    # 시간(CONVEYOR_STOP_DURATION_S)과 별개로 벨트를 재개시켜 서로 경합했다. 이제는
+    # update_conveyor_gate()(bbox 기반, 배터리 경로당 정확히 한 번만 감지)가 벨트
+    # 정지/재개와 pick&place 서비스 호출을 전부 직접 담당한다.
 
     # --------------------------------------------------------
     # 8-2. DISCOVER
@@ -738,6 +822,22 @@ class BatteryFactoryTask(BaseTask):
                     drive_count += 1
 
         print(f"  [OK] M0609 Drive 설정:{drive_count}")
+
+        # RG2 finger_joint는 위 루프에서 stiffness 1e8로 사실상 무한강성 drive가
+        # 됐지만, 나머지 5개 knuckle/finger 관절은 DriveAPI가 없고 PhysxMimicJointAPI
+        # (finger_joint 추종)로만 구동된다. 이 mimic 관절의 dampingRatio가 onrobot_rg2
+        # 원본 자산 기본값(~0.005, 사실상 무감쇠)이라, finger_joint가 순간적으로
+        # 급가속하는 구간(파지 직후 하강 시작 등)에서 나머지 손가락들이 target을
+        # 오버슈트했다가 되돌아오며 "잡기 전 살짝 좁아졌다가 하강하며 다시 벌어지는"
+        # 현상으로 보인다. 임계감쇠(1.0)에 가깝게 올려 오버슈트를 없앤다.
+        rg2_prim = stage.GetPrimAtPath(M0609_RG2_PRIM_PATH)
+        mimic_damping_count = 0
+        for prim in Usd.PrimRange(rg2_prim):
+            damping_attr = prim.GetAttribute("physxMimicJoint:rot:dampingRatio")
+            if damping_attr and damping_attr.IsValid():
+                damping_attr.Set(1.0)
+                mimic_damping_count += 1
+        print(f"  [OK] RG2 mimic joint dampingRatio 보정: {mimic_damping_count}")
 
         # 조원별 Physics 설정 위치
         #
@@ -934,39 +1034,42 @@ class BatteryFactoryTask(BaseTask):
         for battery_path in battery_paths:
             battery_prim = stage.GetPrimAtPath(battery_path)
 
-            if not battery_prim.HasAPI(UsdPhysics.RigidBodyAPI):
-                UsdPhysics.RigidBodyAPI.Apply(battery_prim)
+            # factory_clean_2.usd부터 배터리가 casecover/casebase/nasa_1~4/
+            # cell_1~4가 각각 독립된 RigidBody로 존재하고 AssemblyJoints로
+            # 연결된 조립체 모델로 바뀌었다. 예전(배터리 전체가 통짜 rigid
+            # body 하나)엔 최상위 Xform에 직접 RigidBodyAPI/MassAPI를 걸어야
+            # 했지만, 지금 최상위 Xform은 RigidBodyAPI가 없는 순수 그룹
+            # prim이다 — 여기에 새로 걸면 콜라이더도 없는 "빈 rigid body"가
+            # 하위의 진짜 rigid body들과 별도로 하나 더 생겨서 PhysX 텐서
+            # API가 rigid body 개수를 헷갈리는 원인이 된다(getVelocities
+            # 개수 불일치 에러와 일치). 하위 파트는 이미 자체 RigidBodyAPI/
+            # CollisionAPI를 갖고 있으므로 최상위에는 아무것도 적용하지 않는다.
+            collider_count = sum(
+                1
+                for mesh_prim in Usd.PrimRange(battery_prim)
+                if mesh_prim.IsA(UsdGeom.Mesh) and mesh_prim.HasAPI(UsdPhysics.CollisionAPI)
+            )
 
-            if not battery_prim.HasAPI(UsdPhysics.MassAPI):
-                mass_api = UsdPhysics.MassAPI.Apply(battery_prim)
-                mass_api.CreateMassAttr().Set(BATTERY_MASS_KG)
-
-            # good_battery.usd는 STEP CAD를 그대로 임포트한 것이라 실제 지오메트리는
-            # 최상위 Xform이 아니라 그 아래 Mesh leaf prim들에 있다. CollisionAPI를
-            # 최상위 Xform 하나에만 적용하면 물리적으로 아무 콜라이더도 생기지 않으므로
-            # 모든 Mesh 하위 prim에 개별적으로 적용한다. (vg10_gamin.py에서 확인된 원인)
-            collider_count = 0
-            for mesh_prim in Usd.PrimRange(battery_prim):
-                if not mesh_prim.IsA(UsdGeom.Mesh):
-                    continue
-                if not mesh_prim.HasAPI(UsdPhysics.CollisionAPI):
-                    UsdPhysics.CollisionAPI.Apply(mesh_prim)
-                    mesh_collision = UsdPhysics.MeshCollisionAPI.Apply(mesh_prim)
-                    mesh_collision.CreateApproximationAttr().Set("convexHull")
-                collider_count += 1
+            # pick&place가 배터리 위치로 쓰는 대표 prim은 casecover다 — 흡착
+            # 그리퍼가 위에서 배터리를 집을 때 실제로 닿는 부분이고, 나사
+            # 분해 전까지는 AssemblyJoints가 casebase/nasa 등을 고정해 둬서
+            # casecover를 들면 조립체 전체가 함께 움직인다.
+            cover_path = f"{battery_path}/casecover"
+            if not stage.GetPrimAtPath(cover_path).IsValid():
+                print(f"  [SKIP] {battery_path}: casecover가 없어 배터리 등록 건너뜀")
+                continue
 
             battery_name = battery_path.rsplit("/", 1)[-1]
             self._battery_prims[battery_path] = scene.add(
                 SingleRigidPrim(
-                    prim_path=battery_path,
+                    prim_path=cover_path,
                     name=f"target_{battery_name}",
                 )
             )
             _, _, dimensions = compute_world_bbox(stage, battery_path)
-            self._battery_dimensions_by_path[battery_path] = dimensions
             print(
-                f"  [OK] 배터리 등록: {battery_path}, collider={collider_count}개, "
-                f"dimensions(m)={np.round(dimensions, 5)}"
+                f"  [OK] 배터리 등록: {battery_path} (대표 prim={cover_path}), "
+                f"collider={collider_count}개, dimensions(m)={np.round(dimensions, 5)}"
             )
 
         # 조원별 환경 객체 생성 위치
@@ -991,24 +1094,27 @@ class BatteryFactoryTask(BaseTask):
         }
 
     def get_battery_top_center_position(self, battery_path: str) -> np.ndarray:
-        """지정한 배터리의 윗면 중심 좌표를 매 호출 시 다시 계산한다 (vg10_gamin.py와 동일한 방식).
+        """지정한 배터리의 윗면(=casecover 윗면) 중심 좌표를 매 호출 시
+        다시 계산한다(battery_open_sasumi.py의 cover_targets()와 동일한 방식).
 
-        X, Y는 bbox 중심(피벗이 기하학적 중심과 어긋나 있을 수 있으므로),
-        Z는 피벗 z + half_height를 사용한다. 매 프레임 호출하므로 배터리가
-        물리적으로 안착/이동 중이어도 최신 위치를 따라간다. 4번(작업대)/1번(팔레트)
-        로봇 둘 다 이 메서드로 배터리 위치를 얻는다.
+        예전엔 배터리 전체(casecover/casebase/nasa_1~4/cell_1~4 전부)의 bbox에서
+        X/Y는 중심, Z는 최댓값을 썼는데, nasa_1~4(나사머리)가 casecover 네
+        모서리에서 뚜껑 표면보다 위로 튀어나와 있어서 전체 bbox의 Z 최댓값은
+        "나사머리 높이"가 된다. 근데 X/Y는 배터리 중심(나사가 없는 지점)이라
+        실제 그 위치의 표면은 나사머리보다 낮은 뚜껑 표면이다 — 결과적으로
+        목표 Z가 실제 뚜껑 표면보다 위에 뜬 채로 계산돼, 흡착 컵이 뚜껑과
+        거리가 남은 채로 내려가다 멈춘다(SurfaceGripper가 근접 흡착 반경
+        안에서는 접촉 없이도 붙어버려서 실패로 드러나지 않고 넘어갔다).
+        casecover만의 bbox를 쓰면 X/Y/Z 전부 실제 뚜껑 표면 기준이 된다.
         """
         stage = omni.usd.get_context().get_stage()
-        battery = self._battery_prims[battery_path]
-        battery_pivot, _ = battery.get_world_pose()
-        bbox_min, bbox_max, _ = compute_world_bbox(stage, battery_path)
-        half_height = float(self._battery_dimensions_by_path[battery_path][2]) / 2.0
+        bbox_min, bbox_max, _ = compute_world_bbox(stage, f"{battery_path}/casecover")
 
         return np.array(
             [
                 (bbox_min[0] + bbox_max[0]) / 2.0,
                 (bbox_min[1] + bbox_max[1]) / 2.0,
-                battery_pivot[2] + half_height,
+                bbox_max[2],
             ]
         )
 
@@ -1025,6 +1131,52 @@ class BatteryFactoryTask(BaseTask):
         extent_y = bbox_max[1] - bbox_min[1]
         return 90.0 if extent_x > extent_y else 0.0
 
+    def get_battery_discard_position(self) -> np.ndarray:
+        """BatteryCoverDropNode가 casecover를 버릴 목표 좌표.
+
+        BATTERY_DISCARD_BOX_PRIM_PATH(Box_casecover)의 실제 world bbox에서
+        X/Y는 중심, Z는 최댓값(rim)에 여유(BATTERY_DISCARD_DROP_CLEARANCE_ABOVE_RIM)를
+        더한 높이를 쓴다. get_vg10_worktable_place_position()과 같은 이유로
+        상수 대신 항상 실측한다 — Box_casecover 위치가 나중에 또 바뀌어도
+        코드를 다시 안 고쳐도 된다.
+        """
+        stage = omni.usd.get_context().get_stage()
+        bbox_min, bbox_max, _ = compute_world_bbox(stage, BATTERY_DISCARD_BOX_PRIM_PATH)
+        return np.array(
+            [
+                (bbox_min[0] + bbox_max[0]) / 2.0,
+                (bbox_min[1] + bbox_max[1]) / 2.0,
+                bbox_max[2] + BATTERY_DISCARD_DROP_CLEARANCE_ABOVE_RIM,
+            ]
+        )
+
+    def get_vg10_worktable_place_position(self) -> np.ndarray:
+        """VG10(컨베이어 -> 작업대)이 배터리를 내려놓을 목표 좌표.
+
+        작업대 윗면(WORK_TABLE_SURFACE_PRIM_PATH)의 실제 world bbox에서
+        X/Y는 중심, Z는 최댓값(윗면)을 쓴다. 예전엔 다른 씬 기준으로 재측정된
+        적 없는 상수를 그대로 썼는데, 실제 작업대 표면보다 Z가 2cm 낮고(=
+        표면 안쪽으로 파고드는 목표) Y가 12cm 이상 어긋나 있었다 — 로봇이
+        배터리를 작업대에 강하게 눌러 놓으면서 조립체(FixedJoint로 묶인
+        9개 RigidBody)가 충격으로 분해되는 원인 중 하나였다. 작업대는
+        고정 fixture라 배터리 bbox처럼 매 프레임 다시 잴 필요는 없지만,
+        같은 이유로 상수로 박아두면 씬이 바뀔 때마다 또 어긋나므로 항상
+        실측한다.
+
+        여기에 WORK_TABLE_PLACE_Y_OFFSET을 더하는 이유는 표면에 실제로 인쇄된
+        배치 표시가 이 bbox 중심과 Y 방향으로 어긋나 있기 때문이다(사용자가
+        뷰포트에서 직접 확인/측정).
+        """
+        stage = omni.usd.get_context().get_stage()
+        bbox_min, bbox_max, _ = compute_world_bbox(stage, WORK_TABLE_SURFACE_PRIM_PATH)
+        return np.array(
+            [
+                (bbox_min[0] + bbox_max[0]) / 2.0,
+                (bbox_min[1] + bbox_max[1]) / 2.0 + WORK_TABLE_PLACE_Y_OFFSET,
+                bbox_max[2],
+            ]
+        )
+
     def get_battery_pick_surface_position(self) -> np.ndarray:
         """update_conveyor_gate()가 컨베이어 위에서 감지한 배터리(번호 무관)를
         _active_battery_path에 넣어 두면 그걸 집는다. VG10WorktableNode 전용."""
@@ -1039,6 +1191,12 @@ class BatteryFactoryTask(BaseTask):
             raise RuntimeError("아직 컨베이어 위에서 감지된 배터리가 없습니다.")
         return self.get_battery_pick_yaw_deg(self._active_battery_path)
 
+    def set_pick_trigger(self, pick_trigger: Callable[[], None]) -> None:
+        """VG10WorktableNode.trigger_pick_place()를 넘겨받는다.
+        update_conveyor_gate()가 배터리를 새로 감지한 그 순간 바로 이걸 불러
+        pick&place 서비스를 깨운다."""
+        self._pick_trigger = pick_trigger
+
     def clear_active_battery(self) -> None:
         """VG10WorktableNode가 배터리를 다 옮기고 나면 이걸 불러서 _active_battery_path를
         비운다. 안 비우면, 트리거가 같은 배터리에 대해 서비스를 또 호출했을 때(원본
@@ -1046,21 +1204,64 @@ class BatteryFactoryTask(BaseTask):
         배터리의 오래된 위치를 그대로 써서 로봇이 엉뚱한 곳으로 다시 움직인다."""
         self._last_placed_battery_path = self._active_battery_path
         self._active_battery_path = None
+        # 로봇이 이 배터리 처리를 끝냈으면(흡착 성공/실패 무관) 남은 정지
+        # 시간을 다 채울 때까지 기다릴 필요가 없다 — 배터리는 이미 벨트를
+        # 떠났거나(성공) 더 이상 이 시도로는 못 옮긴다(실패). 정지 시간
+        # (_conveyor_stop_remaining_s)은 로봇이 끝내 응답하지 못한 경우(월드
+        # 정지 등)에 대비한 안전장치일 뿐이라, 정상 종료됐으면 바로 재개한다.
+        if self._conveyor_stop_remaining_s is not None:
+            stage = omni.usd.get_context().get_stage()
+            set_conveyor_track_03_enabled(stage, True)
+            self._conveyor_stop_remaining_s = None
+            print("[CONVEYOR GATE] 로봇 작업 종료 - 벨트 즉시 재개", flush=True)
 
-    def get_last_placed_battery_position(self) -> np.ndarray:
-        """작업대에 마지막으로 놓인 배터리(나사 분해 대상)의 현재 위치.
-        BatteryCoverDropNode 전용 — 나사 분해가 끝난 뒤 그 배터리를 다시
-        집어 버릴 때 쓴다."""
+    def get_battery_cover_center_position(self, battery_path: str) -> np.ndarray:
+        """지정한 배터리의 casecover 위치를 xform pivot(점 좌표) 그대로 쓴다.
+        bbox 중심/최댓값 계산 없이, casecover prim의 world transform
+        translation을 직접 읽는다."""
+        stage = omni.usd.get_context().get_stage()
+        cover_prim = stage.GetPrimAtPath(f"{battery_path}/casecover")
+        cache = UsdGeom.XformCache()
+        position = cache.GetLocalToWorldTransform(cover_prim).ExtractTranslation()
+        return np.array(position, dtype=float)
+
+    def get_battery_cover_pick_yaw_deg(self, battery_path: str) -> float:
+        """배터리가 실제로 놓인 방향에 맞춰 casecover의 pick 각도를 90도
+        단위로 정렬한다(get_battery_pick_yaw_deg()와 동일한 방식, 대상만
+        배터리 전체가 아니라 casecover)."""
+        stage = omni.usd.get_context().get_stage()
+        bbox_min, bbox_max, _ = compute_world_bbox(stage, f"{battery_path}/casecover")
+        extent_x = bbox_max[0] - bbox_min[0]
+        extent_y = bbox_max[1] - bbox_min[1]
+        return 90.0 if extent_x > extent_y else 0.0
+
+    def get_last_placed_battery_cover_position(self) -> np.ndarray:
+        """작업대에 마지막으로 놓인 배터리의 casecover 위치(xform pivot).
+        BatteryCoverDropNode 전용 — casecover만 집어서 버릴 때 쓴다."""
         if self._last_placed_battery_path is None:
             raise RuntimeError("작업대에 아직 배터리가 놓인 적이 없습니다.")
-        return self.get_battery_top_center_position(self._last_placed_battery_path)
+        position = self.get_battery_cover_center_position(self._last_placed_battery_path)
+        position[2] -= BATTERY_COVER_PICK_Z_CLEARANCE
+        return position
 
-    def get_last_placed_battery_pick_yaw_deg(self) -> float:
-        """get_last_placed_battery_position()과 짝을 이루는 pick 각도 버전.
+    def get_last_placed_battery_cover_pick_yaw_deg(self) -> float:
+        """get_last_placed_battery_cover_position()과 짝을 이루는 pick 각도 버전.
         BatteryCoverDropNode 전용."""
         if self._last_placed_battery_path is None:
             raise RuntimeError("작업대에 아직 배터리가 놓인 적이 없습니다.")
-        return self.get_battery_pick_yaw_deg(self._last_placed_battery_path)
+        return self.get_battery_cover_pick_yaw_deg(self._last_placed_battery_path)
+
+    def get_last_placed_battery_path(self) -> Optional[str]:
+        """작업대에 마지막으로 놓인 배터리의 최상위 prim 경로.
+        BatteryCoverDropNode가 casecover_to_casebase 조인트/casebase/cell 등
+        하위 prim 경로를 조립하는 데 쓴다."""
+        return self._last_placed_battery_path
+
+    def get_vg10_gripped_object_paths(self) -> list:
+        """작업대 VG10 흡착 그리퍼가 지금 실제로 붙잡고 있는 prim 경로 목록.
+        BatteryCoverDropNode가 GRIP 직후 실제로 뭘 집었는지(casecover가
+        맞는지, 다른 게 잡혔는지) 검증용으로 로그에 남기는 데 쓴다."""
+        return list(self._vg10_surface_gripper_view.get_gripped_objects())
 
     def clear_last_placed_battery(self) -> None:
         """BatteryCoverDropNode가 배터리를 공장 바닥에 버리고 나면 호출해서
@@ -1069,17 +1270,24 @@ class BatteryFactoryTask(BaseTask):
         self._last_placed_battery_path = None
 
     def get_battery_screw_prim_paths(self) -> Optional[list]:
-        """작업대에 마지막으로 놓인 배터리의 나사 4개 prim 경로를 반환한다.
-        ScrewDisassemblyNode 전용. 아직 작업대에 배터리가 놓인 적이 없으면 None.
+        """작업대에 마지막으로 놓인(=컨베이어에서 옮겨진) 배터리의 나사 4개
+        prim 경로를 반환한다. ScrewDisassemblyNode 전용. 아직 작업대에
+        배터리가 놓인 적이 없으면 None.
+
+        factory_clean_2.usd부터 배터리 모델이 casecover/nasa_1~4/cell_1~4/
+        casebase/AssemblyJoints 구조(battery_open_sasumi 계열과 동일한 조립체
+        모델)로 바뀌면서 나사는 nasa_1~4다. 이 이름은 good_battery_01~04 전부
+        동일하게 확인됨 — STEP 임포트 자동 접미사가 붙던 이전 tn__Part19_*와
+        달리 고정된 이름이라 하드코딩해도 된다.
         """
         if self._last_placed_battery_path is None:
             return None
         base = self._last_placed_battery_path
         return [
-            f"{base}/good_battery/tn__Part19_g6",
-            f"{base}/good_battery/tn__Part19_1_i8",
-            f"{base}/good_battery/tn__Part19_2_i8",
-            f"{base}/good_battery/tn__Part19_3_i8",
+            f"{base}/nasa_1",
+            f"{base}/nasa_2",
+            f"{base}/nasa_3",
+            f"{base}/nasa_4",
         ]
 
     def debug_log_rigid_body_state(self, step_size: float = 0.0) -> None:
@@ -1120,12 +1328,17 @@ class BatteryFactoryTask(BaseTask):
             return
 
         stage = omni.usd.get_context().get_stage()
-        now = time.monotonic()
 
-        if self._conveyor_stop_deadline is not None:
-            if now >= self._conveyor_stop_deadline:
+        if self._conveyor_stop_remaining_s is not None:
+            # step_size는 물리 콜백에 매 물리 스텝 고정으로 들어오는 시뮬레이션
+            # dt(기본 1/60s)다. 로봇의 pick&place 상태머신도 "물리 스텝 횟수"로
+            # 타임아웃을 세므로(예: PICK_ABOVE=240스텝), 같은 시간 기준(시뮬레이션
+            # 시간)으로 정지 시간을 세야 렌더링 부하로 실제 프레임이 느려져도
+            # 로봇 상태머신 진행도와 정지 타이머가 어긋나지 않는다.
+            self._conveyor_stop_remaining_s -= step_size
+            if self._conveyor_stop_remaining_s <= 0.0:
                 set_conveyor_track_03_enabled(stage, True)
-                self._conveyor_stop_deadline = None
+                self._conveyor_stop_remaining_s = None
                 print(f"[CONVEYOR GATE] {self._active_battery_path} 재개", flush=True)
             return
 
@@ -1166,13 +1379,15 @@ class BatteryFactoryTask(BaseTask):
             if aabb_overlap(battery_min, battery_max, gate_min, gate_max):
                 self._active_battery_path = battery_path
                 self._conveyor_triggered_battery_paths.add(battery_path)
-                self._conveyor_stop_deadline = now + CONVEYOR_STOP_DURATION_S
+                self._conveyor_stop_remaining_s = CONVEYOR_STOP_DURATION_S
                 set_conveyor_track_03_enabled(stage, False)
                 print(
                     f"[CONVEYOR GATE] {battery_path} 감지 - "
                     f"{CONVEYOR_STOP_DURATION_S:.0f}초간 정지",
                     flush=True,
                 )
+                if self._pick_trigger is not None:
+                    self._pick_trigger()
                 break
 
     def post_reset(self) -> None:
@@ -1185,7 +1400,7 @@ class BatteryFactoryTask(BaseTask):
         # 새 Play 사이클에서는 같은 배터리도 다시 감지 대상이 되도록 초기화한다.
         self._conveyor_triggered_battery_paths = set()
         self._active_battery_path = None
-        self._conveyor_stop_deadline = None
+        self._conveyor_stop_remaining_s = None
         self._last_placed_battery_path = None
         self._debug_kinematic_state = {}
 
@@ -1205,31 +1420,15 @@ def create_controllers(robot, vg10_robot):
     서비스 호출로 실행 순서를 보장하기 위함이다.
     """
     controllers = {
-        "rg2_pick_place": None,
         "screwdriver": None,
         "conveyor": None,
         "inspection": None,
         "output": None,
     }
 
-    # --------------------------------------------------------
-    # Pick & Place Controller (RG2)
-    # --------------------------------------------------------
-    # VG10 데모 전용 실행 스코프에서는 비활성화한다. RG2가 자동으로 돌다가
-    # is_done()이 되면 my_world.pause()가 걸려 VG10 서비스 호출 도중
-    # 시뮬레이션이 멈출 수 있다 (docs/superpowers/specs/2026-08-06-vg10-demo-only-design.md).
-    #
-    # controllers["rg2_pick_place"] = PickPlaceController(
-    #     name="m0609_rg2_pick_place_controller",
-    #     gripper=robot.gripper,
-    #     robot_articulation=robot,
-    #     end_effector_initial_height=0.30,
-    #     events_dt=EVENTS_DT,
-    #     urdf_path=M0609_URDF_PATH,
-    #     robot_description_path=M0609_DESCRIPTION_PATH,
-    #     rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
-    #     end_effector_frame_name=M0609_EE_LINK_NAME,
-    # )
+    # RG2는 더 이상 여기(placeholder PickPlaceController)로 만들지 않는다 —
+    # controller/grip_cell_node.py의 GripCellNode가 자체 RmpFlow 러너로 RG2를
+    # 직접 구동한다(main()에서 /start_grip_cell_process 서비스로 감싸서 생성).
 
     # --------------------------------------------------------
     # 조원별 Controller 생성 예시
@@ -1296,33 +1495,8 @@ def update_process(
     여기서는 다루지 않는다.
     """
 
-    # --------------------------------------------------------
-    # Pick & Place 실행 (RG2)
-    # --------------------------------------------------------
-    rg2_pick_place_controller = (
-        controllers["rg2_pick_place"]
-    )
-
-    if rg2_pick_place_controller is not None:
-        observations = task.get_observations()
-
-        current_joints = (
-            observations["m0609_robot"]
-            ["joint_positions"]
-        )
-
-        actions = rg2_pick_place_controller.forward(
-            picking_position=RG2_PICK_POSITION,
-            placing_position=RG2_PLACE_POSITION,
-            current_joint_positions=current_joints,
-            end_effector_offset=RG2_EE_OFFSET,
-        )
-
-        robot.apply_action(actions)
-
-        if rg2_pick_place_controller.is_done():
-            print("[완료] RG2 Pick & Place")
-            return True
+    # RG2 Pick & Place는 GripCellNode(controller/grip_cell_node.py)가 서비스
+    # 호출로 직접 구동한다 — 여기서는 다루지 않는다.
 
     # --------------------------------------------------------
     # 조원별 Controller 실행 위치
@@ -1382,6 +1556,7 @@ def main() -> None:
     initialize_robot(
         robot=robot,
         world=my_world,
+        initial_joint_degrees_by_name=M0609_RG2_INITIAL_JOINT_DEGREES,
     )
     initialize_robot(
         robot=vg10_robot,
@@ -1415,10 +1590,11 @@ def main() -> None:
         world=my_world,
         robot=vg10_robot,
         get_picking_position=task.get_battery_pick_surface_position,
-        placing_position=VG10_WORKTABLE_PLACE_POSITION,
+        placing_position=task.get_vg10_worktable_place_position(),
         end_effector_offset=VG10_SURFACE_LOCAL_OFFSET,
         clear_active_battery=task.clear_active_battery,
         get_pick_yaw_deg=task.get_battery_pick_yaw_deg_active,
+        get_gripped_object_paths=task.get_vg10_gripped_object_paths,
         controller_kwargs=dict(
             name="m0609_vg10_worktable_controller",
             gripper=vg10_robot.gripper,
@@ -1427,8 +1603,21 @@ def main() -> None:
             robot_description_path=M0609_DESCRIPTION_PATH,
             rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
             end_effector_frame_name=M0609_EE_LINK_NAME,
+            # 흡착 컵은 배터리 뚜껑 "윗면"을 붙잡는데, place_drop_height 기본값
+            # 0은 컵 자체를 작업대 표면 높이까지 내리라는 뜻이다 — 그러면 배터리
+            # 전체(뚜껑 윗면~casebase 바닥까지 약 10.6cm)가 작업대 표면을 뚫고
+            # 들어가야 하는 위치가 되어 물리적으로 불가능하다. 실제로는 배터리
+            # 바닥이 작업대에 먼저 닿아 팔이 막히고, PLACE_DOWN이 목표보다 한참
+            # 위에서(수십 cm 오차) 타임아웃되는 원인이었다. vg10_pallet_node는
+            # 이미 같은 이유로 place_drop_height=0.2를 쓰고 있었는데 이 노드만
+            # 빠져 있었다. 배터리 높이(10.6cm) + 여유를 둔다.
+            place_drop_height=0.12,
         ),
     )
+    # 컨베이어 게이트가 배터리를 감지하는 즉시 이 서비스를 스스로 깨우도록 연결한다.
+    # (예전엔 factory_clean_2.usd의 OmniGraph가 PhysX 트리거로 직접 호출했는데,
+    # 배터리가 여러 RigidBody로 나뉘면서 콜라이더별로 중복/과호출됐다.)
+    task.set_pick_trigger(vg10_worktable_node.trigger_pick_place)
 
     # --------------------------------------------------------
     # VG10(팔레트 -> 컨베이어)도 같은 방식으로 service node를 만든다.
@@ -1438,10 +1627,10 @@ def main() -> None:
         robot=vg10_pallet_robot,
         battery_paths=PALLET_BATTERY_PRIM_PATHS,
         order=PALLET_BATTERY_ORDER,
-        get_battery_position=task.get_battery_top_center_position,
+        get_battery_position=task.get_battery_cover_center_position,
         conveyor_destination=CONVEYOR_DESTINATION_POSITION,
         end_effector_offset=M0609_VG10_PALLET_SURFACE_LOCAL_OFFSET,
-        get_pick_yaw_deg=task.get_battery_pick_yaw_deg,
+        get_pick_yaw_deg=task.get_battery_cover_pick_yaw_deg,
         controller_kwargs=dict(
             name="m0609_vg10_pallet_controller",
             gripper=vg10_pallet_robot.gripper,
@@ -1459,7 +1648,7 @@ def main() -> None:
             # 컨베이어 위(특히 이미 배터리가 쌓여 있는 2번째 이후)에 정확한 접촉
             # 높이까지 수렴시키려다 로봇이 계속 높은 채로 멈춰있지 않도록, 목표
             # 지점 8cm 위에서 흡착만 풀어 떨어뜨린다.
-            place_drop_height=0.08,
+            place_drop_height=0.2,
             # 기본 90도 회전으로는 배터리가 아직 덜 돌아간 것 같아서 90도 더 돌려본다.
             place_yaw_deg=180.0,
         ),
@@ -1491,7 +1680,35 @@ def main() -> None:
     )
 
     # --------------------------------------------------------
-    # 나사 분해가 끝난 배터리를 같은 작업대 VG10 팔로 다시 집어 공장 바닥에
+    # RG2 셀 추출/검사 노드. rokey_d2_grip_cell_integration/의 통합안을 이
+    # 프로젝트의 controller/ 레이아웃에 맞춰 옮긴 것이다. cover-drop이
+    # 끝나면(아래 battery_cover_drop_node의 on_cover_dropped) grip_cell_node.
+    # request_start()가 호출돼 다음 프레임 update()에서 셀 공정이 시작된다.
+    #
+    # 전압 검사(BatteryVoltageServer)는 이 프로세스 안에서 만들지 않는다 —
+    # 별도 프로세스로 아래 명령을 먼저 실행해 둬야 한다:
+    #   isaac_python controller/battery_voltage_server.py
+    # GripCellNode는 그 프로세스가 띄운 /check_voltage 서비스를 실제 ROS2
+    # 클라이언트로 호출한다. voltage_threshold는 그 서버의 판정 기준값
+    # (MEAN_VOLTAGE=11.0V)을 클래스 상수로만 가져다 쓴다(인스턴스 생성 아님).
+    # --------------------------------------------------------
+    grip_cell_node = GripCellNode(
+        world=my_world,
+        robot=robot,
+        get_battery_root=task.get_last_placed_battery_path,
+        voltage_threshold=BatteryVoltageServer.MEAN_VOLTAGE,
+        urdf_path=M0609_URDF_PATH,
+        robot_description_path=M0609_DESCRIPTION_PATH,
+        rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
+        robot_root_path=M0609_RG2_PRIM_PATH,
+        tool_length_m=RG2_TOOL_LENGTH_M,
+        new_case_root=NEW_CASE_ROOT_PRIM_PATH,
+        end_effector_frame_name=M0609_EE_LINK_NAME,
+        pre_grip_joint_degrees=M0609_RG2_PRE_GRIP_JOINT_DEGREES,
+    )
+
+    # --------------------------------------------------------
+    # 나사 분해가 끝난 배터리를 같은 작업대 VG10 팔로 다시 집어 Box_casecover에
     # 버리는 노드. battery_open_sasumi_portable의 "casecover 흡착 후 바닥
     # 투하" 동작을 이 프로젝트의 배터리(단일 rigid body)에 맞게 옮긴 것이다.
     # ScrewDisassemblyNode가 나사 분해를 끝내면 이 서비스(/start_battery_cover_drop)를
@@ -1502,11 +1719,14 @@ def main() -> None:
     battery_cover_drop_node = BatteryCoverDropNode(
         world=my_world,
         robot=vg10_robot,
-        get_picking_position=task.get_last_placed_battery_position,
-        placing_position=BATTERY_DISCARD_POSITION,
+        get_picking_position=task.get_last_placed_battery_cover_position,
+        placing_position=task.get_battery_discard_position(),
         end_effector_offset=VG10_SURFACE_LOCAL_OFFSET,
         clear_last_placed_battery=task.clear_last_placed_battery,
-        get_pick_yaw_deg=task.get_last_placed_battery_pick_yaw_deg,
+        get_pick_yaw_deg=task.get_last_placed_battery_cover_pick_yaw_deg,
+        get_battery_path=task.get_last_placed_battery_path,
+        get_gripped_object_paths=task.get_vg10_gripped_object_paths,
+        on_cover_dropped=grip_cell_node.request_start,
         controller_kwargs=dict(
             name="m0609_vg10_cover_drop_controller",
             gripper=vg10_robot.gripper,
@@ -1516,6 +1736,18 @@ def main() -> None:
             rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
             end_effector_frame_name=M0609_EE_LINK_NAME,
             place_drop_height=BATTERY_DISCARD_DROP_HEIGHT,
+            # ROTATE_J1은 Cartesian 제어(RMPFlow) 시작 전에 관절 공간에서 미리
+            # 목표 방향 쪽으로 대충 돌려놓는 역할이다. 실제 목표 방향과 반대에
+            # 가까운 각도를 주면(예전 90도는 Box_casecover 방향인 -86도와 거의
+            # 정반대라), 일단 엉뚱한 방향으로 돌았다가 RMPFlow가 다시 실제
+            # 목표까지 끌고 가려다 못 따라잡고 타임아웃 나는 문제가 생긴다.
+            # atan2(Box_casecover.y - base.y, Box_casecover.x - base.x)로 계산한
+            # 실제 방향(-86도 근처)으로 맞춘다. Box_casecover를 또 옮기면 이 값도
+            # 다시 계산해야 한다.
+            j1_place_deg=-86.0,
+            # 뚜껑을 Box_casecover에 내려놓을 때 그립퍼 yaw(z축 회전)를
+            # 기본값(90도) 대신 0도로 맞춰서 테이블 모서리에 걸리지 않게 한다.
+            place_yaw_deg=0.0,
         ),
     )
 
@@ -1527,27 +1759,30 @@ def main() -> None:
     print("VG10 팔레트: /vg10_pallet/run_pallet_to_conveyor service 대기 중")
     print("나사 분해  : /start_screw_process service 대기 중")
     print("배터리 폐기: /start_battery_cover_drop service 대기 중")
+    print("셀 검사    : /start_grip_cell_process service 대기 중 (cover-drop 완료 시 자동 시작)")
+    print("주의: 전압 검사(/check_voltage)는 이 프로세스가 아니라 별도로")
+    print("      실행한 controller/battery_voltage_server.py가 응답해야 합니다.")
     print("=" * 60 + "\n")
 
     was_playing = False
     process_done = False
 
     while simulation_app.is_running():
-        rclpy.spin_once(vg10_worktable_node, timeout_sec=0.0)
-        rclpy.spin_once(vg10_pallet_node, timeout_sec=0.0)
-        rclpy.spin_once(screw_disassembly_node, timeout_sec=0.0)
-        rclpy.spin_once(battery_cover_drop_node, timeout_sec=0.0)
-        my_world.step(render=True)
-        time.sleep(0.01)
-
         is_playing = my_world.is_playing()
 
+        # world.reset()은 로봇의 PhysX 시뮬레이션 뷰(텐서 API 기반 articulation
+        # view)를 무효화한다. 이 재초기화를 rclpy.spin_once()/world.step() 뒤에
+        # 하면, Stop -> Play로 전환되는 바로 그 프레임에서 spin_once()가 먼저
+        # 서비스 요청을 처리해버려 "Simulation view object is invalidated"
+        # 에러가 난다(재초기화 전의 낡은 뷰로 get_joint_positions()를 부르게 됨).
+        # 그래서 재초기화를 spin_once()/step()보다 먼저 한다.
         if is_playing and not was_playing:
             my_world.reset()
 
             initialize_robot(
                 robot=robot,
                 world=my_world,
+                initial_joint_degrees_by_name=M0609_RG2_INITIAL_JOINT_DEGREES,
             )
             initialize_robot(
                 robot=vg10_robot,
@@ -1569,7 +1804,21 @@ def main() -> None:
             vg10_pallet_node.reset_controller()
             screw_disassembly_node.reset_controller()
             battery_cover_drop_node.reset_controller()
+            grip_cell_node.reset_controller()
             process_done = False
+
+        rclpy.spin_once(vg10_worktable_node, timeout_sec=0.0)
+        rclpy.spin_once(vg10_pallet_node, timeout_sec=0.0)
+        rclpy.spin_once(screw_disassembly_node, timeout_sec=0.0)
+        rclpy.spin_once(battery_cover_drop_node, timeout_sec=0.0)
+        rclpy.spin_once(grip_cell_node, timeout_sec=0.0)
+        # grip_cell_node.update()는 request_start()로 예약된 pending 상태일 때만
+        # 동작한다(cover-drop 완료 콜백 -> 다음 프레임). 내부에서 자체적으로
+        # world.step()을 여러 번 반복하는 긴 블로킹 호출이라 다른 서비스
+        # 핸들러들(_handle_run)과 같은 자리에서, my_world.step() 호출 전에 둔다.
+        grip_cell_node.update()
+        my_world.step(render=True)
+        time.sleep(0.01)
 
         if is_playing and not process_done:
             process_done = update_process(

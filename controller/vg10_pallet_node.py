@@ -65,13 +65,7 @@ class VG10PalletNode(Node):
             current_joint_positions = self._robot.get_joint_positions()
             pick_yaw_deg = 0.0
             if self._get_pick_yaw_deg is not None:
-                try:
-                    pick_yaw_deg = self._get_pick_yaw_deg(battery_path)
-                except Exception as exc:
-                    # bbox 조회가 매 프레임 도는데, 여기서 한번 실패한다고 전체
-                    # pick&place를 중단시키면 안 된다 — 로봇이 그 자리에서 멈추고
-                    # home으로도 못 돌아가게 된다.
-                    self.get_logger().warn(f"[PICK YAW] 조회 실패, 0도로 대체: {exc}")
+                pick_yaw_deg = self._get_pick_yaw_deg(battery_path)
 
             actions = self._controller.forward(
                 picking_position=picking_position,
@@ -85,6 +79,12 @@ class VG10PalletNode(Node):
 
         if not self._controller.is_done():
             raise RuntimeError("world가 재생 중이 아니어서 중단됨")
+        # is_done()은 상태머신이 끝까지 진행됐는지만 본다 — GRIP이 타임아웃으로
+        # 흡착 없이 강제로 다음 단계로 넘어가도 is_done()은 True가 된다. 흡착
+        # 자체가 됐는지는 did_pick_succeed()로 따로 확인해야, 배터리를 못 집었는데도
+        # order 인덱스를 넘겨 다음 배터리로 진행해버리는 것을 막을 수 있다.
+        if not self._controller.did_pick_succeed():
+            raise RuntimeError("흡착 실패로 배터리를 옮기지 못함")
 
     def _handle_run(self, request, response) -> Trigger.Response:
         if self._next_order_index >= len(self._order):

@@ -74,11 +74,33 @@ _CARTESIAN_STEPS = {
     PickPlaceState.PICK_DOWN: 180,
     PickPlaceState.PICK_LIFT: 180,
     PickPlaceState.PLACE_ABOVE: 240,
-    PickPlaceState.PLACE_DOWN: 180,
+    # PLACE_DOWN 실측 결과 180스텝(3초)에 위치오차 0.24m/자세오차 25도를 남긴 채
+    # 타임아웃되는 경우가 있었다 — 관절이 꼬여 특이점 근처에서 막힌 것으로 보여
+    # 시간을 늘려도 완전히 해결 안 될 수 있지만(진짜 도달 불가 지점이면 시간을
+    # 더 줘도 그대로 막힘), "시간 부족"과 "도달 불가"를 구분하기 위해 우선
+    # 넉넉하게(600스텝=10초) 늘려서 실제로 수렴하는지부터 확인한다.
+    PickPlaceState.PLACE_DOWN: 600,
     PickPlaceState.RETREAT: 180,
 }
 # 목표 지점에 "도달했다"고 판정할 위치 오차 허용치(m).
+# PICK_DOWN/PLACE_DOWN(실제 접촉 지점)은 정밀해야 하지만, PICK_ABOVE/PICK_LIFT/
+# PLACE_ABOVE/RETREAT는 접근 높이(approach_height)만큼 띄운 경유점일 뿐이라
+# 몇 cm 어긋나도 실제 동작(접촉/흡착)에 영향이 없다. 그런데 RMPFlow는 목표에
+# 가까워질수록(마지막 몇 cm) 수렴이 느려져서, 이 경유점들까지 접촉 지점과
+# 같은 엄격한 허용치(0.02m)를 요구하면 TIMEOUT까지 몇 초를 그냥 날린다 —
+# 컨베이어 정지 시간(CONVEYOR_STOP_DURATION_S)을 갉아먹어 로봇이 실제로 집기도
+# 전에 벨트가 재개되는 원인이 됐다. 경유점은 허용치를 넉넉히 풀어 빨리
+# 넘어가고, 접촉 지점만 정밀도를 유지한다.
 _CARTESIAN_TOLERANCE = 0.02
+_APPROACH_CARTESIAN_TOLERANCE = 0.08
+_CARTESIAN_TOLERANCE_BY_STATE = {
+    PickPlaceState.PICK_ABOVE: _APPROACH_CARTESIAN_TOLERANCE,
+    PickPlaceState.PICK_DOWN: _CARTESIAN_TOLERANCE,
+    PickPlaceState.PICK_LIFT: _APPROACH_CARTESIAN_TOLERANCE,
+    PickPlaceState.PLACE_ABOVE: _APPROACH_CARTESIAN_TOLERANCE,
+    PickPlaceState.PLACE_DOWN: _CARTESIAN_TOLERANCE,
+    PickPlaceState.RETREAT: _APPROACH_CARTESIAN_TOLERANCE,
+}
 # 목표 자세에 "도달했다"고 판정할 각도 오차 허용치(rad, 약 3도).
 # 위치만 확인하면, RMPFlow가 위치는 다 왔는데 yaw 회전(PICK_ORIENTATION ->
 # place_orientation)이 아직 덜 끝난 채로 다음 단계(RELEASE)로 넘어가
@@ -106,7 +128,14 @@ _JOINT_TIMEOUT_STEPS = {
 # 붙기도 전에 다음 단계(PICK_LIFT)로 넘어가 허공만 들어올리게 된다.
 _GRIPPER_HOLD_STEPS = {
     PickPlaceState.GRIP: 180,
-    PickPlaceState.RELEASE: 20,
+    # open()을 불렀다고 곧바로 물리적으로 떨어지는 게 아니라서(GRIP의 부착
+    # 재시도와 대칭으로, 해제도 즉시 반영 안 될 수 있음), is_closed()로 실제
+    # 해제를 확인하고 넘어간다. 이 값은 그 확인이 안 될 때의 안전장치
+    # 타임아웃일 뿐이다 — 예전엔 20프레임(0.33초)이었는데, 확인 없이 그냥
+    # 시간이 지나면 넘어가는 방식이라 실제로는 아직 안 떨어졌는데 RETREAT로
+    # 넘어가 팔이 움직이기 시작했고, 뒤늦게 떨어지는 순간 팔의 이동 속도를
+    # 그대로 이어받아 가벼운 뚜껑이 튕겨 날아가는 원인이 됐다.
+    PickPlaceState.RELEASE: 90,
 }
 # 부착이 확인된 뒤에도 곧장 들어올리지 않고 이만큼(프레임) 더 붙잡고 있다가
 # 넘어간다 — 접촉 직후 물리가 안정되기 전에 들어올리다 놓치는 것을 방지.
@@ -197,9 +226,13 @@ class SuctionStatePickPlaceController(BaseController):
         """
         return self._gripped_steps >= _GRIPPER_SETTLE_STEPS
 
-    def reset(self) -> None:
+    def reset(self, skip_init_home: bool = False) -> None:
+        """skip_init_home=True면 INIT_HOME(관절을 home_joints_deg로 이동)을
+        건너뛰고 바로 PICK_ABOVE부터 시작한다. 호출부가 이미 다른 방식으로
+        시작 자세를 맞춰 놓은 경우(예: 관절을 직접 0도로 스냅) INIT_HOME이
+        거기서 또 home_joints_deg로 한 번 더 움직이는 중복 이동을 막는다."""
         self._cspace_controller.reset()
-        self._state_index = 0
+        self._state_index = 1 if skip_init_home else 0
         self._step_in_state = 0
         self._pick_target = None
         self._gripped_steps = 0
@@ -350,7 +383,12 @@ class SuctionStatePickPlaceController(BaseController):
             )
             if self._step_in_state == 1:
                 self._log_event(state, target_position, target_orientation, gripper_cmd="OPEN")
-            if self._step_in_state >= _GRIPPER_HOLD_STEPS[state]:
+
+            really_released = not self._gripper.is_closed()
+            timed_out = self._step_in_state >= _GRIPPER_HOLD_STEPS[state]
+            if timed_out and not really_released:
+                print("  [경고] 흡착 해제 확인 안 됨(타임아웃) — 그래도 다음 단계로 진행합니다.")
+            if really_released or timed_out:
                 self._advance()
             return action
 
@@ -402,7 +440,7 @@ class SuctionStatePickPlaceController(BaseController):
         position_error = float(np.linalg.norm(np.asarray(ee_pos) - target_position))
         orientation_error = _quat_angle_diff(ee_orientation, target_orientation)
         reached = (
-            position_error < _CARTESIAN_TOLERANCE
+            position_error < _CARTESIAN_TOLERANCE_BY_STATE[state]
             and orientation_error < _ORIENTATION_TOLERANCE
         )
         timed_out = self._step_in_state >= _CARTESIAN_STEPS[state]
