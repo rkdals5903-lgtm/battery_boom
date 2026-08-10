@@ -1,0 +1,101 @@
+{
+    "version": "1.0",
+    "file_records": [
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/MetalPainted_White_Glossy_A.mdl",
+            "source_hash": "dc5cf54bfad3f99ccadfd38d009539b435296477",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/MetalPainted_White_Glossy_A.mdl",
+            "target_hash": "eb2e1d6a810b445d84f6cc567ab6ccee0507b38f"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/Metal_Glossy_A.mdl",
+            "source_hash": "de7f369c29504372c44f9d033fc56096a5a3f051",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/Metal_Glossy_A.mdl",
+            "target_hash": "835ab37dfd78194a1e2e24b09b2742074f6172ab"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/Wood_Laminate_Gray_A.mdl",
+            "source_hash": "2c4231c28b44779608e03b692be19b02972a3f02",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/Wood_Laminate_Gray_A.mdl",
+            "target_hash": "728987587473cf4a4da56eee210d5e79479587c5"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/Wood_Pressed_A.mdl",
+            "source_hash": "787312ecfdf245a2b7cba7360b6c26eb57d76014",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/Wood_Pressed_A.mdl",
+            "target_hash": "cd35f1a5e8c68e47d1f98eaef6bb630f58416253"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Pressed_A/T_Wood_Pressed_A1_Albedo.png",
+            "source_hash": "b47ec10a8a281f4d13017fae5063ecaf292cc112",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Pressed_A/T_Wood_Pressed_A1_Albedo.png",
+            "target_hash": "6914d5b083cfa5ce518c7bc671f894b1419cd8cd"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Pressed_A/T_Wood_Pressed_A1_Normal.png",
+            "source_hash": "dfd35b071fe2a8337aa62a71eea7b47e4a83ad4f",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Pressed_A/T_Wood_Pressed_A1_Normal.png",
+            "target_hash": "3fb34a953cf4f3add674817fdca18170838f31d6"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/MetalPainted_White_Glossy_A/T_MetalPainted_White_Glossy_A_Albedo.png",
+            "source_hash": "850e4fae92380ee51401ac9079934c9939654d5c",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/MetalPainted_White_Glossy_A/T_MetalPainted_White_Glossy_A_Albedo.png",
+            "target_hash": "7ce40fcc1d93cf98282bb490fe3a6d16a3431b34"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Metal_Glossy_A/T_Metal_Glossy_A_Albedo.png",
+            "source_hash": "a68f08684c08b095869bca01858b0f73f37eb842",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Metal_Glossy_A/T_Metal_Glossy_A_Albedo.png",
+            "target_hash": "2428277cf662812a41bb07ffe0a0f2ada8f44d6a"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Laminate_Gray_A/T_Wood_Laminate_Gray_A_Albedo.png",
+            "source_hash": "217f7e7e125e1c8bf76e3b21e564968049ca0dee",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Laminate_Gray_A/T_Wood_Laminate_Gray_A_Albedo.png",
+            "target_hash": "5cb697e1f6b7b52cd8fd0d529ed9d4f6511d7d81"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Pressed_A/T_Wood_Pressed_A1_ORM.png",
+            "source_hash": "b9808db041aa859f54c87626003de4e19468d0ac",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Pressed_A/T_Wood_Pressed_A1_ORM.png",
+            "target_hash": "37465d795b50fd2865fb6367d7547eb6ffc8fafa"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/MetalPainted_White_Glossy_A/T_MetalPainted_White_Glossy_A_Normal.png",
+            "source_hash": "dc2af57cd350caa1a296a4f26ed6d41488db25d9",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/MetalPainted_White_Glossy_A/T_MetalPainted_White_Glossy_A_Normal.png",
+            "target_hash": "67a0b105f5e397f5191b8640e6531cd08e7fc673"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Metal_Glossy_A/T_Metal_Glossy_A_Normal.png",
+            "source_hash": "54a0d9502921e648d78abbdaa8102f22ac4bded1",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Metal_Glossy_A/T_Metal_Glossy_A_Normal.png",
+            "target_hash": "d827d0df3abc8841de420eee995b8deabf4bf94c"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Laminate_Gray_A/T_Wood_Laminate_Gray_A_ORM.png",
+            "source_hash": "5cbda698e27db98d4d8c9c82feb62f3e809ec601",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Laminate_Gray_A/T_Wood_Laminate_Gray_A_ORM.png",
+            "target_hash": "9503176643e542a4a75575f0bae0d7f62e5ed204"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/MetalPainted_White_Glossy_A/T_MetalPainted_White_Glossy_A_ORM.png",
+            "source_hash": "dd2de4f9c5bcee6c4327a1af94675be9fc846346",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/MetalPainted_White_Glossy_A/T_MetalPainted_White_Glossy_A_ORM.png",
+            "target_hash": "2d96abd12cc2e983fcd6f91d4d9fa77bd515b49a"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Metal_Glossy_A/T_Metal_Glossy_A_ORM.png",
+            "source_hash": "7b0380821065e49f5435622fa078534fd90c6a9b",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Metal_Glossy_A/T_Metal_Glossy_A_ORM.png",
+            "target_hash": "52ae56d05ef529c9024253d48d736b65baa325e0"
+        },
+        {
+            "source_url": "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Laminate_Gray_A/T_Wood_Laminate_Gray_A_Normal.png",
+            "source_hash": "e031b4eaabc3e8eada6fcc2389e3e0804051fbd6",
+            "target_url": "./omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/IsaacLab/Mimic/pick_place_task/pick_place_assets/PackingTable/props/SM_HeavyDutyPackingTable_C02_01/materials/textures/Wood_Laminate_Gray_A/T_Wood_Laminate_Gray_A_Normal.png",
+            "target_hash": "0f4e4858d29847154c2fbe1e7f9be95b60cd1ed0"
+        }
+    ]
+}
