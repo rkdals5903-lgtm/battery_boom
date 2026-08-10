@@ -38,7 +38,7 @@ import time
 import numpy as np
 import omni.usd
 import rclpy
-from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics # GF 모름
+from pxr import Gf, PhysxSchema, Sdf, Usd, UsdGeom, UsdPhysics # GF 모름
 from usd.schema.isaac import robot_schema
 #######################################
 #isaac-sim.api import
@@ -47,6 +47,7 @@ from isaacsim.core.api.objects import DynamicCuboid, VisualCuboid
 from isaacsim.core.api.tasks import BaseTask
 from isaacsim.core.experimental.utils import prim as prim_utils
 from isaacsim.core.prims import SingleRigidPrim
+from isaacsim.core.utils.types import ArticulationAction
 from isaacsim.robot.manipulators.grippers import ParallelGripper, SurfaceGripper
 from isaacsim.robot.manipulators.manipulators import SingleManipulator
 from isaacsim.robot.surface_gripper import GripperView
@@ -125,7 +126,7 @@ WORK_TABLE_SURFACE_PRIM_PATH = "/World/work_table/packing_table/new_ws_table"
 # 벗어난 위치에 있는 것뿐이라, bbox 계산 위에 이 오프셋만 더한다.
 # 실측 후에도 실제로 놓아보니 -Y 방향으로 추가로 약 2cm 더 가야 해서(사용자 확인)
 # -0.02를 추가로 더했다.
-WORK_TABLE_PLACE_Y_OFFSET = -0.08371278093038825 - 0.02
+WORK_TABLE_PLACE_Y_OFFSET = -0.08371278093038825 - 0.01
 
 # 1번(팔레트 -> 컨베이어 적재) 전용 VG10. 4번(컨베이어 -> 작업대) VG10과는
 # 별도의 로봇이다.
@@ -164,9 +165,14 @@ M0609_SCREW_TIP_PRIM_PATH = (
     f"{M0609_SCREW_ROBOT_PRIM_PATH}/tool0/assembly_screw/assembly_screw/tn__Part1_f5"
 )
 M0609_SCREW_SCENE_NAME = "m0609_screw_robot"
-# run_screw_disassembly.py의 init_joint_positions([0, -1.2, 1.8, 0, 1.2, 0] rad)와
-# 동일한 자세(전부 0도인 특이 자세를 피해 팔꿈치를 미리 굽혀 둠).
-M0609_SCREW_INITIAL_JOINT_DEGREES = {"joint_2": -45.0, "joint_3": 90.0, "joint_5": 90.0}
+# run_screw_disassembly.py의 검증된 시작 자세
+# [0, -1.2, 1.8, 0, 1.2, 0] rad을 그대로 사용한다. 이전 값은
+# 주석만 원본이고 실제 숫자는 HOME 자세로 바뀌어 있었다.
+M0609_SCREW_INITIAL_JOINT_DEGREES = {
+    "joint_2": math.degrees(-1.2),
+    "joint_3": math.degrees(1.8),
+    "joint_5": math.degrees(1.2),
+}
 
 M0609_VG10_PALLET_POSITION = np.array([0.22590169234536872, -0.2402201520116727, 0.0022747409529983997])
 # pallet_to_conveyor_clean.py의 INITIAL_JOINT_POSITIONS_DEG_BY_NAME과 동일.
@@ -185,9 +191,9 @@ M0609_URDF_PATH = str( PROJECT_DIR/ "urdf"/ "m0609_isaac_sim.urdf")
 M0609_DESCRIPTION_PATH = str(PROJECT_DIR/ "rmpflow"/ "m0609_description.yaml")
 M0609_RMPFLOW_CONFIG_PATH = str(PROJECT_DIR/"rmpflow"/ "m0609_rmpflow_common.yaml")
 
-RG2_OPEN_POSITIONS = np.array([0.0, 0.0])
-RG2_CLOSED_POSITIONS = np.array([0.5, 0.5])
-RG2_ACTION_DELTAS = np.array([-0.5, -0.5])
+RG2_OPEN_POSITIONS = np.array([0.60])
+RG2_CLOSED_POSITIONS = np.array([0.6864])
+RG2_ACTION_DELTAS = np.array([-0.5])
 
 
 # <장치명>_<역할>_LINK_NAME
@@ -197,7 +203,7 @@ M0609_EE_LINK_NAME = "link_6"
 
 # <장치명>_<역할>_JOINT_NAMES
 #     제어할 Joint 이름 목록
-RG2_JOINT_NAMES = ["finger_joint", "right_inner_knuckle_joint",]
+RG2_JOINT_NAMES = ["finger_joint"]
 
 # ------------------------------------------------------------
 # 4-2. VG10 Surface Gripper 파라미터
@@ -365,6 +371,26 @@ BATTERY_COVER_PICK_Z_CLEARANCE = 0.0
 # GripCellNode._run_process()는 이 경로 아래에서 이름이 "casebase"인 Prim을
 # 찾아 bbox 기준으로 슬롯 좌표를 계산한다.
 NEW_CASE_ROOT_PRIM_PATH = "/World/new_case"
+# 빈 목적지 케이스는 원본 배터리 USD를 payload로 재사용하므로, 화면에서
+# casecover/nasa/cell을 비활성화했더라도 payload의 AssemblyJoints는 별도로
+# 살아 있을 수 있다. PhysX 시작 전에 아래 네 케이스의 조립 조인트만 끈다.
+DESTINATION_CASE_ROOT_PRIM_PATHS = (
+    NEW_CASE_ROOT_PRIM_PATH,
+    "/World/new_case_01",
+    "/World/new_case_02",
+    "/World/new_case_03",
+)
+DESTINATION_CASE_ASSEMBLY_JOINT_NAMES = (
+    "casecover_to_casebase",
+    "nasa_1_to_casecover",
+    "nasa_2_to_casecover",
+    "nasa_3_to_casecover",
+    "nasa_4_to_casecover",
+    "cell_1_to_casebase",
+    "cell_2_to_casebase",
+    "cell_3_to_casebase",
+    "cell_4_to_casebase",
+)
 # grip_cell_node.py(GripCellNode -> IntegratedRmpRunner)의 손끝-link_6 오프셋.
 RG2_TOOL_LENGTH_M = 0.20
 
@@ -491,6 +517,162 @@ def snap_prim_to_floor(stage, prim_path: str, floor_z: float) -> None:
     print(f"  [OK] {prim_path}: 바닥에 맞춰 Z {offset_z:+.4f}m 보정", flush=True)
 
 
+def deactivate_prim_in_session(stage: Usd.Stage, prim_path: str) -> None:
+    """참조/payload 원본을 수정하지 않고 현재 실행에서 prim을 비활성화한다."""
+    previous_edit_target = stage.GetEditTarget()
+    try:
+        stage.SetEditTarget(stage.GetSessionLayer())
+        stage.OverridePrim(prim_path).SetActive(False)
+    finally:
+        stage.SetEditTarget(previous_edit_target)
+
+
+def sanitize_destination_case_assembly_joints(stage: Usd.Stage) -> None:
+    """빈 new_case 4개의 끊어진 조립 FixedJoint를 물리 시작 전에 제거한다.
+
+    grip_cell_final.py의 DISABLED_ASSEMBLY_JOINTS 처리와 같은 방식이다.
+    통합 공정의 good_battery*는 뚜껑/나사 분해 전까지 조인트가 필요하므로
+    절대 건드리지 않고, 목적지/예비 casebase 네 개만 대상으로 제한한다.
+    """
+    disabled = []
+    for case_root in DESTINATION_CASE_ROOT_PRIM_PATHS:
+        for joint_name in DESTINATION_CASE_ASSEMBLY_JOINT_NAMES:
+            joint_path = f"{case_root}/AssemblyJoints/{joint_name}"
+            # payload가 아직 늦게 로드되는 경우에도 inactive override를 미리
+            # author하면 이후 나타난 동일 경로의 joint까지 확실히 차단된다.
+            deactivate_prim_in_session(stage, joint_path)
+            disabled.append(joint_path)
+
+    still_active = [
+        path
+        for path in disabled
+        if (
+            stage.GetPrimAtPath(path).IsValid()
+            and stage.GetPrimAtPath(path).IsActive()
+        )
+    ]
+    if still_active:
+        raise RuntimeError(
+            "빈 목적지 케이스 AssemblyJoint 비활성화 실패:\n  "
+            + "\n  ".join(still_active)
+        )
+    print(
+        f"  [FIX] new_case/new_case_01~03 AssemblyJoints "
+        f"{len(disabled)}개 비활성화 (casebase-only)",
+        flush=True,
+    )
+
+
+def configure_destination_casebases(stage: Usd.Stage) -> None:
+    """new_case와 예비 casebase 3개에 동일한 고정/콜라이더 물리를 적용한다.
+
+    grip_cell_final.py의 configure_colliders()에서 검증된 casebase 설정 그대로다.
+    Apply()는 기존 API를 재사용하므로 ridge/collider prim을 중복 생성하지 않는다.
+    """
+    configured = []
+    for case_root in DESTINATION_CASE_ROOT_PRIM_PATHS:
+        casebase_path = f"{case_root}/casebase"
+        casebase = stage.GetPrimAtPath(casebase_path)
+        if not casebase.IsValid() or not casebase.IsActive():
+            raise RuntimeError(
+                f"빈 목적지 casebase가 없거나 비활성 상태입니다: {casebase_path}"
+            )
+
+        rigid = UsdPhysics.RigidBodyAPI.Apply(casebase)
+        rigid.CreateRigidBodyEnabledAttr().Set(True)
+        rigid.CreateKinematicEnabledAttr().Set(True)
+        PhysxSchema.PhysxRigidBodyAPI.Apply(
+            casebase
+        ).CreateDisableGravityAttr().Set(True)
+
+        mesh_count = 0
+        for prim in Usd.PrimRange(casebase):
+            if not prim.IsA(UsdGeom.Mesh):
+                continue
+            UsdPhysics.CollisionAPI.Apply(
+                prim
+            ).CreateCollisionEnabledAttr().Set(True)
+            # Convex Hull은 케이스 내부를 막아버리므로, 고정된 casebase에는
+            # triangle mesh를 사용해 셀이 들어갈 빈 공간을 그대로 보존한다.
+            UsdPhysics.MeshCollisionAPI.Apply(
+                prim
+            ).CreateApproximationAttr().Set("none")
+            mesh_count += 1
+
+        if mesh_count == 0:
+            raise RuntimeError(f"casebase collider Mesh를 찾지 못했습니다: {casebase_path}")
+        configured.append((casebase_path, mesh_count))
+
+    for casebase_path, mesh_count in configured:
+        print(
+            f"  [FIX] {casebase_path}: kinematic+gravity OFF+concave, "
+            f"mesh={mesh_count}",
+            flush=True,
+        )
+
+
+def sanitize_robot_physics_before_reset(stage: Usd.Stage) -> None:
+    """검증된 로봇 USD의 중첩 RigidBody/외부 고정 조인트를 정리한다."""
+    # angle_bracket 자체가 RigidBody인데 자식 RSD455에도 RigidBodyAPI가 있어
+    # articulation tensor view가 카메라를 별도 body로 잘못 등록하는 문제 수정.
+    camera_body_path = (
+        f"{M0609_RG2_PRIM_PATH}/Xform/m0609_camera/m0609/"
+        "onrobot_rg2ft/angle_bracket/realsense_d455/RSD455"
+    )
+    camera_prim = stage.GetPrimAtPath(camera_body_path)
+    if camera_prim.IsValid():
+        previous_edit_target = stage.GetEditTarget()
+        try:
+            stage.SetEditTarget(stage.GetSessionLayer())
+            if camera_prim.HasAPI(UsdPhysics.RigidBodyAPI):
+                camera_prim.RemoveAPI(UsdPhysics.RigidBodyAPI)
+            if camera_prim.HasAPI(UsdPhysics.MassAPI):
+                camera_prim.RemoveAPI(UsdPhysics.MassAPI)
+        finally:
+            stage.SetEditTarget(previous_edit_target)
+        if camera_prim.HasAPI(UsdPhysics.RigidBodyAPI):
+            raise RuntimeError(
+                f"RG2 camera nested RigidBodyAPI 제거 실패: {camera_body_path}"
+            )
+        print(f"  [FIX] RG2 camera nested RigidBody/Mass 제거: {camera_body_path}")
+
+    # 이 FixedJoint들은 떨어진 로봇 root와 base_link를 강제로 snap시키는 USD
+    # 잔여물이다. 각 Articulation Root의 fix-root 동작은 그대로 유지된다.
+    fixed_joint_paths = tuple(
+        f"{robot_root}/Xform_robot1/m0609_isaac_sim/base_link/FixedJoint"
+        for robot_root in (
+            M0609_VG10_PRIM_PATH,
+            M0609_VG10_PALLET_PRIM_PATH,
+            M0609_VG10_OUTFEED_PRIM_PATH,
+        )
+    )
+    for joint_path in fixed_joint_paths:
+        deactivate_prim_in_session(stage, joint_path)
+    active_fixed_joints = [
+        path
+        for path in fixed_joint_paths
+        if stage.GetPrimAtPath(path).IsValid() and stage.GetPrimAtPath(path).IsActive()
+    ]
+    if active_fixed_joints:
+        raise RuntimeError(
+            "VG10 disjoint FixedJoint 비활성화 실패:\n  "
+            + "\n  ".join(active_fixed_joints)
+        )
+    print(f"  [FIX] VG10 base FixedJoint {len(fixed_joint_paths)}개 비활성화")
+
+    # RGB/Depth만 사용하며 IMU는 사용하지 않는다. rigid parent가 없는 RealSense
+    # stand의 Imu_Sensor가 불필요한 PhysX tensor view 오류를 만들지 않게 한다.
+    imu_paths = [
+        str(prim.GetPath())
+        for prim in Usd.PrimRange(stage.GetPrimAtPath("/World"))
+        if prim.GetName() == "Imu_Sensor"
+    ]
+    for imu_path in imu_paths:
+        deactivate_prim_in_session(stage, imu_path)
+    if imu_paths:
+        print(f"  [FIX] 미사용 RealSense Imu_Sensor {len(imu_paths)}개 비활성화")
+
+
 def discover_battery_prim_paths(stage) -> list:
     """/World 바로 아래에서 good_battery, good_battery_01, good_battery_02... 를 전부 찾는다.
 
@@ -595,13 +777,37 @@ def initialize_robot(robot, world, initial_joint_degrees_by_name: Optional[dict]
         )
         # ParallelGripper(RG2)는 위 gripper.initialize()가 필수(그리퍼 콜백 배선)라
         # 위 두 분기처럼 통째로 건너뛸 수 없다 — gripper 초기화 뒤에 이어서
-        # 팔 관절 자세도 원하는 값으로 덮어쓴다.
+        # 팔 관절 자세도 원하는 값으로 덮어쓴다. 이때 전체 DOF를 0으로 만든
+        # 배열에는 RG2 finger_joint도 포함되므로, 팔 자세만 쓴 뒤 그리퍼를
+        # 반드시 open 상태로 다시 복원해야 한다.
         if initial_joint_degrees_by_name:
             joint_positions = np.zeros(robot.num_dof)
             dof_names = list(robot.dof_names)
             for name, value_deg in initial_joint_degrees_by_name.items():
                 joint_positions[dof_names.index(name)] = math.radians(value_deg)
             robot.set_joint_positions(joint_positions)
+
+        # set_joint_positions()만 호출하면 현재 위치만 순간적으로 바뀌고 PhysX
+        # drive target은 USD 기본값(0.0)에 남을 수 있다. 그러면 grip-cell 사전
+        # 회전 동안 finger_joint가 open target에서 다시 0.0으로 돌아간다. 위치와
+        # drive target을 같은 프레임에 함께 설정해, 작업 시작 전에는 움직이지
+        # 않은 채 안전 진입 개도 0.60을 계속 유지한다.
+        opened_positions = np.asarray(
+            robot.gripper.joint_opened_positions, dtype=float
+        ).reshape(-1)
+        gripper_indices = np.asarray(
+            robot.gripper.active_joint_indices, dtype=np.int32
+        )
+        robot.set_joint_positions(
+            opened_positions,
+            joint_indices=gripper_indices,
+        )
+        robot.get_articulation_controller().apply_action(
+            ArticulationAction(
+                joint_positions=opened_positions.copy(),
+                joint_indices=gripper_indices,
+            )
+        )
 
 
 # ============================================================
@@ -740,6 +946,13 @@ class BatteryFactoryTask(BaseTask):
 
         for _ in range(15):
             simulation_app.update()
+
+        # PhysX/Fabric view가 생성되는 my_world.reset()보다 반드시 먼저 실행한다.
+        # 빈 destination case의 끊어진 joint와 로봇 USD의 중첩/잔여 physics를
+        # session layer에서만 정리해 원본 USD 파일은 변경하지 않는다.
+        sanitize_destination_case_assembly_joints(stage)
+        configure_destination_casebases(stage)
+        sanitize_robot_physics_before_reset(stage)
 
         # Box_trash/Box_casecover의 참조 에셋(payload)이 이제 막 로드됐으니,
         # 여기서 bbox를 계산해 바닥에 맞춰 보정한다(로드 전에는 bbox가 비어 있어
@@ -886,21 +1099,9 @@ class BatteryFactoryTask(BaseTask):
 
         print(f"  [OK] M0609 Drive 설정:{drive_count}")
 
-        # RG2 finger_joint는 위 루프에서 stiffness 1e8로 사실상 무한강성 drive가
-        # 됐지만, 나머지 5개 knuckle/finger 관절은 DriveAPI가 없고 PhysxMimicJointAPI
-        # (finger_joint 추종)로만 구동된다. 이 mimic 관절의 dampingRatio가 onrobot_rg2
-        # 원본 자산 기본값(~0.005, 사실상 무감쇠)이라, finger_joint가 순간적으로
-        # 급가속하는 구간(파지 직후 하강 시작 등)에서 나머지 손가락들이 target을
-        # 오버슈트했다가 되돌아오며 "잡기 전 살짝 좁아졌다가 하강하며 다시 벌어지는"
-        # 현상으로 보인다. 임계감쇠(1.0)에 가깝게 올려 오버슈트를 없앤다.
-        rg2_prim = stage.GetPrimAtPath(M0609_RG2_PRIM_PATH)
-        mimic_damping_count = 0
-        for prim in Usd.PrimRange(rg2_prim):
-            damping_attr = prim.GetAttribute("physxMimicJoint:rot:dampingRatio")
-            if damping_attr and damping_attr.IsValid():
-                damping_attr.Set(1.0)
-                mimic_damping_count += 1
-        print(f"  [OK] RG2 mimic joint dampingRatio 보정: {mimic_damping_count}")
+        # RG2의 종속 손가락은 USD에 authored된 PhysX mimic 물성을 그대로 쓴다.
+        # 임의 dampingRatio override는 정답 standalone 구성에 없고, 종속축의
+        # 응답을 늦춰 하강 중 손가락이 움직이는 부작용을 만든다.
 
         # 조원별 Physics 설정 위치
         #
@@ -920,6 +1121,10 @@ class BatteryFactoryTask(BaseTask):
             joint_opened_positions=RG2_OPEN_POSITIONS,
             joint_closed_positions=RG2_CLOSED_POSITIONS,
             action_deltas=RG2_ACTION_DELTAS,
+            # RG2 USD에서 finger_joint 하나만 drive이고 나머지는
+            # PhysX MimicJoint이다. Isaac Sim 5.0에서 이 옵션이 없으면
+            # ParallelGripper.initialize()가 두 번째 joint를 필수로 찾는다.
+            use_mimic_joints=True,
         )
 
         self._robot = scene.add(
@@ -1417,11 +1622,14 @@ class BatteryFactoryTask(BaseTask):
         if self._last_placed_battery_path is None:
             return None
         base = self._last_placed_battery_path
+        # 기존 성공 모델의 Part19 순서는 좌하 → 좌상 → 우상 →
+        # 우하였다. 현재 nasa 모델의 실제 좌표로 매핑하면 1, 2, 4, 3이다.
+        # 이름순(1,2,3,4)으로 보내면 3·4번의 물리적 동작 순서가 바뀐다.
         return [
             f"{base}/nasa_1",
             f"{base}/nasa_2",
-            f"{base}/nasa_3",
             f"{base}/nasa_4",
+            f"{base}/nasa_3",
         ]
 
     def debug_log_rigid_body_state(self, step_size: float = 0.0) -> None:

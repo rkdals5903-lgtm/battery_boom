@@ -67,9 +67,16 @@ STABLE_STEPS = 10
 
 PICK_CLEARANCE_M = 0.14
 GAP_ENTRY_CLEARANCE_M = 0.025
-FINGER_INSERTION_DEPTH_M = 0.035
+FINGER_INSERTION_DEPTH_M = 0.020
+# 기준 구현에서 검증된 -Y 5 mm는 유지한다. 통합 씬의 cell_1만 런타임
+# 관찰값에 따라 +X 3 mm 보정하며, overhead/gap/insertion이 같은 XY를 쓴다.
 GRIPPER_PICK_Y_OFFSET_M = -0.005
-GRIPPER_YAW_OFFSET_RAD = np.deg2rad(90.0)
+CELL_PICK_X_CORRECTION_M = {1: 0.003}
+# 기준 씬은 셀의 짧은 변이 world Y라서 +90 deg를 사용한다. 통합 씬처럼
+# 짧은 변이 world X인 경우에는 0 deg가 같은 물리적 short-side grasp다.
+GRIPPER_YAW_SHORT_X_RAD = 0.0
+GRIPPER_YAW_SHORT_Y_RAD = np.deg2rad(90.0)
+CELL_XY_AXIS_MIN_DIFFERENCE_M = 0.010
 GAP_ALIGNMENT_TOLERANCE_M = 0.022
 GAP_ALIGNMENT_TIMEOUT_ACCEPTANCE_M = 0.025
 
@@ -104,28 +111,23 @@ REJECT_JOINT1_OFFSET_RAD = np.deg2rad(-90.0)
 REJECT_VERTICAL_LIFT_M = 0.10
 FACTORY_FLOOR_Z_M = 0.0023
 
-# RG2 그리퍼는 finger_joint 하나만 UsdPhysics.DriveAPI로 실제 구동되고,
-# 나머지 5개(knuckle/finger)는 PhysxMimicJointAPI로 finger_joint에 기계적으로
-# 종속돼 있다(USD에 authored된 gearing: left_inner_knuckle=+1, left_outer_knuckle=+1,
-# right_inner_knuckle=-1, right_inner_finger=+1, left_inner_finger=+1 — 예전에
-# 여기 있던 GRIPPER_MIMIC_SIGNS=[1,-1,-1,1,-1,-1]는 5개 전부 실제 gearing과
-# 부호가 반대였다). 6개 전부에 독립적인 목표값을 보내면 mimic 제약과 서로
-# 힘겨루기를 해서 finger_joint조차 목표에 못 미치고 중간값에 멈춘다
-# (예: target=0.6864인데 actual=0.29 근처에서 timeout). finger_joint만
-# 명령하고 나머지는 PhysX mimic이 알아서 따라가게 한다.
-GRIPPER_JOINTS = ["finger_joint"]
-# 스왑 전/후 상관없이 옆 틀에 걸리는 현상이 동일하게 발생 -> 원인이 이 두 값의
-# 정체(0.60/0.42)가 아니라는 뜻이라 원본 grip_cell_fianl.py(v4) 그대로 되돌린다.
-# GRIPPER_OPEN(0.60)은 좁은 틈을 통과하는 pick 진입 폭, GRIPPER_INSPECTION_RELEASE
-# (0.42)는 검사 중 "더 넓게" 풀어주는 폭이다.
-GRIPPER_OPEN = np.array([0.60])
-# 원본 grip_cell_fianl.py(v4)에 있던 세 번째 그리퍼 개도값 — 셀을 집은 채로
-# 검사 지점까지 옮긴 뒤, 전압 서비스를 호출하기 전에 "완전히 열지 않고" 이
-# 정도까지만 풀어준다(검사 도중 셀이 손가락에 눌려 있지 않게 하기 위함).
-# 응답을 받은 뒤에는 GRIPPER_CLOSED로 다시 쥐고(재파지) 계속 진행한다.
-GRIPPER_INSPECTION_RELEASE = np.array([0.42])
-GRIPPER_CLOSED = np.array([0.6864])
-GRIPPER_CONTACT_MIN_RAD = 0.55
+# grip_cell_final.py에서 검증된 6-DOF RG2 제어값을 그대로 사용한다.
+GRIPPER_DRIVE_JOINTS = [
+    "finger_joint",
+    "left_inner_knuckle_joint",
+    "left_outer_knuckle_joint",
+    "right_inner_knuckle_joint",
+    "right_inner_finger_joint",
+    "left_inner_finger_joint",
+]
+GRIPPER_MIMIC_SIGNS = np.array(
+    [1.0, -1.0, -1.0, 1.0, -1.0, -1.0], dtype=float
+)
+
+GRIPPER_OPEN = 0.60 * GRIPPER_MIMIC_SIGNS
+GRIPPER_INSPECTION_RELEASE = 0.42 * GRIPPER_MIMIC_SIGNS
+GRIPPER_CLOSED = 0.6864 * GRIPPER_MIMIC_SIGNS
+GRIPPER_CONTACT_MIN_RAD = 0.45
 GRIPPER_CONTACT_MAX_RESIDUAL_RAD = 0.13
 
 JOINT_LIMITS_DEG: Dict[str, Tuple[float, float]] = {
@@ -277,6 +279,11 @@ class IntegratedRmpRunner:
         self.robot_root_path = robot_root_path
         self.end_effector_frame_name = end_effector_frame_name
         self.tool_length_m = float(tool_length_m)
+        self.physics_dt = float(world.get_physics_dt())
+        print(
+            f"[GRIP CELL TIMING] world physics_dt={self.physics_dt:.6f}s "
+            f"(grip_cell_final reference={PHYSICS_DT:.6f}s)"
+        )
 
         self.ee_path = _find_prim_path_by_name(stage, robot_root_path, end_effector_frame_name)
         self.base_path = _find_prim_path_by_name(stage, robot_root_path, "base_link")
@@ -363,9 +370,9 @@ class IntegratedRmpRunner:
         tool_offset_world = rotation @ np.array([0.0, 0.0, self.tool_length_m], dtype=float)
         return tcp_position - tool_offset_world
 
-    def set_short_side_grasp_orientation(self) -> None:
+    def set_short_side_grasp_orientation(self, yaw: float) -> None:
         base_rotation = _quat_to_rotation(self.orientation)
-        yaw = GRIPPER_YAW_OFFSET_RAD
+        yaw = float(yaw)
         local_yaw = np.array(
             [
                 [np.cos(yaw), -np.sin(yaw), 0.0],
@@ -433,14 +440,15 @@ class IntegratedRmpRunner:
 
         stable = 0
         best_error = float("inf")
-        max_steps = int(MOVE_TIMEOUT_S / PHYSICS_DT)
+        max_steps = int(MOVE_TIMEOUT_S / self.physics_dt)
+        log_interval = max(1, int(round(1.0 / self.physics_dt)))
         print(f"\n[GRIP CELL MOVE] {label}: link6={np.round(target, 5)}")
         for step in range(max_steps):
             if not self.world.is_playing():
                 raise RuntimeError(f"{label}: World가 재생 중이 아닙니다.")
             self.rmpflow.set_end_effector_target(target, self.orientation)
-            action = self.policy.get_next_articulation_action(PHYSICS_DT)
-            action = self._filter_action(action, PHYSICS_DT)
+            action = self.policy.get_next_articulation_action(self.physics_dt)
+            action = self._filter_action(action, self.physics_dt)
             self.controller.apply_action(action)
             self.world.step(render=True)
             if step_callback is not None:
@@ -449,8 +457,8 @@ class IntegratedRmpRunner:
             error = float(np.linalg.norm(target - np.asarray(actual, dtype=float)))
             best_error = min(best_error, error)
             stable = stable + 1 if error <= tolerance else 0
-            if step % 120 == 0:
-                print(f"  t={step * PHYSICS_DT:5.1f}s error={error * 1000:6.1f} mm")
+            if step % log_interval == 0:
+                print(f"  t={step * self.physics_dt:5.1f}s error={error * 1000:6.1f} mm")
             if stable >= STABLE_STEPS:
                 return
         if timeout_acceptance is not None and best_error <= timeout_acceptance:
@@ -474,7 +482,7 @@ class IntegratedRmpRunner:
             return
         speed_overrides = joint_speed_overrides or {}
         print(f"\n[GRIP CELL HOME] {label}")
-        for _ in range(int(30.0 / PHYSICS_DT)):
+        for _ in range(int(30.0 / self.physics_dt)):
             current_all = np.asarray(self.robot.get_joint_positions(), dtype=float)
             current = current_all[indices]
             delta = targets - current
@@ -488,7 +496,7 @@ class IntegratedRmpRunner:
             for local_i, dof_i in enumerate(indices):
                 name = dof_names[dof_i]
                 max_speed = speed_overrides.get(name, MAX_JOINT_SPEED_RAD_S.get(name, 0.45))
-                step = max_speed * PHYSICS_DT
+                step = max_speed * self.physics_dt
                 command[local_i] += np.clip(delta[local_i], -step, step)
             self.controller.apply_action(
                 ArticulationAction(joint_positions=command, joint_indices=np.asarray(indices, dtype=np.int32))
@@ -604,6 +612,9 @@ class GripCellNode(Node):
         # _command_gripper()가 6-DOF 직접 제어 경로를 쓰는지 fallback을 쓰는지
         # 한 번만 로그로 알려주기 위한 플래그.
         self._gripper_direct_control_logged = False
+        # source close timeout에서 손가락과 주변 물체의 runtime AABB를 비교하기
+        # 위한 현재 pick 컨텍스트. 공정 외 gripper 명령에는 사용하지 않는다.
+        self._pick_collision_context: Optional[dict] = None
 
         # grip_cell_final과 같은 의미를 유지한다.
         self.cell_count = 1
@@ -625,6 +636,7 @@ class GripCellNode(Node):
         self.cell_count = 1
         self.stack_count = 1
         self._captured_battery_root = None
+        self._pick_collision_context = None
 
     def request_start(self, battery_root: Optional[str] = None) -> bool:
         """Cover-open 완료 콜백에서 호출한다. 실제 공정은 update()에서 시작.
@@ -783,25 +795,251 @@ class GripCellNode(Node):
             targets.extend(self._rg2_collision_targets(stage))
         relation.SetTargets(targets)
 
-    def _resolve_direct_gripper_indices(self) -> Optional[list[int]]:
+    def _resolve_direct_gripper_indices(self) -> list[int]:
         indices = []
-        for name in GRIPPER_JOINTS:
+        for name in GRIPPER_DRIVE_JOINTS:
             try:
                 idx = int(self._robot.get_dof_index(name))
             except Exception as exc:
-                self.get_logger().warning(
-                    f"[GRIPPER] '{name}' DOF를 찾지 못해 세밀한 개도 제어(finger_joint 직접 제어)를 "
-                    f"포기하고 open/close만 되는 fallback으로 전환합니다: {exc}. "
-                    f"robot dof_names={list(self._robot.dof_names)}"
-                )
-                return None
+                raise RuntimeError(
+                    f"[GRIPPER] grip_cell_final 필수 DOF '{name}'를 찾지 못했습니다: "
+                    f"{exc}; robot dof_names={list(self._robot.dof_names)}"
+                ) from exc
             if idx < 0:
-                self.get_logger().warning(
-                    f"[GRIPPER] '{name}' DOF index가 음수({idx})라 fallback으로 전환합니다."
+                raise RuntimeError(
+                    f"[GRIPPER] grip_cell_final 필수 DOF '{name}'의 index가 "
+                    f"유효하지 않습니다: {idx}"
                 )
-                return None
             indices.append(idx)
         return indices
+
+    @staticmethod
+    def _aabb_metrics(
+        first_min: np.ndarray,
+        first_max: np.ndarray,
+        second_min: np.ndarray,
+        second_max: np.ndarray,
+    ) -> Tuple[float, bool, float]:
+        """두 world AABB의 최단거리, overlap 여부, overlap 체적을 반환한다."""
+        separation = np.maximum(
+            np.maximum(second_min - first_max, first_min - second_max), 0.0
+        )
+        distance_m = float(np.linalg.norm(separation))
+        overlap_extent = np.maximum(
+            np.minimum(first_max, second_max) - np.maximum(first_min, second_min),
+            0.0,
+        )
+        overlap = bool(np.all(overlap_extent > 0.0))
+        overlap_volume_m3 = float(np.prod(overlap_extent)) if overlap else 0.0
+        return distance_m, overlap, overlap_volume_m3
+
+    @staticmethod
+    def _point_aabb_distance(
+        point: np.ndarray, bbox_min: np.ndarray, bbox_max: np.ndarray
+    ) -> float:
+        separation = np.maximum(np.maximum(bbox_min - point, point - bbox_max), 0.0)
+        return float(np.linalg.norm(separation))
+
+    @staticmethod
+    def _point_aabb_shell_distance(
+        point: np.ndarray, bbox_min: np.ndarray, bbox_max: np.ndarray
+    ) -> float:
+        """Hollow casebase의 외곽 BBox 벽면까지 점의 근사 거리를 구한다."""
+        if np.all(point >= bbox_min) and np.all(point <= bbox_max):
+            return float(np.min(np.concatenate((point - bbox_min, bbox_max - point))))
+        return GripCellNode._point_aabb_distance(point, bbox_min, bbox_max)
+
+    @staticmethod
+    def _aabb_shell_metrics(
+        inner_min: np.ndarray,
+        inner_max: np.ndarray,
+        shell_min: np.ndarray,
+        shell_max: np.ndarray,
+    ) -> Tuple[float, bool, float]:
+        """Hollow outer AABB 안쪽 물체와 가장 가까운 벽면 clearance를 계산한다."""
+        fully_inside = bool(
+            np.all(inner_min >= shell_min) and np.all(inner_max <= shell_max)
+        )
+        if fully_inside:
+            clearance_m = float(
+                np.min(
+                    np.concatenate((inner_min - shell_min, shell_max - inner_max))
+                )
+            )
+            return clearance_m, False, 0.0
+        return GripCellNode._aabb_metrics(
+            inner_min, inner_max, shell_min, shell_max
+        )
+
+    def _log_pick_collision_diagnostic(self) -> None:
+        """현재 TCP/손가락 AABB와 source cell/casebase AABB를 비교한다."""
+        context = self._pick_collision_context
+        if not context:
+            self.get_logger().error(
+                "[COLLISION DIAGNOSTIC] active pick context가 없어 대상을 판별할 수 없습니다."
+            )
+            return
+
+        try:
+            stage = omni.usd.get_context().get_stage()
+            link6_position, link6_orientation = self._robot.end_effector.get_world_pose()
+            link6_position = np.asarray(link6_position, dtype=float)
+            link6_orientation = np.asarray(link6_orientation, dtype=float)
+            current_tcp = link6_position + _quat_to_rotation(link6_orientation) @ np.array(
+                [0.0, 0.0, self._tool_length_m], dtype=float
+            )
+
+            candidates = []
+            target_cell_path = str(context["target_cell_path"])
+            for cell_index, cell_path in context["source_cell_paths"].items():
+                bbox_min, bbox_max = _bbox(stage, str(cell_path))
+                candidates.append(
+                    {
+                        "name": f"cell_{cell_index}",
+                        "path": str(cell_path),
+                        "bbox_min": bbox_min,
+                        "bbox_max": bbox_max,
+                        "is_target_cell": str(cell_path) == target_cell_path,
+                        "is_casebase": False,
+                    }
+                )
+
+            casebase_path = str(context["source_casebase"])
+            casebase_prim = stage.GetPrimAtPath(casebase_path)
+            casebase_meshes = [
+                prim
+                for prim in Usd.PrimRange(casebase_prim)
+                if prim.IsValid() and prim.IsActive() and prim.IsA(UsdGeom.Mesh)
+            ]
+            # Hollow casebase 전체 AABB는 빈 내부까지 채우므로 wall 오탐이 난다.
+            # 가능한 경우 descendant mesh별 AABB를 사용하고, mesh가 없을 때만
+            # casebase root AABB로 fallback한다.
+            if casebase_meshes:
+                for mesh in casebase_meshes:
+                    bbox_min, bbox_max = _bbox(stage, str(mesh.GetPath()))
+                    candidates.append(
+                        {
+                            "name": "casebase",
+                            "path": str(mesh.GetPath()),
+                            "bbox_min": bbox_min,
+                            "bbox_max": bbox_max,
+                            "is_target_cell": False,
+                            "is_casebase": True,
+                        }
+                    )
+            else:
+                bbox_min, bbox_max = _bbox(stage, casebase_path)
+                candidates.append(
+                    {
+                        "name": "casebase",
+                        "path": casebase_path,
+                        "bbox_min": bbox_min,
+                        "bbox_max": bbox_max,
+                        "is_target_cell": False,
+                        "is_casebase": True,
+                    }
+                )
+
+            self.get_logger().error(
+                f"[COLLISION DIAGNOSTIC] current_tcp={np.round(current_tcp, 5)}, "
+                f"link6={np.round(link6_position, 5)}"
+            )
+            for candidate in candidates:
+                target_note = " target-cell" if candidate["is_target_cell"] else ""
+                self.get_logger().error(
+                    f"[COLLISION DIAGNOSTIC] candidate={candidate['name']}"
+                    f"{target_note}, bbox_min={np.round(candidate['bbox_min'], 5)}, "
+                    f"bbox_max={np.round(candidate['bbox_max'], 5)}, "
+                    f"prim={candidate['path']}"
+                )
+
+            tcp_nearest = min(
+                candidates,
+                key=lambda item: (
+                    self._point_aabb_shell_distance(
+                        current_tcp, item["bbox_min"], item["bbox_max"]
+                    )
+                    if item["is_casebase"]
+                    else self._point_aabb_distance(
+                        current_tcp, item["bbox_min"], item["bbox_max"]
+                    )
+                ),
+            )
+            tcp_distance_m = (
+                self._point_aabb_shell_distance(
+                    current_tcp, tcp_nearest["bbox_min"], tcp_nearest["bbox_max"]
+                )
+                if tcp_nearest["is_casebase"]
+                else self._point_aabb_distance(
+                    current_tcp, tcp_nearest["bbox_min"], tcp_nearest["bbox_max"]
+                )
+            )
+            self.get_logger().error(
+                f"[COLLISION DIAGNOSTIC] TCP nearest target: {tcp_nearest['name']} "
+                f"(distance: {tcp_distance_m * 1000.0:.1f} mm, "
+                f"prim={tcp_nearest['path']})"
+            )
+
+            finger_specs = (
+                ("Left finger", "left_inner_finger"),
+                ("Right finger", "right_inner_finger"),
+            )
+            for display_name, prim_name in finger_specs:
+                finger_path = _find_prim_path_by_name(
+                    stage, self._robot_root_path, prim_name
+                )
+                if finger_path is None:
+                    self.get_logger().error(
+                        f"[COLLISION DIAGNOSTIC] {display_name} prim을 찾지 못했습니다: "
+                        f"name={prim_name}"
+                    )
+                    continue
+                finger_min, finger_max = _bbox(stage, finger_path)
+                finger_center = 0.5 * (finger_min + finger_max)
+
+                ranked = []
+                for candidate in candidates:
+                    metrics = (
+                        self._aabb_shell_metrics(
+                            finger_min,
+                            finger_max,
+                            candidate["bbox_min"],
+                            candidate["bbox_max"],
+                        )
+                        if candidate["is_casebase"]
+                        else self._aabb_metrics(
+                            finger_min,
+                            finger_max,
+                            candidate["bbox_min"],
+                            candidate["bbox_max"],
+                        )
+                    )
+                    distance_m, overlap, overlap_volume_m3 = metrics
+                    ranked.append(
+                        (distance_m, -overlap_volume_m3, overlap, candidate)
+                    )
+                distance_m, negative_overlap_volume, overlap, likely = min(
+                    ranked, key=lambda item: (item[0], item[1])
+                )
+                target_note = " target-cell" if likely["is_target_cell"] else ""
+                self.get_logger().error(
+                    f"[COLLISION DIAGNOSTIC] {display_name} world_center="
+                    f"{np.round(finger_center, 5)}, bbox_min={np.round(finger_min, 5)}, "
+                    f"bbox_max={np.round(finger_max, 5)}"
+                )
+                self.get_logger().error(
+                    f"[COLLISION DIAGNOSTIC] {display_name} likely hit target: "
+                    f"{likely['name']}{target_note} "
+                    f"(distance: {distance_m * 1000.0:.1f} mm, "
+                    f"bbox_overlap={overlap}, "
+                    f"overlap_volume={-negative_overlap_volume * 1.0e9:.1f} mm^3, "
+                    f"prim={likely['path']})"
+                )
+        except Exception as exc:
+            # 진단 실패가 원래 gripper timeout을 덮어쓰지 않게 한다.
+            self.get_logger().error(
+                f"[COLLISION DIAGNOSTIC] 진단 계산 실패: {type(exc).__name__}: {exc}"
+            )
 
     def _command_gripper(
         self,
@@ -813,35 +1051,36 @@ class GripCellNode(Node):
         """target은 GRIPPER_OPEN/GRIPPER_INSPECTION_RELEASE/GRIPPER_CLOSED 중 하나를
         그대로 넘긴다 — 원본 grip_cell_fianl.py의 command_gripper()처럼 열림 정도를
         세 단계로 세밀하게 구분한다(단순 open/closed 이진값이 아니다)."""
-        target = np.asarray(target, dtype=float)
+        target = np.asarray(target, dtype=float).reshape(-1)
         indices = self._resolve_direct_gripper_indices()
         controller = self._robot.get_articulation_controller()
-        if indices is None:
-            # main.py의 ParallelGripper가 2개 joint만 등록된 USD용 fallback.
-            # 이 경로는 open/close 두 상태만 지원해서 GRIPPER_INSPECTION_RELEASE도
-            # "open"으로 근사한다(완전 열림보다는 낫지만 세밀한 개도는 없다).
-            action_name = "close" if np.allclose(target, GRIPPER_CLOSED) else "open"
-            self.get_logger().warning(
-                f"[GRIPPER] {label}: fallback 경로 사용 중 -> action='{action_name}' "
-                "(GRIPPER_INSPECTION_RELEASE와 GRIPPER_OPEN이 여기서는 둘 다 'open'으로 "
-                "보여 개도 차이가 시각적으로 구분되지 않습니다)"
-            )
-            controller.apply_action(self._robot.gripper.forward(action=action_name))
-            for _ in range(120):
-                self._world.step(render=True)
-            return
         if not self._gripper_direct_control_logged:
             self._gripper_direct_control_logged = True
             self.get_logger().info(
-                f"[GRIPPER] finger_joint 직접 제어 사용(나머지 5개는 PhysX mimic으로 자동 추종): "
-                f"{dict(zip(GRIPPER_JOINTS, indices))}"
+                f"[GRIPPER] grip_cell_final 6-DOF signed 제어: "
+                f"{dict(zip(GRIPPER_DRIVE_JOINTS, indices))}"
             )
 
-        current = None
-        initial = None
+        positions_before_command = np.asarray(
+            self._robot.get_joint_positions(), dtype=float
+        )[indices]
+        initial = positions_before_command.copy()
+        current = np.full(target.shape, np.nan, dtype=float)
         previous = None
-        stalled = 0
-        for _ in range(180):
+        stalled_steps = 0
+        self.get_logger().info(
+            f"[GRIPPER BEFORE] {label}: actual={np.round(positions_before_command, 4)}, "
+            f"target={np.round(target, 4)}"
+        )
+        # grip_cell_final의 120 Hz 기준(180 frames=1.5 s, contact stall
+        # 60 frames=0.5 s)을 통합 World의 실제 physics_dt에 맞춰 같은 시간으로
+        # 환산한다. 통합 World가 60 Hz일 때 불필요하게 두 배 느려지지 않는다.
+        physics_dt = float(self._world.get_physics_dt())
+        command_steps = max(1, int(round(180 * PHYSICS_DT / physics_dt)))
+        contact_stall_steps = max(1, int(round(60 * PHYSICS_DT / physics_dt)))
+        movement_threshold = 5.0e-4 * physics_dt / PHYSICS_DT
+        progress_interval = max(1, command_steps // 3)
+        for step in range(command_steps):
             controller.apply_action(
                 ArticulationAction(
                     joint_positions=target.copy(),
@@ -853,29 +1092,41 @@ class GripCellNode(Node):
             if all_pos is None:
                 continue
             current = np.asarray(all_pos, dtype=float)[indices]
-            if initial is None:
-                initial = current.copy()
             if float(np.max(np.abs(current - target))) <= 0.01:
                 return
             if accept_contact and previous is not None:
                 movement = float(np.max(np.abs(current - previous)))
-                stalled = stalled + 1 if movement < 5.0e-4 else 0
-                if stalled >= 60 and float(current[0]) >= contact_min_rad:
+                stalled_steps = stalled_steps + 1 if movement < movement_threshold else 0
+                if stalled_steps >= contact_stall_steps and float(current[0]) >= contact_min_rad:
                     return
+            if step == 0 or (step + 1) % progress_interval == 0:
+                self.get_logger().info(
+                    f"[GRIPPER PROGRESS] {label}: step={step + 1}, "
+                    f"target={np.round(target, 4)}, "
+                    f"actual={np.round(current, 4)}, stalled={stalled_steps}"
+                )
             previous = current.copy()
-        if accept_contact and current is not None:
+        if accept_contact:
             residual = float(np.max(np.abs(target - current)))
             if float(current[0]) >= contact_min_rad and residual <= GRIPPER_CONTACT_MAX_RESIDUAL_RAD:
                 return
-        raise TimeoutError(f"RG2 {label} timeout: target={target}, actual={current}")
+        timeout_message = (
+            f"RG2 {label} timeout: target={target}, actual={current}, "
+            f"initial={initial}"
+        )
+        self.get_logger().error(f"[GRIPPER TIMEOUT] {timeout_message}")
+        if accept_contact and "closed on cell contact" in label:
+            self._log_pick_collision_diagnostic()
+        raise TimeoutError(timeout_message)
 
     def _rotate_joint1_for_reject(self, follower: KinematicCellFollower, home_by_name: Dict[str, float]) -> None:
         dof_names = list(self._robot.dof_names)
         j1 = dof_names.index("joint_1")
         controller = self._robot.get_articulation_controller()
         target = float(home_by_name["joint_1"] + REJECT_JOINT1_OFFSET_RAD)
-        max_step = MAX_JOINT_SPEED_RAD_S["joint_1"] * PHYSICS_DT
-        for _ in range(int(30.0 / PHYSICS_DT)):
+        physics_dt = float(self._world.get_physics_dt())
+        max_step = MAX_JOINT_SPEED_RAD_S["joint_1"] * physics_dt
+        for _ in range(int(30.0 / physics_dt)):
             current = np.asarray(self._robot.get_joint_positions(), dtype=float)
             error = target - current[j1]
             command = current[j1] + float(np.clip(error, -max_step, max_step))
@@ -998,9 +1249,37 @@ class GripCellNode(Node):
                 np.asarray(current_orientation, dtype=float)
             )
 
-        runner.set_short_side_grasp_orientation()
+        orientation_cell_min, orientation_cell_max = _bbox(
+            stage, source_cell_paths[1]
+        )
+        orientation_cell_xy_size = (
+            orientation_cell_max[:2] - orientation_cell_min[:2]
+        )
+        xy_axis_difference = float(
+            abs(orientation_cell_xy_size[0] - orientation_cell_xy_size[1])
+        )
+        if xy_axis_difference < CELL_XY_AXIS_MIN_DIFFERENCE_M:
+            raise RuntimeError(
+                "cell_1 runtime bbox의 X/Y 짧은 축을 판정할 수 없습니다: "
+                f"xy_size={np.round(orientation_cell_xy_size, 5)}, "
+                f"minimum_difference={CELL_XY_AXIS_MIN_DIFFERENCE_M:.3f} m"
+            )
+        if orientation_cell_xy_size[0] < orientation_cell_xy_size[1]:
+            short_axis = "X"
+            grasp_yaw = GRIPPER_YAW_SHORT_X_RAD
+        else:
+            short_axis = "Y"
+            grasp_yaw = GRIPPER_YAW_SHORT_Y_RAD
+        runner.set_short_side_grasp_orientation(grasp_yaw)
+        self.get_logger().info(
+            f"[GRIP CELL ORIENTATION] cell_1_xy_size="
+            f"{np.round(orientation_cell_xy_size, 5)}, short_axis={short_axis}, "
+            f"yaw_offset_deg={math.degrees(grasp_yaw):.1f}"
+        )
 
-        self._command_gripper(GRIPPER_OPEN, "grip-cell 시작 전 초기 오픈")
+        # grip_cell_final.py와 동일하게 안전한 시작 자세에서 6축 open target을
+        # 먼저 정착시킨 뒤 source 접근을 시작한다.
+        self._command_gripper(GRIPPER_OPEN, "initial side-grip open")
         all_current = np.asarray(self._robot.get_joint_positions(), dtype=float)
         dof_names = list(self._robot.dof_names)
         home_by_name = {
@@ -1009,7 +1288,7 @@ class GripCellNode(Node):
             if name in dof_names
         }
 
-        old_case_min, _ = _bbox(stage, source_casebase)
+        old_case_min, old_case_max = _bbox(stage, source_casebase)
         new_case_min, _ = _bbox(stage, new_casebase)
         case_delta = new_case_min - old_case_min
 
@@ -1028,18 +1307,38 @@ class GripCellNode(Node):
             root_to_center = cell_center - np.asarray(initial_root, dtype=float)
             cell_half_height = 0.5 * float(cell_max[2] - cell_min[2])
 
+            pick_xy_offset = np.array(
+                [
+                    CELL_PICK_X_CORRECTION_M.get(self.cell_count, 0.0),
+                    GRIPPER_PICK_Y_OFFSET_M,
+                ],
+                dtype=float,
+            )
+            approach_xy = cell_center[:2] + pick_xy_offset
+
+            # 세 지점을 하나의 XY에서 각각 생성한다. 따라서 source overhead에서
+            # gap entry를 거쳐 side insertion까지 목표 궤적은 Z축으로만 변한다.
             pick_tcp = cell_center.copy()
-            pick_tcp[1] += GRIPPER_PICK_Y_OFFSET_M
+            pick_tcp[:2] = approach_xy
             pick_tcp[2] = cell_max[2] - FINGER_INSERTION_DEPTH_M
-            pick_overhead = pick_tcp + np.array([0.0, 0.0, PICK_CLEARANCE_M])
-            gap_entry = pick_tcp.copy()
-            gap_entry[2] = cell_max[2] + GAP_ENTRY_CLEARANCE_M
+
+            gap_entry_tcp = cell_center.copy()
+            gap_entry_tcp[:2] = approach_xy
+            gap_entry_tcp[2] = cell_max[2] + GAP_ENTRY_CLEARANCE_M
+
+            pick_overhead_tcp = cell_center.copy()
+            pick_overhead_tcp[:2] = approach_xy
+            pick_overhead_tcp[2] = pick_tcp[2] + PICK_CLEARANCE_M
             tcp_above_cell_center = pick_tcp - cell_center
+
+            pick_link6 = runner.tcp_to_link6(pick_tcp)
+            gap_entry_link6 = runner.tcp_to_link6(gap_entry_tcp)
+            pick_overhead_link6 = runner.tcp_to_link6(pick_overhead_tcp)
 
             # 다른 씬 전용 검사대 좌표(INSPECTION_SURFACE_IN_BASE 등, 위 상수 설명
             # 참고) 대신, 이미 도달 가능함이 검증된 pick_overhead 바로 위로 더
             # 들어올린 지점을 검사 위치로 쓴다.
-            inspection_tcp = pick_overhead + np.array([0.0, 0.0, INSPECTION_EXTRA_LIFT_M])
+            inspection_tcp = pick_overhead_tcp + np.array([0.0, 0.0, INSPECTION_EXTRA_LIFT_M])
             inspection_overhead = inspection_tcp + np.array([0.0, 0.0, INSPECTION_CLEARANCE_M])
             inspection_safe = inspection_tcp + np.array([0.0, 0.0, POST_SERVICE_TRANSFER_CLEARANCE_M])
 
@@ -1052,22 +1351,54 @@ class GripCellNode(Node):
 
             self.get_logger().info(
                 f"[CELL {self.cell_count}] stack_slot={self.stack_count}, "
-                f"source={source_cell_path}"
+                f"source={source_cell_path}, pick_xy_offset={np.round(pick_xy_offset, 4)}"
+            )
+            self.get_logger().info(
+                f"[GRIP CELL GEOMETRY] cell_{self.cell_count}: "
+                f"cell_bbox_min={np.round(cell_min, 5)}, "
+                f"cell_bbox_max={np.round(cell_max, 5)}, "
+                f"cell_center={np.round(cell_center, 5)}, "
+                f"casebase_bbox_min={np.round(old_case_min, 5)}, "
+                f"casebase_bbox_max={np.round(old_case_max, 5)}"
+            )
+            self.get_logger().info(
+                f"[GRIP CELL TARGETS] cell_{self.cell_count}: "
+                f"overhead_tcp={np.round(pick_overhead_tcp, 5)}, "
+                f"gap_entry_tcp={np.round(gap_entry_tcp, 5)}, "
+                f"pick_tcp={np.round(pick_tcp, 5)}, "
+                f"overhead_link6={np.round(pick_overhead_link6, 5)}, "
+                f"gap_entry_link6={np.round(gap_entry_link6, 5)}, "
+                f"pick_link6={np.round(pick_link6, 5)}"
             )
 
-            # 예전엔 여기서 매 셀마다 GRIPPER_OPEN(0.60)으로 다시 열었는데, 팔이
-            # 아직 이전 사이클 마지막 자세(예: new_case 후퇴 지점)에 머물러 있는
-            # 채로 그리퍼만 먼저 벌어진 뒤 이동이 시작돼 "도달 후 다시 벌리고
-            # 내려가는" 것처럼 보이는 원인이었다. 직전 릴리즈 폭(성공 시 0.60로
-            # 이미 동일, 반려 시 0.42로 오히려 더 넓음)을 그대로 들고 진입해도
-            # 접촉 시 자동으로 닫히므로(accept_contact=True) 집는 데는 문제
-            # 없어서 제거한다.
-            runner.move(runner.tcp_to_link6(pick_overhead), f"cell_{self.cell_count} source overhead", 0.025, timeout_acceptance=0.030)
-            runner.move(runner.tcp_to_link6(gap_entry), f"cell_{self.cell_count} gap entry", GAP_ALIGNMENT_TOLERANCE_M, timeout_acceptance=GAP_ALIGNMENT_TIMEOUT_ACCEPTANCE_M)
-            runner.move(runner.tcp_to_link6(pick_tcp), f"cell_{self.cell_count} side insertion", GAP_ALIGNMENT_TOLERANCE_M, timeout_acceptance=GAP_ALIGNMENT_TIMEOUT_ACCEPTANCE_M)
+            # grip_cell_final.py의 셀별 시작 순서와 동일하다.
             self._command_gripper(
-                GRIPPER_CLOSED, f"cell_{self.cell_count} closed on cell contact", accept_contact=True
+                GRIPPER_OPEN, f"cell_{self.cell_count} open before source approach"
             )
+            runner.move(pick_overhead_link6, f"cell_{self.cell_count} source overhead", 0.025, timeout_acceptance=0.030)
+            runner.move(gap_entry_link6, f"cell_{self.cell_count} gap entry", GAP_ALIGNMENT_TOLERANCE_M, timeout_acceptance=GAP_ALIGNMENT_TIMEOUT_ACCEPTANCE_M)
+            gripper_indices = self._resolve_direct_gripper_indices()
+            gripper_before_descent = np.asarray(
+                self._robot.get_joint_positions(), dtype=float
+            )[gripper_indices]
+            self.get_logger().info(
+                f"[GRIPPER BEFORE DESCENT] cell_{self.cell_count}: "
+                f"actual={np.round(gripper_before_descent, 4)}, "
+                f"open_target={np.round(GRIPPER_OPEN, 4)}"
+            )
+            runner.move(pick_link6, f"cell_{self.cell_count} side insertion", GAP_ALIGNMENT_TOLERANCE_M, timeout_acceptance=GAP_ALIGNMENT_TIMEOUT_ACCEPTANCE_M)
+            self._pick_collision_context = {
+                "target_cell_path": source_cell_path,
+                "source_cell_paths": source_cell_paths.copy(),
+                "source_casebase": source_casebase,
+            }
+            self._command_gripper(
+                GRIPPER_CLOSED,
+                f"cell_{self.cell_count} closed on cell contact",
+                accept_contact=True,
+                contact_min_rad=0.45,
+            )
+            self._pick_collision_context = None
 
             # 실제 파지가 끝난 뒤 joint를 해제한다. cover-open 완료가 이 공정의
             # 시작 조건이므로 source battery는 이미 열린 상태다.
@@ -1082,7 +1413,7 @@ class GripCellNode(Node):
                 np.asarray(initial_orientation, dtype=float),
             )
             before_lift, _ = cell_obj.get_world_pose()
-            runner.move(runner.tcp_to_link6(pick_overhead), f"cell_{self.cell_count} lift", 0.045, follower.update, 0.070)
+            runner.move(runner.tcp_to_link6(pick_overhead_tcp), f"cell_{self.cell_count} lift", 0.045, follower.update, 0.070)
             after_lift, _ = cell_obj.get_world_pose()
             lift_delta = np.asarray(after_lift, dtype=float) - np.asarray(before_lift, dtype=float)
             if float(lift_delta[2]) < 0.04:
@@ -1134,13 +1465,13 @@ class GripCellNode(Node):
             )
 
             # 합격/불량 어느 쪽이든 다음 동작(new_case 이송 또는 폐기 회전) 전에
-            # 다시 꽉 쥔다 — 원본도 두 분기 모두 동일하게 재파지부터 시작하고,
-            # 이때 접촉 판정 기준도 초기 파지(0.55)보다 낮은 0.50을 쓴다.
+            # 다시 꽉 쥔다. 얕은 20 mm 파지에서는 완전히 닫히지 않아도 접촉으로
+            # 인정하도록 초기 파지와 재파지 모두 0.45 기준을 사용한다.
             self._command_gripper(
                 GRIPPER_CLOSED,
                 f"cell_{self.cell_count} re-grasp after service",
                 accept_contact=True,
-                contact_min_rad=0.50,
+                contact_min_rad=0.45,
             )
 
             if inspection_ok:
