@@ -2,6 +2,7 @@ from typing import Callable, Optional
 
 import numpy as np
 import omni.usd
+from pxr import PhysxSchema, Usd, UsdPhysics
 from rclpy.node import Node
 from std_srvs.srv import Trigger
 from isaacsim.core.utils.types import ArticulationAction
@@ -138,6 +139,51 @@ class BatteryCoverDropNode(Node):
             self._robot.gripper.open()
             self._world.step(render=True)
 
+    def _disable_discarded_cover_physics(self, battery_path: str) -> None:
+        """이미 버린 cover 조립체가 다음 cover와 충돌하지 않도록 물리만 끈다.
+
+        Box_casecover 안에 이전 casecover/nasa가 dynamic rigid body로 남아 있으면
+        다음 cover가 같은 위치에 떨어질 때 강한 충돌 반발로 튀어 오른다. 시각
+        모델과 RigidBody actor는 그대로 두되 collision만 session layer에서
+        비활성화해서 다음 폐기 사이클의 물리 충돌 대상에서 뺀다. RigidBody 자체를
+        끄면 PhysX tensor simulationView가 invalidation되어 바로 다음 RG2 공정의
+        get_world_pose()가 실패한다.
+        """
+        stage = omni.usd.get_context().get_stage()
+        roots = [f"{battery_path}/casecover"] + [
+            f"{battery_path}/nasa_{index}" for index in range(1, 5)
+        ]
+        previous_target = stage.GetEditTarget()
+        disabled_colliders = 0
+        frozen_bodies = 0
+        try:
+            stage.SetEditTarget(stage.GetSessionLayer())
+            for root_path in roots:
+                root = stage.GetPrimAtPath(root_path)
+                if not root.IsValid():
+                    continue
+                for prim in Usd.PrimRange(root):
+                    if prim.HasAPI(UsdPhysics.CollisionAPI):
+                        UsdPhysics.CollisionAPI(
+                            prim
+                        ).CreateCollisionEnabledAttr().Set(False)
+                        disabled_colliders += 1
+                    if prim.HasAPI(UsdPhysics.RigidBodyAPI):
+                        rigid = UsdPhysics.RigidBodyAPI(prim)
+                        rigid.CreateKinematicEnabledAttr().Set(True)
+                        frozen_bodies += 1
+                    if prim.HasAPI(PhysxSchema.PhysxRigidBodyAPI):
+                        PhysxSchema.PhysxRigidBodyAPI(
+                            prim
+                        ).CreateDisableGravityAttr().Set(True)
+        finally:
+            stage.SetEditTarget(previous_target)
+        self.get_logger().info(
+            f"[COVER DROP CLEANUP] discarded cover physics disabled: "
+            f"battery={battery_path}, frozen_bodies={frozen_bodies}, "
+            f"colliders={disabled_colliders}"
+        )
+
     def _handle_run(self, request, response) -> Trigger.Response:
         self.get_logger().info("[REQUEST] 배터리 폐기(공장 바닥 투하) 시작")
         # INIT_HOME(컨트롤러 자체 관절 목표, 기본 180,0,90,0,90,0도)까지 타면
@@ -221,6 +267,8 @@ class BatteryCoverDropNode(Node):
                 response.message = "world가 재생 중이 아니어서 중단됨"
             else:
                 response.message = "흡착 실패로 배터리를 집지 못해 폐기 중단"
+            if response.success and battery_path:
+                self._disable_discarded_cover_physics(battery_path)
             if response.success and self._on_cover_dropped is not None and battery_path:
                 accepted = bool(self._on_cover_dropped(battery_path))
                 if not accepted:

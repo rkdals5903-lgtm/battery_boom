@@ -39,7 +39,7 @@ class VG10OutfeedNode(Node):
         end_effector_offset: np.ndarray,
         controller_kwargs: dict,
         node_name: str = "vg10_outfeed_node",
-        service_name: str = "/vg10_outfeed/run_belt_to_pallet",
+        service_name: str = "/lastpickandplace",
         stack_height_step_m: float = 0.05,
         get_pick_yaw_deg: Optional[Callable[[str], float]] = None,
     ) -> None:

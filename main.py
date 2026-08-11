@@ -2191,10 +2191,13 @@ def main() -> None:
     # 끝나면(아래 battery_cover_drop_node의 on_cover_dropped) grip_cell_node.
     # request_start()가 호출돼 다음 프레임 update()에서 셀 공정이 시작된다.
     #
-    # 전압 서버를 통합 프로세스에 함께 둔다. GripCellNode 전체 공정은 한 번의
+    # 전압 서버는 통합 프로세스에 함께 둔다. GripCellNode 전체 공정은 한 번의
     # update() 안에서 world.step()을 반복하므로 자기 ROS 서비스를 기다리면 main의
     # spin_once가 돌지 않아 교착된다. 따라서 내부 공정은 sample_voltage()를 직접
     # 호출하고, /check_voltage 서비스는 외부 진단 호출용으로 계속 제공한다.
+    #
+    # CNN 외형검사는 /home/rokey/cnn/cell_inspection_node.py를 별도 ROS2 노드로
+    # 실행하고, 여기서는 /inspect_cell 서비스 클라이언트로 호출만 한다.
     # --------------------------------------------------------
     battery_voltage_server = BatteryVoltageServer()
     grip_cell_node = GripCellNode(
@@ -2344,6 +2347,7 @@ def main() -> None:
     print("완성 new_case 출고: /vg10_pallet/run_completed_newcase_to_conveyor service 대기 중 (나사 조임 완료 시 자동 시작)")
     print("VG10 출고  : /vg10_outfeed/run_belt_to_pallet service 대기 중 (좌표 미입력, TODO)")
     print("전압 검사  : 통합 BatteryVoltageServer 직접 샘플링 (/check_voltage도 제공)")
+    print("CNN 외형검사: 별도 cell_inspection_node.py의 /inspect_cell service 호출")
     print("=" * 60 + "\n")
 
     was_playing = False

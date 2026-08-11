@@ -9,9 +9,10 @@
 - cover-open 완료 콜백이 ``request_start()``를 호출하면 다음 main loop의
   ``update()``에서 공정을 시작한다. 따라서 기존 mock ``/suction_cover_opened``
   서버는 필요하지 않다.
-- 검사 결과는 main.py가 통합 생성한 BatteryVoltageServer의 샘플 콜백으로
-  결정한다. 콜백이 없는 독립 실행 구성에서는 ``/check_voltage`` ROS2
-  서비스를 호출한다(``_sample_voltage_via_service()``).
+- 검사 결과는 전압 검사와 CNN 외형 검사를 모두 통과해야 정상으로 결정한다.
+  전압은 main.py가 통합 생성한 BatteryVoltageServer의 샘플 콜백을 우선 쓰고,
+  콜백이 없는 독립 실행 구성에서는 ``/check_voltage`` ROS2 서비스를 호출한다.
+  CNN 외형 검사는 ``/inspect_cell`` Trigger 서비스를 호출한다.
 - 판정 임계값(``voltage_threshold``)은 main.py에서 상수로 주입한다
   (BatteryVoltageServer.MEAN_VOLTAGE=11.0V 참고).
   voltage < threshold -> False, voltage >= threshold -> True이다.
@@ -784,11 +785,13 @@ class GripCellNode(Node):
         start_service_name: str = "/start_grip_cell_process",
         cover_close_service_name: str = "/suction_cover_close",
         voltage_service_name: str = "/check_voltage",
+        inspection_service_name: str = "/inspect_cell",
         pallet_service_name: str = PALLET_ROBOT_START_SERVICE_NAME,
         hijack_cleared_service_name: str = HIJACK_ROBOT_CLEARED_SERVICE_NAME,
         sample_voltage: Optional[Callable[[], float]] = None,
         progress_cover_close: Optional[Callable[[], None]] = None,
         progress_pallet: Optional[Callable[[], None]] = None,
+        progress_inspection: Optional[Callable[[], None]] = None,
         pre_grip_joint_degrees: Optional[Dict[str, float]] = None,
         node_name: str = "grip_cell_node",
     ) -> None:
@@ -823,11 +826,14 @@ class GripCellNode(Node):
         # "따로 실행되고 있는 BatteryVoltageServer node에 서비스를 보내 전압을 확인").
         self._voltage_client = self.create_client(Trigger, voltage_service_name)
         self._voltage_service_name = voltage_service_name
+        self._inspection_client = self.create_client(Trigger, inspection_service_name)
+        self._inspection_service_name = inspection_service_name
         self._sample_voltage = sample_voltage
         # /suction_cover_close 서버가 같은 프로세스에 있을 때 GripCellNode의
         # blocking update 안에서도 그 서버 callback을 진행시키는 hook이다.
         self._progress_cover_close = progress_cover_close
         self._progress_pallet = progress_pallet
+        self._progress_inspection = progress_inspection
         self._cover_close_future = None
 
         self._pending_start = False
@@ -865,7 +871,8 @@ class GripCellNode(Node):
 
         self.get_logger().info(
             f"[READY] service={start_service_name}, voltage threshold="
-            f"{self._voltage_threshold:.2f} V, close={cover_close_service_name}"
+            f"{self._voltage_threshold:.2f} V, cnn={inspection_service_name}, "
+            f"close={cover_close_service_name}"
         )
 
     @property
@@ -2315,6 +2322,57 @@ class GripCellNode(Node):
             raise RuntimeError(f"{self._voltage_service_name} 실패 응답: {response.message}")
         return float(response.message)
 
+    def _inspect_cell_via_cnn_service(self) -> Tuple[Optional[bool], str]:
+        """Call the CNN inspection Trigger service after camera clearance.
+
+        /home/rokey/cnn/cell_inspection_node.py는 top/side ROS Image 최신 프레임을
+        계속 보관하다가 이 Trigger가 들어온 순간의 두 프레임을 CNN에 넣는다.
+        통합 main.py에서는 이 서비스를 제공하지 않는다. /home/rokey/cnn의
+        cell_inspection_node.py를 별도 ROS2 노드로 띄워두면 여기서는 client로
+        Trigger만 보낸다. progress hook은 테스트에서 같은 프로세스에 넣는 경우를
+        위한 선택 경로다.
+        """
+        started = time.monotonic()
+        while not self._inspection_client.service_is_ready():
+            if time.monotonic() - started > 10.0:
+                raise TimeoutError(
+                    f"{self._inspection_service_name} CNN 검사 서비스가 준비되지 않았습니다"
+                )
+            if self._progress_inspection is not None:
+                self._progress_inspection()
+            rclpy.spin_once(self, timeout_sec=0.0)
+            self._world.step(render=True)
+
+        if self._progress_inspection is not None:
+            # 같은 프로세스 테스트 구성에서만 CNN 노드의 image subscription
+            # callback을 미리 진행시킨다. 별도 노드 구성에서는 그 노드가 스스로
+            # spin 중이므로 여기서 할 일이 없다.
+            for _ in range(30):
+                self._progress_inspection()
+                rclpy.spin_once(self, timeout_sec=0.0)
+                self._world.step(render=True)
+
+        future = self._inspection_client.call_async(Trigger.Request())
+        started = time.monotonic()
+        while not future.done():
+            if time.monotonic() - started > 30.0:
+                raise TimeoutError(
+                    f"{self._inspection_service_name} CNN 검사 응답 timeout"
+                )
+            if self._progress_inspection is not None:
+                self._progress_inspection()
+            rclpy.spin_once(self, timeout_sec=0.0)
+            if not future.done():
+                self._world.step(render=True)
+
+        response = future.result()
+        if response is None:
+            raise RuntimeError(f"{self._inspection_service_name} CNN 검사 응답이 없습니다")
+        message = str(response.message)
+        if response.success or message.startswith("판정="):
+            return bool(response.success), message
+        return None, message
+
     # -------------------------------------------------------------------------
     # process
     # -------------------------------------------------------------------------
@@ -2840,14 +2898,33 @@ class GripCellNode(Node):
                 "delta=[0.00 0.00 0.15] m"
             )
 
-            # mock_inspection_true/false 대체 지점. 별도 프로세스의 BatteryVoltageServer에
-            # 실제 ROS2 서비스 콜로 전압을 물어본다(같은 프로세스 안에서 직접
-            # 함수 호출하지 않는다).
+            # mock_inspection_true/false 대체 지점. 전압과 CNN 외형 검사를 모두
+            # 통과해야 정상 셀로 본다. CNN 노드는 /home/rokey/cnn의 학습 설정과
+            # 모델(cell_classifier_final.pt)을 그대로 사용하며, 이 시점의 top/side
+            # 최신 카메라 프레임을 Trigger 서비스에서 판정한다.
             voltage = self._sample_voltage_via_service()
-            inspection_ok = voltage >= self._voltage_threshold
+            voltage_ok = voltage >= self._voltage_threshold
             self.get_logger().info(
                 f"[VOLTAGE] cell_{self.cell_count}: {voltage:.3f} V / "
                 f"threshold={self._voltage_threshold:.3f} V -> "
+                f"{'TRUE(정상)' if voltage_ok else 'FALSE(불량)'}"
+            )
+            cnn_ok, cnn_message = self._inspect_cell_via_cnn_service()
+            if cnn_ok is None:
+                self.get_logger().warning(
+                    f"[CNN INSPECTION UNAVAILABLE] cell_{self.cell_count}: "
+                    f"{cnn_message} -> voltage-only fallback"
+                )
+                inspection_ok = voltage_ok
+            else:
+                self.get_logger().info(
+                    f"[CNN INSPECTION] cell_{self.cell_count}: "
+                    f"{'TRUE(정상)' if cnn_ok else 'FALSE(불량)'} | {cnn_message}"
+                )
+                inspection_ok = voltage_ok and cnn_ok
+            self.get_logger().info(
+                f"[INSPECTION FINAL] cell_{self.cell_count}: "
+                f"voltage_ok={voltage_ok}, cnn_ok={cnn_ok} -> "
                 f"{'TRUE(정상)' if inspection_ok else 'FALSE(불량)'}"
             )
 

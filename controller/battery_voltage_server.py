@@ -21,7 +21,7 @@ from std_srvs.srv import Trigger
 
 class BatteryVoltageServer(Node):
     MEAN_VOLTAGE = 11.5
-    STD_DEV = 0.1
+    STD_DEV = 2  # 12.0이 자주 나오게 하려면 이 값을 0.3 ~ 0.5 등으로 키우세요!
     MIN_VOLTAGE = 0.0
     MAX_VOLTAGE = 12.0
 
@@ -42,10 +42,17 @@ class BatteryVoltageServer(Node):
 
     def sample_voltage(self) -> float:
         voltage = np.random.normal(loc=self.MEAN_VOLTAGE, scale=self.STD_DEV)
-        voltage = float(np.clip(voltage, self.MIN_VOLTAGE, self.MAX_VOLTAGE))
-        self.last_voltage = voltage
-        self.get_logger().info(f"전압 생성: {voltage:.3f} V")
-        return voltage
+        
+        # 12.0 이상인 경우 무조건 12.0으로 고정
+        if voltage >= self.MAX_VOLTAGE:
+            voltage = self.MAX_VOLTAGE
+        # 0.0 이하인 경우 무조건 0.0으로 고정
+        elif voltage <= self.MIN_VOLTAGE:
+            voltage = self.MIN_VOLTAGE
+
+        self.last_voltage = float(voltage)
+        self.get_logger().info(f"전압 생성: {self.last_voltage:.3f} V")
+        return self.last_voltage
 
     def _handle_check(self, request, response) -> Trigger.Response:
         voltage = self.sample_voltage()
