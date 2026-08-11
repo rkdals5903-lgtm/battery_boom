@@ -20,8 +20,8 @@ from std_srvs.srv import Trigger
 
 
 class BatteryVoltageServer(Node):
-    MEAN_VOLTAGE = 11.0
-    STD_DEV = 1.5
+    MEAN_VOLTAGE = 11.5
+    STD_DEV = 0.1
     MIN_VOLTAGE = 0.0
     MAX_VOLTAGE = 12.0
 

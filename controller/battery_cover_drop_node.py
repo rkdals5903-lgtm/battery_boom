@@ -13,6 +13,7 @@ from vg10_suction_pick_place_controller import PickPlaceState, SuctionStatePickP
 # 컨트롤러를 돌리기 전에 항상 같은 기준 자세(전부 0도)로 관절 공간에서만
 # (orientation 신경 안 쓰고) 먼저 이동시켜 둔다.
 _ZERO_POSE_STEPS = 90
+_RELEASE_SETTLE_STEPS = 30
 
 
 class BatteryCoverDropNode(Node):
@@ -128,12 +129,26 @@ class BatteryCoverDropNode(Node):
             self._robot.apply_action(ArticulationAction(joint_positions=interpolated))
             self._world.step(render=True)
 
+    def _release_previous_cover_attachment(self) -> None:
+        """이전 cycle의 SurfaceGripper 잔류 부착을 완전히 해제한다."""
+        self._robot.gripper.open()
+        for _ in range(_RELEASE_SETTLE_STEPS):
+            if not self._world.is_playing():
+                return
+            self._robot.gripper.open()
+            self._world.step(render=True)
+
     def _handle_run(self, request, response) -> Trigger.Response:
         self.get_logger().info("[REQUEST] 배터리 폐기(공장 바닥 투하) 시작")
         # INIT_HOME(컨트롤러 자체 관절 목표, 기본 180,0,90,0,90,0도)까지 타면
         # 0,0,0,0,0,0으로 보낸 직후 또 그쪽으로 한 번 더 움직이는 중복 이동이
         # 생긴다. INIT_HOME은 건너뛰고 바로 PICK_ABOVE부터 시작한다.
         self._controller.reset(skip_init_home=True)
+        # 두 번째 이후 cycle에서 이전 뚜껑이 아직 SurfaceGripper에 남아
+        # 있으면 새 뚜껑 접근 중 팔이 끌려가거나 문지르는 현상이 생긴다.
+        # 컨트롤러 reset만으로는 PhysX 부착 상태가 즉시 풀리지 않으므로,
+        # open 명령을 일정 프레임 유지한 뒤 기준 자세로 이동한다.
+        self._release_previous_cover_attachment()
         self._move_to_zero_pose()
 
         battery_path = self._get_battery_path() if self._get_battery_path else None

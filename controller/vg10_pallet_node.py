@@ -31,6 +31,8 @@ class VG10PalletNode(Node):
         service_name: str = "/vg10_pallet/run_pallet_to_conveyor",
         stack_height_step_m: float = 0.05,
         get_pick_yaw_deg: Optional[Callable[[str], float]] = None,
+        get_completed_battery_path: Optional[Callable[[], Optional[str]]] = None,
+        completed_service_name: str = "/vg10_pallet/run_completed_newcase_to_conveyor",
     ) -> None:
         super().__init__(node_name)
 
@@ -42,6 +44,7 @@ class VG10PalletNode(Node):
         self._conveyor_destination = np.asarray(conveyor_destination, dtype=float)
         self._end_effector_offset = np.asarray(end_effector_offset, dtype=float)
         self._get_pick_yaw_deg = get_pick_yaw_deg
+        self._get_completed_battery_path = get_completed_battery_path
         # 먼저 옮긴 배터리가 컨베이어 위에 그대로 있으므로, 순서상 뒤에
         # 놓는 배터리는 그 위에 쌓이도록 놓는 높이를 순번마다 조금씩 올려준다.
         self._stack_height_step_m = float(stack_height_step_m)
@@ -52,7 +55,12 @@ class VG10PalletNode(Node):
         self._controller = SuctionStatePickPlaceController(**controller_kwargs)
 
         self._service = self.create_service(Trigger, service_name, self._handle_run)
-        self.get_logger().info(f"[READY] service={service_name}")
+        self._completed_service = self.create_service(
+            Trigger, completed_service_name, self._handle_completed_run
+        )
+        self.get_logger().info(
+            f"[READY] service={service_name}, completed={completed_service_name}"
+        )
 
     def reset_controller(self) -> None:
         self._controller.reset()
@@ -109,6 +117,34 @@ class VG10PalletNode(Node):
             self.get_logger().info(f"[TASK 완료] {battery_name}")
             response.success = True
             response.message = f"{battery_name} 이송 완료"
+        except Exception as exc:
+            response.success = False
+            response.message = f"실패: {exc}"
+            self.get_logger().error(response.message)
+        return response
+
+    def _handle_completed_run(self, request, response) -> Trigger.Response:
+        """완성된 new_case를 컨베이어로 보내는 전용 서비스."""
+        if self._get_completed_battery_path is None:
+            response.success = False
+            response.message = "완성 new_case 경로 callback이 없습니다"
+            return response
+        battery_path = self._get_completed_battery_path()
+        if not battery_path:
+            response.success = False
+            response.message = "완성 new_case가 아직 준비되지 않았습니다"
+            return response
+        placing_position = self._conveyor_destination + np.array(
+            [0.0, 0.0, self._next_order_index * self._stack_height_step_m]
+        )
+        self.get_logger().info(
+            f"[REQUEST] 조립 완료 new_case -> 컨베이어 시작: {battery_path}"
+        )
+        try:
+            self._run_single_battery(battery_path, placing_position)
+            response.success = True
+            response.message = f"완성 new_case 이송 완료: {battery_path}"
+            self.get_logger().info(f"[TASK 완료] {response.message}")
         except Exception as exc:
             response.success = False
             response.message = f"실패: {exc}"

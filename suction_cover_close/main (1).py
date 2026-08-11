@@ -37,7 +37,55 @@ import time
 
 import numpy as np
 import omni.usd
+
+# 셸에서 /opt/ros/humble/setup.bash를 source하고 Isaac Sim을 띄우면, 시스템 ROS2
+# Humble(Python 3.10용으로 빌드된 rclpy)의 dist-packages 경로가 PYTHONPATH를 통해
+# sys.path 앞쪽에 들어와 있다. Isaac Sim의 Kit 파이썬은 3.11이라, 이 python3.10
+# 전용 경로에서 import rclpy를 하면 그 안의 _rclpy_pybind11 C확장이 3.10용이라
+# "No module named 'rclpy._rclpy_pybind11'"로 죽는다. isaacsim.ros2.bridge
+# extension(위에서 enable_extension으로 이미 켰다)이 3.11 호환 rclpy를 별도
+# 제공하므로, python3.10 전용 경로만 sys.path에서 걷어내 그쪽이 우선 잡히게 한다.
+#
+# 그런데 sys.path만 고치는 걸로는 부족하다 — isaacsim.ros2.bridge extension
+# 자신이 Kit 시작 중(이 스크립트가 실행되기도 전)에 이미 한 번 자체적으로
+# rclpy를 import 시도하다가 실패한 상태다(로그의 "[Warning] [humble.rclpy]
+# Could not import rclpy"). 그 실패한 시도가 sys.modules에 반쪽짜리(rclpy.impl
+# 등이 없는) rclpy를 이미 캐싱해 놨기 때문에, 방금 sys.path를 고쳤어도
+# "import rclpy"는 캐시를 그대로 재사용해버려 다시 깨진 상태로 돌아온다.
+# rclpy로 시작하는 캐시를 전부 지워서 sys.path가 고쳐진 지금 상태 기준으로
+# 완전히 새로 import되게 강제한다.
+for _mod_name in list(sys.modules):
+    if _mod_name == "rclpy" or _mod_name.startswith("rclpy."):
+        del sys.modules[_mod_name]
+
+# 위 필터만으로는 이 컴퓨터에서 실행 시점마다 결과가 들쭉날쭉했다(python3.10
+# 경로가 필터 이후에 다시 잡히는 경우가 있었다) — 그래서 Isaac Sim이 실제로
+# enable한 isaacsim.ros2.bridge extension의 설치 경로를 Kit의 extension
+# manager API로 직접 물어봐서, 그 안의 humble/rclpy를 sys.path 맨 앞(0번)에
+# 강제로 꽂는다. 다른 곳에서 python3.10 경로가 몇 번을 다시 끼어들어도
+# "가장 먼저 검사되는" 자리를 이 경로가 차지하고 있으면 항상 이긴다.
+try:
+    import omni.kit.app
+
+    _ext_manager = omni.kit.app.get_app().get_extension_manager()
+    _ros2_bridge_ext_id = _ext_manager.get_enabled_extension_id("isaacsim.ros2.bridge")
+    _ros2_bridge_path = _ext_manager.get_extension_path(_ros2_bridge_ext_id)
+    _bundled_rclpy_dir = str(Path(_ros2_bridge_path) / "humble" / "rclpy")
+    if _bundled_rclpy_dir in sys.path:
+        sys.path.remove(_bundled_rclpy_dir)
+    sys.path.insert(0, _bundled_rclpy_dir)
+    print(f"[ROS2] Isaac 번들 rclpy 경로를 sys.path 맨 앞에 고정: {_bundled_rclpy_dir}")
+except Exception as _exc:
+    print(f"[ROS2][경고] Isaac 번들 rclpy 경로 자동탐색 실패(필터링만 적용됨): {_exc}")
+
 import rclpy
+
+# rclpy/__init__.py가 rclpy.impl을 미리 import해 두지 않는 경우, 나중에
+# controller/*.py가 "from rclpy.node import Node"를 하는 시점에 rclpy.node ->
+# ... -> rclpy.logging이 rclpy.impl.rcutils_logger를 찾다가
+# "module 'rclpy' has no attribute 'impl'"로 죽는 걸 봤다. 여기서 미리 강제로
+# import해서 rclpy.impl이 항상 채워진 채로 넘어가게 한다.
+import rclpy.impl.rcutils_logger  # noqa: F401
 from pxr import Gf, PhysxSchema, Sdf, Usd, UsdGeom, UsdPhysics # GF 모름
 from usd.schema.isaac import robot_schema
 #######################################
@@ -79,10 +127,11 @@ from vg10_pallet_node import VG10PalletNode
 from vg10_outfeed_node import VG10OutfeedNode
 from screw_control import ScrewDriverController
 from screw_disassembly_node import ScrewDisassemblyNode
-from screw_tightening_node import ScrewTighteningNode
 from battery_cover_drop_node import BatteryCoverDropNode
 from grip_cell_node import GripCellNode
 from suction_cover_close_node import SuctionCoverCloseNode
+# BatteryVoltageServer는 이 프로세스에서 만들지 않는다(별도 프로세스로 실행) —
+# 여기서는 판정 임계값 상수(MEAN_VOLTAGE)만 클래스 속성으로 가져다 쓴다.
 from battery_voltage_server import BatteryVoltageServer
 
 # from screwdriver_controller import ScrewdriverController
@@ -220,7 +269,13 @@ VG10_SURFACE_LOCAL_OFFSET = np.array([0.0, 0.0, 0.15])
 # 1번(팔레트) VG10 전용. pallet_to_conveyor_clean.py의 VG10_TOOL_LENGTH_M(검증된 값)과
 # 동일하다 — 같은 VG10이라도 개체마다 실측값이 달라 4번 로봇과 공유하지 않는다.
 M0609_VG10_PALLET_SURFACE_LOCAL_OFFSET = np.array([0.0, 0.0, 0.15])
-VG10_SURFACE_MAX_GRIP_DISTANCE = 0.05
+# 5cm였을 때 casecover 근처에 바짝 붙어있는 nasa_1~4 등 주변 형제 prim과
+# 접근 도중 엮여서 밀려나는 문제가 있었다(사용자 확인) — 표면에 닿기 전에
+# 너무 넓은 반경에서부터 흡착이 걸려 목표가 아직 부정확한 채로 붙잡히는
+# 것으로 보인다. 좁혀서 실제로 가까이 다가갔을 때만 걸리게 한다. 이 값은
+# vg10_robot의 모든 SurfaceGripper 사용처(작업대/팔레트 pick, 뚜껑 폐기/닫기)가
+# 공유하므로, 너무 좁히면 다른 pick 동작에서 반대로 흡착 실패가 늘 수 있다.
+VG10_SURFACE_MAX_GRIP_DISTANCE = 0.04
 VG10_SURFACE_COAXIAL_FORCE_LIMIT = 1500.0
 VG10_SURFACE_SHEAR_FORCE_LIMIT = 1500.0
 VG10_SURFACE_RETRY_INTERVAL = 1.0
@@ -362,8 +417,7 @@ BATTERY_COVER_PICK_Z_CLEARANCE = 0.0
 # ------------------------------------------------------------
 # 6-1c. RG2 셀 추출/전압검사(GripCellNode) 파라미터
 # ------------------------------------------------------------
-# 정상 판정된 cell을 채울 새 케이스. factory_clean_2.usd의
-# /World/new_battery_01을 현재 목적지로 사용한다.
+# 정상 판정된 cell을 채울 새 케이스. factory_clean_2.usd에 /World/new_case로
 # 이미 배치해 뒀다(casebase만 남기고 casecover/nasa_1~4/cell_1~4/AssemblyJoints는
 # 비활성화한 빈 케이스). 위치는 grip_cell_fianl.py를 실제로 검증 실행했던
 # factory_work_set_screw_3.usd의 /World/new_case 실측값
@@ -371,6 +425,13 @@ BATTERY_COVER_PICK_Z_CLEARANCE = 0.0
 # 기준으로 맞췄으니(M0609_RG2_POSITION 주석 참고) 이 조합 전체가 검증된 배치다.
 # GripCellNode._run_process()는 이 경로 아래에서 이름이 "casebase"인 Prim을
 # 찾아 bbox 기준으로 슬롯 좌표를 계산한다.
+#
+# 사용자가 Isaac Sim에서 씬을 new_case/new_case_01~03 -> new_battery_01~04로
+# 재구성했다(good_battery_01~04와 이름 규칙을 맞춘 것으로 보인다). 위치도
+# 새로 배치됐는데, new_battery_01만 예전 new_case와 정확히 같은 좌표
+# (1.60886, 6.11558, 1.00492)를 그대로 쓰고 있어서 이게 "현재 작업 중인"
+# 슬롯이다 — 나머지 02~03은 같은 XY(2.03109, 5.90558)에 Z만 다르게(약
+# 9.7~9.8cm 간격) 쌓여 있어 예비 케이스 스택으로 보인다.
 NEW_CASE_ROOT_PRIM_PATH = "/World/new_battery_01"
 # 빈 목적지 케이스는 원본 배터리 USD를 payload로 재사용하므로, 화면에서
 # casecover/nasa/cell을 비활성화했더라도 payload의 AssemblyJoints는 별도로
@@ -395,22 +456,21 @@ DESTINATION_CASE_ASSEMBLY_JOINT_NAMES = (
 # grip_cell_node.py(GripCellNode -> IntegratedRmpRunner)의 손끝-link_6 오프셋.
 RG2_TOOL_LENGTH_M = 0.20
 
+# SuctionCoverCloseNode 전용 — new_battery_01(=NEW_CASE_ROOT_PRIM_PATH)의
+# casecover/casebase는 이름으로 직접 찾는다(get_new_case_cover_pick_position/
+# get_new_case_casebase_place_position 참고). 한때 로컬 XY 좌표 근처를 bbox로
+# 찾는 방식을 썼었는데, casecover가 이전 물리 시뮬레이션 중 조인트 없이
+# 떨어져 원래 payload 위치에서 1m 넘게 벗어나 있는 게 확인되면서(USD 파일은
+# 그대로 둔 채) 좌표 근접 탐색이 아니라 이름 탐색으로 바꿨다.
+
 # ------------------------------------------------------------
 # 6-2. VG10(팔레트 -> 컨베이어) 파라미터
 # ------------------------------------------------------------
 PALLET_BATTERY_PRIM_PATHS = {
     "good_battery_01": "/World/good_battery_01",
     "good_battery_02": "/World/good_battery_02",
-    "good_battery_03": "/World/good_battery_03",
-    "good_battery_04": "/World/good_battery_04",
 }
-# 팔레트의 두 행을 기존과 같은 우 -> 좌 순서로 처리한다.
-PALLET_BATTERY_ORDER = [
-    "good_battery_02",
-    "good_battery_01",
-    "good_battery_04",
-    "good_battery_03",
-]
+PALLET_BATTERY_ORDER = ["good_battery_02", "good_battery_01"]
 CONVEYOR_DESTINATION_POSITION = np.array([0.667304, 0.300000, 0.95435])
 
 # ------------------------------------------------------------
@@ -537,7 +597,7 @@ def deactivate_prim_in_session(stage: Usd.Stage, prim_path: str) -> None:
 
 
 def sanitize_destination_case_assembly_joints(stage: Usd.Stage) -> None:
-    """빈 new_battery 4개의 끊어진 조립 FixedJoint를 물리 시작 전에 제거한다.
+    """빈 new_case 4개의 끊어진 조립 FixedJoint를 물리 시작 전에 제거한다.
 
     grip_cell_final.py의 DISABLED_ASSEMBLY_JOINTS 처리와 같은 방식이다.
     통합 공정의 good_battery*는 뚜껑/나사 분해 전까지 조인트가 필요하므로
@@ -573,28 +633,56 @@ def sanitize_destination_case_assembly_joints(stage: Usd.Stage) -> None:
 
 
 def configure_destination_casebases(stage: Usd.Stage) -> None:
-    """Validate new case prims without changing their authored physics.
+    """new_battery_01~04(예전 new_case/new_case_01~03)에 동일한 고정/콜라이더
+    물리를 적용한다.
 
-    The rebuilt factory scene may use referenced/instanced geometry rather than
-    direct UsdGeom.Mesh descendants. Its RigidBody and collider configuration is
-    owned by factory_clean_2.usd, so startup must not Apply or overwrite it.
+    grip_cell_final.py의 configure_colliders()에서 검증된 casebase 설정 그대로다.
+    Apply()는 기존 API를 재사용하므로 ridge/collider prim을 중복 생성하지 않는다.
+
+    씬을 새로 배치할 때마다(예: new_case -> new_battery_01~04 재구성) casebase가
+    비활성 상태로 남아 있을 수 있어서, 여기서 casebase만 활성화한다.
+    casecover/nasa_1~4/cell_1~4는 건드리지 않는다 — 씬(USD 파일)에 저장된
+    활성/비활성 상태를 그대로 존중한다.
     """
+    configured = []
     for case_root in DESTINATION_CASE_ROOT_PRIM_PATHS:
         casebase_path = f"{case_root}/casebase"
         casebase = stage.GetPrimAtPath(casebase_path)
-        if not casebase.IsValid() or not casebase.IsActive():
-            raise RuntimeError(
-                f"빈 목적지 casebase가 없거나 비활성 상태입니다: {casebase_path}"
-            )
-        collider_paths = [
-            str(prim.GetPath())
-            for prim in Usd.PrimRange(casebase)
-            if prim.HasAPI(UsdPhysics.CollisionAPI)
-        ]
+        if not casebase.IsValid():
+            raise RuntimeError(f"빈 목적지 casebase Prim이 없습니다: {casebase_path}")
+        if not casebase.IsActive():
+            casebase.SetActive(True)
+            print(f"  [FIX] {casebase_path}: 비활성 상태였음 -> 활성화", flush=True)
+
+        rigid = UsdPhysics.RigidBodyAPI.Apply(casebase)
+        rigid.CreateRigidBodyEnabledAttr().Set(True)
+        rigid.CreateKinematicEnabledAttr().Set(True)
+        PhysxSchema.PhysxRigidBodyAPI.Apply(
+            casebase
+        ).CreateDisableGravityAttr().Set(True)
+
+        mesh_count = 0
+        for prim in Usd.PrimRange(casebase):
+            if not prim.IsA(UsdGeom.Mesh):
+                continue
+            UsdPhysics.CollisionAPI.Apply(
+                prim
+            ).CreateCollisionEnabledAttr().Set(True)
+            # Convex Hull은 케이스 내부를 막아버리므로, 고정된 casebase에는
+            # triangle mesh를 사용해 셀이 들어갈 빈 공간을 그대로 보존한다.
+            UsdPhysics.MeshCollisionAPI.Apply(
+                prim
+            ).CreateApproximationAttr().Set("none")
+            mesh_count += 1
+
+        if mesh_count == 0:
+            raise RuntimeError(f"casebase collider Mesh를 찾지 못했습니다: {casebase_path}")
+        configured.append((casebase_path, mesh_count))
+
+    for casebase_path, mesh_count in configured:
         print(
-            f"  [PRESERVE] {casebase_path}: authored physics unchanged, "
-            f"rigid_api={casebase.HasAPI(UsdPhysics.RigidBodyAPI)}, "
-            f"visible_collision_apis={len(collider_paths)}",
+            f"  [FIX] {casebase_path}: kinematic+gravity OFF+concave, "
+            f"mesh={mesh_count}",
             flush=True,
         )
 
@@ -1445,127 +1533,116 @@ class BatteryFactoryTask(BaseTask):
     def get_outfeed_source_position(self, source_path: str) -> np.ndarray:
         return self.get_battery_top_center_position(source_path)
 
-    # SuctionCoverCloseNode 전용. 접근 전에는 cover의 active만 켜고 위치를
-    # runtime bbox로 읽는다. 실제 GRIP 진입 순간에는 아래
-    # enable_new_case_cover_physics()가 원본 동작과 동일하게 cover/nasa 물리와
-    # nasa-to-cover FixedJoint를 활성화한다.
-    def prepare_new_case_cover(self, case_root: str) -> bool:
+    # --------------------------------------------------------
+    # SuctionCoverCloseNode 전용 — new_case에 셀 4개가 다 차면(grip_cell_node의
+    # /suction_cover_close 신호) "옆에 있는 뚜껑"을 활성화해서 흡착 로봇으로
+    # casebase 위에 닫는다. "옆에 있는 뚜껑"은 new_case가 배터리와 동일한
+    # payload를 참조하면서 casebase만 남기고 비활성화해 둔 그 casecover
+    # 자신이다(같은 부모 밑 형제 prim이라 "옆에 있다") — 새 prim이 아니다.
+    # --------------------------------------------------------
+    def activate_new_case_cover(self) -> bool:
+        """casecover를 눈에 보이게(active)만 만든다 — 물리(RigidBody)는 아직
+        안 붙인다. 로봇이 접근하는 동안 중력 등 물리에 영향받지 않고 제자리에
+        그대로 있어야 하므로, 실제 흡착 접촉 직전(GRIP 상태)에
+        enable_new_case_cover_rigid_body()가 따로 RigidBody를 붙인다.
+        """
         stage = omni.usd.get_context().get_stage()
-        cover_path = f"{case_root.rstrip('/')}/casecover"
+        cover_path = f"{NEW_CASE_ROOT_PRIM_PATH}/casecover"
         cover = stage.GetPrimAtPath(cover_path)
-        if not cover.IsValid() or not cover.IsLoaded():
-            print(
-                f"  [경고] cover prim이 없거나 미로드 상태입니다: "
-                f"{cover_path}",
-                flush=True,
-            )
+        if not cover.IsValid():
+            print(f"  [경고] {cover_path} prim이 없습니다", flush=True)
             return False
-        # 접근 중에는 Active만 전환한다. 물리는 GRIP 직전에 활성화한다.
+        # 씬에 저장된 상태를 그대로 존중한다 — 이미 활성화돼 있어도 실패로
+        # 취급하지 않고 그냥 진행한다.
         if not cover.IsActive():
             cover.SetActive(True)
         return True
 
-    def enable_new_case_cover_physics(self, case_root: str) -> None:
-        """Enable cover/screw physics and reconnect screws at first GRIP.
+    def enable_new_case_cover_rigid_body(self) -> None:
+        """casecover(+거기 얹힌 나사 nasa_1~4)에 실제로 흡착 접촉하는
+        순간(GRIP 상태)에 호출한다.
 
-        ``sanitize_destination_case_assembly_joints()`` intentionally disables
-        every destination assembly joint while cells are loaded. At cover-pick
-        time only the four screw-to-cover joints are restored; the
-        casecover-to-casebase joint stays disabled so the cover can be lifted.
+        그 전까지는 RigidBody가 없어서 물리(중력 등)에 전혀 관여하지 않다가,
+        접촉 직전에야 dynamic RigidBody + Collision을 붙여 SurfaceGripper가
+        실제로 붙잡을 수 있게 한다. casebase처럼 kinematic으로 고정하지
+        않는다 — 이건 실제로 들어올렸다 내려놓아야 하는 대상이라 dynamic
+        RigidBody여야 한다.
+
+        nasa_1~4에는 RigidBody가 없어서 casecover가 들려 올라갈 때 같이
+        딸려가지 못하고 제자리에 남는 문제가 있었다(사용자 확인). casecover와
+        동일하게 RigidBody를 붙이고, sanitize_destination_case_assembly_joints()가
+        비활성화해 둔 nasa_X_to_casecover FixedJoint를 다시 켜서 casecover에
+        물리적으로 붙어 함께 움직이게 한다.
         """
         stage = omni.usd.get_context().get_stage()
-        case_root = case_root.rstrip("/")
-        cover_path = f"{case_root}/casecover"
+        cover_path = f"{NEW_CASE_ROOT_PRIM_PATH}/casecover"
         cover = stage.GetPrimAtPath(cover_path)
-        if not cover.IsValid() or not cover.IsActive():
-            raise RuntimeError(f"active casecover가 없습니다: {cover_path}")
-
-        cover_rigid = UsdPhysics.RigidBodyAPI.Apply(cover)
-        cover_rigid.CreateRigidBodyEnabledAttr().Set(True)
-        cover_rigid.CreateKinematicEnabledAttr().Set(False)
-        cover_mesh_count = 0
+        if not cover.IsValid():
+            return
+        rigid = UsdPhysics.RigidBodyAPI.Apply(cover)
+        rigid.CreateRigidBodyEnabledAttr().Set(True)
+        rigid.CreateKinematicEnabledAttr().Set(False)
+        mesh_count = 0
         for prim in Usd.PrimRange(cover):
-            if prim.IsA(UsdGeom.Mesh):
-                UsdPhysics.CollisionAPI.Apply(
-                    prim
-                ).CreateCollisionEnabledAttr().Set(True)
-                cover_mesh_count += 1
-        if cover_mesh_count == 0:
-            raise RuntimeError(f"casecover collider Mesh가 없습니다: {cover_path}")
+            if not prim.IsA(UsdGeom.Mesh):
+                continue
+            UsdPhysics.CollisionAPI.Apply(prim).CreateCollisionEnabledAttr().Set(True)
+            mesh_count += 1
+        print(f"  [OK] {cover_path}: 접촉 직전 RigidBody 부여 (mesh={mesh_count})", flush=True)
 
-        restored_joints = []
-        for index in range(1, 5):
-            nasa_path = f"{case_root}/nasa_{index}"
+        for i in range(1, 5):
+            nasa_path = f"{NEW_CASE_ROOT_PRIM_PATH}/nasa_{i}"
             nasa = stage.GetPrimAtPath(nasa_path)
             if not nasa.IsValid():
-                raise RuntimeError(f"cover screw Prim이 없습니다: {nasa_path}")
+                continue
             if not nasa.IsActive():
-                previous_target = stage.GetEditTarget()
-                try:
-                    stage.SetEditTarget(stage.GetSessionLayer())
-                    stage.OverridePrim(nasa_path).SetActive(True)
-                finally:
-                    stage.SetEditTarget(previous_target)
-                nasa = stage.GetPrimAtPath(nasa_path)
-
+                nasa.SetActive(True)
             nasa_rigid = UsdPhysics.RigidBodyAPI.Apply(nasa)
             nasa_rigid.CreateRigidBodyEnabledAttr().Set(True)
             nasa_rigid.CreateKinematicEnabledAttr().Set(False)
-            nasa_mesh_count = 0
             for prim in Usd.PrimRange(nasa):
                 if prim.IsA(UsdGeom.Mesh):
-                    UsdPhysics.CollisionAPI.Apply(
-                        prim
-                    ).CreateCollisionEnabledAttr().Set(True)
-                    nasa_mesh_count += 1
-            if nasa_mesh_count == 0:
-                raise RuntimeError(f"cover screw collider Mesh가 없습니다: {nasa_path}")
+                    UsdPhysics.CollisionAPI.Apply(prim).CreateCollisionEnabledAttr().Set(True)
 
-            joint_path = (
-                f"{case_root}/AssemblyJoints/nasa_{index}_to_casecover"
-            )
-            previous_target = stage.GetEditTarget()
-            try:
-                stage.SetEditTarget(stage.GetSessionLayer())
-                stage.OverridePrim(joint_path).SetActive(True)
-            finally:
-                stage.SetEditTarget(previous_target)
+            joint_path = f"{NEW_CASE_ROOT_PRIM_PATH}/AssemblyJoints/nasa_{i}_to_casecover"
             joint = stage.GetPrimAtPath(joint_path)
-            if not joint.IsValid() or not joint.IsActive():
-                raise RuntimeError(f"cover screw FixedJoint 활성화 실패: {joint_path}")
-            restored_joints.append(joint_path)
+            if joint.IsValid() and not joint.IsActive():
+                previous_edit_target = stage.GetEditTarget()
+                try:
+                    stage.SetEditTarget(stage.GetSessionLayer())
+                    stage.OverridePrim(joint_path).SetActive(True)
+                finally:
+                    stage.SetEditTarget(previous_edit_target)
 
-        print(
-            f"  [COVER PHYSICS READY] root={case_root}, "
-            f"cover_meshes={cover_mesh_count}, "
-            f"screw_joints={len(restored_joints)}",
-            flush=True,
-        )
+        print(f"  [OK] {NEW_CASE_ROOT_PRIM_PATH}: nasa_1~4 RigidBody 부여 + casecover 조인트 재연결", flush=True)
 
-    def get_new_case_cover_pick_position(self, case_root: str) -> np.ndarray:
+    def get_new_case_cover_pick_position(self) -> np.ndarray:
+        """"옆에 있는 뚜껑"(casecover)의 현재 world bbox 상단 중심을 pick
+        위치로 쓴다. USD 파일은 건드리지 않는다 — casecover가 이전 물리
+        시뮬레이션 중 조인트 없이 떨어져 원래 payload 위치(로컬 XY 약
+        0.155, 0.105)에서 1m 넘게 벗어나 있는 게 확인됐다. 그래서 "그 근처
+        좌표로 찾기"가 아니라 이름(casecover)으로 직접 찾는다 — 어디로
+        틀어져 있든 bbox는 항상 그 실제(현재) 위치를 정확히 반환한다.
+        """
         stage = omni.usd.get_context().get_stage()
-        cover_path = f"{case_root.rstrip('/')}/casecover"
-        bbox_min, bbox_max, _ = compute_world_bbox(stage, cover_path)
+        bbox_min, bbox_max, _ = compute_world_bbox(stage, f"{NEW_CASE_ROOT_PRIM_PATH}/casecover")
         return np.array(
             [
-                0.5 * (bbox_min[0] + bbox_max[0]),
-                0.5 * (bbox_min[1] + bbox_max[1]),
+                (bbox_min[0] + bbox_max[0]) / 2.0,
+                (bbox_min[1] + bbox_max[1]) / 2.0,
                 bbox_max[2],
-            ],
-            dtype=float,
+            ]
         )
 
-    def get_new_case_casebase_place_position(self, case_root: str) -> np.ndarray:
+    def get_new_case_casebase_place_position(self) -> np.ndarray:
         stage = omni.usd.get_context().get_stage()
-        casebase_path = f"{case_root.rstrip('/')}/casebase"
-        bbox_min, bbox_max, _ = compute_world_bbox(stage, casebase_path)
+        bbox_min, bbox_max, _ = compute_world_bbox(stage, f"{NEW_CASE_ROOT_PRIM_PATH}/casebase")
         return np.array(
             [
-                0.5 * (bbox_min[0] + bbox_max[0]),
-                0.5 * (bbox_min[1] + bbox_max[1]),
+                (bbox_min[0] + bbox_max[0]) / 2.0,
+                (bbox_min[1] + bbox_max[1]) / 2.0,
                 bbox_max[2],
-            ],
-            dtype=float,
+            ]
         )
 
     def get_battery_pick_yaw_deg(self, battery_path: str) -> float:
@@ -1742,21 +1819,6 @@ class BatteryFactoryTask(BaseTask):
             f"{base}/nasa_4",
             f"{base}/nasa_3",
         ]
-
-    def get_new_case_screw_prim_paths(self, case_root: str) -> Optional[list]:
-        """Return the active destination screws in the proven physical order."""
-        base = case_root.rstrip("/")
-        stage = omni.usd.get_context().get_stage()
-        ordered_paths = [
-            f"{base}/nasa_1",
-            f"{base}/nasa_2",
-            f"{base}/nasa_4",
-            f"{base}/nasa_3",
-        ]
-        screw_prims = [stage.GetPrimAtPath(path) for path in ordered_paths]
-        if not all(prim.IsValid() and prim.IsActive() for prim in screw_prims):
-            return None
-        return ordered_paths
 
     def debug_log_rigid_body_state(self, step_size: float = 0.0) -> None:
         """[임시 진단] omni.physx.tensors의 getVelocities 개수 불일치(expected
@@ -2128,7 +2190,6 @@ def main() -> None:
             # 기본 90도 회전으로는 배터리가 아직 덜 돌아간 것 같아서 90도 더 돌려본다.
             place_yaw_deg=180.0,
         ),
-        get_completed_battery_path=lambda: grip_cell_node.active_destination_root,
     )
 
     # --------------------------------------------------------
@@ -2157,107 +2218,31 @@ def main() -> None:
     )
 
     # --------------------------------------------------------
-    # 뚜껑 닫기가 끝난 active destination case의 나사 4개를 같은 스크류
-    # 로봇으로 조인다. 조임 노드는 J1 시작 정렬과 원본의 J2 제한이 반영된
-    # 별도 RMPFlow 설정을 생성해 사용한다. 네 번째 나사 완료 후에는 동적
-    # FixedJoint를 만들지 않고 케이스 구성품을 kinematic으로 고정한다.
-    # --------------------------------------------------------
-    screw_tightening_node = ScrewTighteningNode(
-        world=my_world,
-        robot=m0609_screw_robot,
-        screw_tool=screw_tool,
-        get_new_case_screw_prim_paths=lambda: task.get_new_case_screw_prim_paths(
-            grip_cell_node.active_destination_root
-        ),
-        get_completed_cell_prim_paths=lambda: (
-            grip_cell_node.completed_cell_proxy_paths
-        ),
-        progress_completed_pack=lambda: rclpy.spin_once(
-            vg10_pallet_node, timeout_sec=0.0
-        ),
-        controller_kwargs=dict(
-            name="m0609_screw_tightening_cspace_controller",
-            robot_articulation=m0609_screw_robot,
-            urdf_path=M0609_URDF_PATH,
-            robot_description_path=M0609_DESCRIPTION_PATH,
-            rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
-            end_effector_frame_name=M0609_EE_LINK_NAME,
-        ),
-    )
-
-    # --------------------------------------------------------
     # RG2 셀 추출/검사 노드. rokey_d2_grip_cell_integration/의 통합안을 이
     # 프로젝트의 controller/ 레이아웃에 맞춰 옮긴 것이다. cover-drop이
     # 끝나면(아래 battery_cover_drop_node의 on_cover_dropped) grip_cell_node.
     # request_start()가 호출돼 다음 프레임 update()에서 셀 공정이 시작된다.
     #
-    # 전압 서버를 통합 프로세스에 함께 둔다. GripCellNode 전체 공정은 한 번의
-    # update() 안에서 world.step()을 반복하므로 자기 ROS 서비스를 기다리면 main의
-    # spin_once가 돌지 않아 교착된다. 따라서 내부 공정은 sample_voltage()를 직접
-    # 호출하고, /check_voltage 서비스는 외부 진단 호출용으로 계속 제공한다.
+    # 전압 검사(BatteryVoltageServer)는 이 프로세스 안에서 만들지 않는다 —
+    # 별도 프로세스로 아래 명령을 먼저 실행해 둬야 한다:
+    #   isaac_python controller/battery_voltage_server.py
+    # GripCellNode는 그 프로세스가 띄운 /check_voltage 서비스를 실제 ROS2
+    # 클라이언트로 호출한다. voltage_threshold는 그 서버의 판정 기준값
+    # (MEAN_VOLTAGE=11.0V)을 클래스 상수로만 가져다 쓴다(인스턴스 생성 아님).
     # --------------------------------------------------------
-    battery_voltage_server = BatteryVoltageServer()
     grip_cell_node = GripCellNode(
         world=my_world,
         robot=robot,
         get_battery_root=task.get_last_placed_battery_path,
         voltage_threshold=BatteryVoltageServer.MEAN_VOLTAGE,
-        sample_voltage=battery_voltage_server.sample_voltage,
-        progress_cover_close=lambda: rclpy.spin_once(
-            suction_cover_close_node, timeout_sec=0.0
-        ),
-        progress_pallet=lambda: rclpy.spin_once(
-            vg10_pallet_node, timeout_sec=0.0
-        ),
         urdf_path=M0609_URDF_PATH,
         robot_description_path=M0609_DESCRIPTION_PATH,
         rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
         robot_root_path=M0609_RG2_PRIM_PATH,
         tool_length_m=RG2_TOOL_LENGTH_M,
         new_case_root=NEW_CASE_ROOT_PRIM_PATH,
-        inspection_surface_prim_path=WORK_TABLE_SURFACE_PRIM_PATH,
         end_effector_frame_name=M0609_EE_LINK_NAME,
         pre_grip_joint_degrees=M0609_RG2_PRE_GRIP_JOINT_DEGREES,
-    )
-
-    # --------------------------------------------------------
-    # full destination case의 casecover를 작업대 VG10으로 집어 casebase 위에
-    # 닫는다. 접근 중에는 active 전환과 bbox 조회만 하고, GRIP 직전에
-    # cover/nasa RigidBody·Collision 및 nasa FixedJoint를 활성화한다.
-    # GripCellNode가 교체한 다음 case에도 대응하도록 active destination root를
-    # 매 호출 시 조회한다.
-    # --------------------------------------------------------
-    suction_cover_close_node = SuctionCoverCloseNode(
-        world=my_world,
-        robot=vg10_robot,
-        prepare_cover=lambda: task.prepare_new_case_cover(
-            grip_cell_node.active_destination_root
-        ),
-        get_picking_position=lambda: task.get_new_case_cover_pick_position(
-            grip_cell_node.active_destination_root
-        ),
-        get_placing_position=lambda: task.get_new_case_casebase_place_position(
-            grip_cell_node.active_destination_root
-        ),
-        end_effector_offset=VG10_SURFACE_LOCAL_OFFSET,
-        get_gripped_object_paths=task.get_vg10_gripped_object_paths,
-        enable_cover_physics=lambda: task.enable_new_case_cover_physics(
-            grip_cell_node.active_destination_root
-        ),
-        progress_screw_tightening=lambda: rclpy.spin_once(
-            screw_tightening_node, timeout_sec=0.0
-        ),
-        controller_kwargs=dict(
-            name="m0609_vg10_cover_close_controller",
-            gripper=vg10_robot.gripper,
-            robot_articulation=vg10_robot,
-            urdf_path=M0609_URDF_PATH,
-            robot_description_path=M0609_DESCRIPTION_PATH,
-            rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
-            end_effector_frame_name=M0609_EE_LINK_NAME,
-            place_drop_height=0.0,
-            place_yaw_deg=180.0,
-        ),
     )
 
     # --------------------------------------------------------
@@ -2305,6 +2290,47 @@ def main() -> None:
     )
 
     # --------------------------------------------------------
+    # new_battery_01에 정상 셀 4개가 다 차면(grip_cell_node의
+    # /suction_cover_close 신호) VG10(작업대 로봇, vg10_robot 재사용)으로
+    # 뚜껑을 닫는다. battery_cover_drop_node.py(뚜껑을 떼어내는 노드)와
+    # 동일한 구조를 그대로 따른다 — 방향만 반대다. "뚜껑"은 new_battery_01이
+    # 배터리와 같은 payload를 참조하며 casebase만 남기고 비활성화해 둔 그
+    # casecover 자신이다(BatteryFactoryTask.activate_new_case_cover 참고) —
+    # 별도 prim을 새로 만들지 않았다. pick/place 위치는 이름(casecover/
+    # casebase)으로 찾은 뒤 bbox로 계산한다 — casecover는 이전 물리
+    # 시뮬레이션 중 원래 위치에서 벗어난 상태라 좌표 근접 탐색 대신 이름으로
+    # 찾는다(get_new_case_cover_pick_position 참고).
+    # 미검증: place_drop_height는 다른 VG10 노드들을 참고한 추정치다.
+    # --------------------------------------------------------
+    suction_cover_close_node = SuctionCoverCloseNode(
+        world=my_world,
+        robot=vg10_robot,
+        activate_cover=task.activate_new_case_cover,
+        get_picking_position=task.get_new_case_cover_pick_position,
+        get_placing_position=task.get_new_case_casebase_place_position,
+        end_effector_offset=VG10_SURFACE_LOCAL_OFFSET,
+        get_gripped_object_paths=task.get_vg10_gripped_object_paths,
+        enable_cover_rigid_body=task.enable_new_case_cover_rigid_body,
+        controller_kwargs=dict(
+            name="m0609_vg10_cover_close_controller",
+            gripper=vg10_robot.gripper,
+            robot_articulation=vg10_robot,
+            urdf_path=M0609_URDF_PATH,
+            robot_description_path=M0609_DESCRIPTION_PATH,
+            rmpflow_config_path=M0609_RMPFLOW_CONFIG_PATH,
+            end_effector_frame_name=M0609_EE_LINK_NAME,
+            # 0.08m 위에서 흡착을 풀어 떨어뜨리니 casebase에 "툭" 부딪히는
+            # 소리/충격이 났다(사용자 확인) — casecover는 컨베이어에
+            # 임시로 놓는 게 아니라 실제로 케이스를 닫는 정밀 배치라, 접촉
+            # 지점까지 완전히 내려간 뒤(0m) 놓도록 낮춘다.
+            place_drop_height=0.0,
+            # 컨트롤러 기본값(90도)으로 실제 Isaac Sim에서 내려놔 보니 뚜껑
+            # 방향이 어긋나 있어서(사용자 확인), 거기서 +90도 더 돌린다.
+            place_yaw_deg=180.0,
+        ),
+    )
+
+    # --------------------------------------------------------
     # VG10(출고, 5번째 로봇). vg10_pallet_node.py(VG10PalletNode)를 거의
     # 그대로 복제한 것 — 검증된 SuctionStatePickPlaceController는 바꾸지
     # 않고 재사용하고, 방향만 반대다(벨트 -> 팔레트). OUTFEED_SOURCE_PRIM_PATHS/
@@ -2339,11 +2365,10 @@ def main() -> None:
     print("나사 분해  : /start_screw_process service 대기 중")
     print("배터리 폐기: /start_battery_cover_drop service 대기 중")
     print("셀 검사    : /start_grip_cell_process service 대기 중 (cover-drop 완료 시 자동 시작)")
-    print("뚜껑 닫기  : /suction_cover_close service 대기 중 (new case 4/4 완료 시 자동 시작)")
-    print("나사 조이기: /start_screw_tightening service 대기 중 (뚜껑 닫기 완료 시 자동 시작)")
-    print("완성 new_case 출고: /vg10_pallet/run_completed_newcase_to_conveyor service 대기 중 (나사 조임 완료 시 자동 시작)")
+    print("뚜껑 닫기  : /suction_cover_close service 대기 중 (new_battery_01 4/4 완료 시 자동 시작)")
     print("VG10 출고  : /vg10_outfeed/run_belt_to_pallet service 대기 중 (좌표 미입력, TODO)")
-    print("전압 검사  : 통합 BatteryVoltageServer 직접 샘플링 (/check_voltage도 제공)")
+    print("주의: 전압 검사(/check_voltage)는 이 프로세스가 아니라 별도로")
+    print("      실행한 controller/battery_voltage_server.py가 응답해야 합니다.")
     print("=" * 60 + "\n")
 
     was_playing = False
@@ -2390,7 +2415,6 @@ def main() -> None:
             vg10_worktable_node.reset_controller()
             vg10_pallet_node.reset_controller()
             screw_disassembly_node.reset_controller()
-            screw_tightening_node.reset_controller()
             battery_cover_drop_node.reset_controller()
             grip_cell_node.reset_controller()
             suction_cover_close_node.reset_controller()
@@ -2400,9 +2424,7 @@ def main() -> None:
         rclpy.spin_once(vg10_worktable_node, timeout_sec=0.0)
         rclpy.spin_once(vg10_pallet_node, timeout_sec=0.0)
         rclpy.spin_once(screw_disassembly_node, timeout_sec=0.0)
-        rclpy.spin_once(screw_tightening_node, timeout_sec=0.0)
         rclpy.spin_once(battery_cover_drop_node, timeout_sec=0.0)
-        rclpy.spin_once(battery_voltage_server, timeout_sec=0.0)
         rclpy.spin_once(grip_cell_node, timeout_sec=0.0)
         rclpy.spin_once(suction_cover_close_node, timeout_sec=0.0)
         rclpy.spin_once(vg10_outfeed_node, timeout_sec=0.0)
@@ -2430,10 +2452,7 @@ def main() -> None:
     vg10_worktable_node.destroy_node()
     vg10_pallet_node.destroy_node()
     screw_disassembly_node.destroy_node()
-    screw_tightening_node.destroy_node()
     battery_cover_drop_node.destroy_node()
-    battery_voltage_server.destroy_node()
-    grip_cell_node.destroy_node()
     suction_cover_close_node.destroy_node()
     vg10_outfeed_node.destroy_node()
     rclpy.shutdown()
