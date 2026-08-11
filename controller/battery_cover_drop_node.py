@@ -184,6 +184,38 @@ class BatteryCoverDropNode(Node):
             f"colliders={disabled_colliders}"
         )
 
+    def _set_cover_collision_enabled(self, battery_path: str, enabled: bool) -> None:
+        """운반 중인 casecover+nasa collider만 켜고 끈다.
+
+        흡착 성공 뒤에는 뚜껑이 SurfaceGripper joint로 따라오므로 collision은
+        운반 안정성에 필요 없다. 이때 collision을 끄면 작업대 구조물/폐기함 안
+        이전 뚜껑과 부딪혀 튀는 현상을 막을 수 있다.
+        """
+        stage = omni.usd.get_context().get_stage()
+        roots = [f"{battery_path}/casecover"] + [
+            f"{battery_path}/nasa_{index}" for index in range(1, 5)
+        ]
+        previous_target = stage.GetEditTarget()
+        toggled = 0
+        try:
+            stage.SetEditTarget(stage.GetSessionLayer())
+            for root_path in roots:
+                root = stage.GetPrimAtPath(root_path)
+                if not root.IsValid():
+                    continue
+                for prim in Usd.PrimRange(root):
+                    if prim.HasAPI(UsdPhysics.CollisionAPI):
+                        UsdPhysics.CollisionAPI(
+                            prim
+                        ).CreateCollisionEnabledAttr().Set(bool(enabled))
+                        toggled += 1
+        finally:
+            stage.SetEditTarget(previous_target)
+        self.get_logger().info(
+            f"[COVER DROP] cover collisionEnabled={enabled}: "
+            f"battery={battery_path}, colliders={toggled}"
+        )
+
     def _handle_run(self, request, response) -> Trigger.Response:
         self.get_logger().info("[REQUEST] 배터리 폐기(공장 바닥 투하) 시작")
         # INIT_HOME(컨트롤러 자체 관절 목표, 기본 180,0,90,0,90,0도)까지 타면
@@ -227,6 +259,7 @@ class BatteryCoverDropNode(Node):
         # body 중에서 알아서 고른다), 그래서 실제로 뭐가 잡혔는지 눈으로
         # 확인해야 casecover가 맞는지 casebase 등 다른 게 잡혔는지 알 수 있다.
         gripped_logged = False
+        collision_disabled = False
         try:
             while self._world.is_playing() and not self._controller.is_done():
                 picking_position = self._get_picking_position()
@@ -242,6 +275,15 @@ class BatteryCoverDropNode(Node):
                     end_effector_offset=self._end_effector_offset,
                     pick_yaw_deg=pick_yaw_deg,
                 )
+
+                if (
+                    not collision_disabled
+                    and battery_path
+                    and self._controller.did_pick_succeed()
+                    and self._controller.get_current_event() == PickPlaceState.PICK_LIFT
+                ):
+                    collision_disabled = True
+                    self._set_cover_collision_enabled(battery_path, False)
 
                 if (
                     not gripped_logged

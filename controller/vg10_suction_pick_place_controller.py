@@ -159,6 +159,11 @@ class SuctionStatePickPlaceController(BaseController):
         approach_height: float = 0.25,
         place_drop_height: float = 0.0,
         place_yaw_deg: float = 90.0,
+        pick_lift_tilt_deg: float = 0.0,
+        pick_lift_y_tilt_deg: float = 0.0,
+        vertical_pick_lift_only: bool = False,
+        pick_lift_steps: int = None,
+        place_down_steps: int = None,
     ) -> None:
         super().__init__(name=name)
 
@@ -185,6 +190,17 @@ class SuctionStatePickPlaceController(BaseController):
         # 정확한 접촉 높이까지 수렴시키려다 로봇이 계속 높은 채로 멈춰있는 문제를
         # 피하기 위함.
         self._place_drop_height = place_drop_height
+        # 이 값은 필요한 인스턴스에서만 PICK_LIFT에 적용한다. 기본값은 0도라
+        # 기존 VG10 동작에는 영향이 없다.
+        self._pick_lift_tilt_deg = pick_lift_tilt_deg
+        self._pick_lift_y_tilt_deg = pick_lift_y_tilt_deg
+        self._vertical_pick_lift_only = bool(vertical_pick_lift_only)
+
+        self._cartesian_steps = dict(_CARTESIAN_STEPS)
+        if pick_lift_steps is not None:
+            self._cartesian_steps[PickPlaceState.PICK_LIFT] = pick_lift_steps
+        if place_down_steps is not None:
+            self._cartesian_steps[PickPlaceState.PLACE_DOWN] = place_down_steps
 
         # PICK 쪽(PICK_ABOVE/PICK_DOWN/GRIP/PICK_LIFT)은 forward()가 매 호출 받는
         # pick_yaw_deg로 그때그때 계산하므로 여기서는 place 쪽만 고정해서 들고 있는다.
@@ -201,6 +217,8 @@ class SuctionStatePickPlaceController(BaseController):
         self._state_index = 0
         self._step_in_state = 0
         self._pick_target = None  # PICK_DOWN에서 고정한 XY를 PICK_LIFT에서 재사용
+        self._pick_lift_target = None
+        self._pick_lift_orientation = None
         self._gripped_steps = 0  # GRIP 상태에서 is_closed()==True가 연속된 프레임 수
         self._rotate_j1_hold = None  # ROTATE_J1 진입 시점에 고정한 J1 외 관절 스냅샷
 
@@ -235,6 +253,8 @@ class SuctionStatePickPlaceController(BaseController):
         self._state_index = 1 if skip_init_home else 0
         self._step_in_state = 0
         self._pick_target = None
+        self._pick_lift_target = None
+        self._pick_lift_orientation = None
         self._gripped_steps = 0
         self._rotate_j1_hold = None
 
@@ -403,8 +423,19 @@ class SuctionStatePickPlaceController(BaseController):
             target_position = pick_target                # Event 1: Pick 위치로 하강
             self._pick_target = pick_target
         elif state == PickPlaceState.PICK_LIFT:
-            base = self._pick_target if self._pick_target is not None else pick_target
-            target_position = base + up                  # Event 4: 물체를 들고 수직 상승
+            if self._vertical_pick_lift_only:
+                if self._pick_lift_target is None:
+                    ee_pos, ee_orientation = self._robot_articulation.end_effector.get_world_pose()
+                    self._pick_lift_target = np.asarray(ee_pos, dtype=float) + up
+                    self._pick_lift_orientation = np.asarray(ee_orientation, dtype=float)
+                    print(
+                        "[VERTICAL PICK LIFT] lock XY/orientation, "
+                        f"target={np.round(self._pick_lift_target, 5)}"
+                    )
+                target_position = self._pick_lift_target
+            else:
+                base = self._pick_target if self._pick_target is not None else pick_target
+                target_position = base + up                  # Event 4: 물체를 들고 수직 상승
         elif state == PickPlaceState.PLACE_ABOVE:
             target_position = place_target + up           # Event 5: Place 위치 위로 수평 이동
         elif state == PickPlaceState.PLACE_DOWN:
@@ -416,7 +447,29 @@ class SuctionStatePickPlaceController(BaseController):
         else:
             raise RuntimeError(f"처리되지 않은 상태: {state}")
 
-        if state in (
+        if (
+            state == PickPlaceState.PICK_LIFT
+            and (
+                self._pick_lift_tilt_deg != 0.0
+                or self._pick_lift_y_tilt_deg != 0.0
+            )
+        ):
+            target_orientation = euler_angles_to_quat(
+                np.array(
+                    [
+                        np.deg2rad(self._pick_lift_tilt_deg),
+                        np.pi + np.deg2rad(self._pick_lift_y_tilt_deg),
+                        np.deg2rad(pick_yaw_deg),
+                    ]
+                )
+            )
+        elif (
+            state == PickPlaceState.PICK_LIFT
+            and self._vertical_pick_lift_only
+            and self._pick_lift_orientation is not None
+        ):
+            target_orientation = self._pick_lift_orientation
+        elif state in (
             PickPlaceState.PICK_ABOVE,
             PickPlaceState.PICK_DOWN,
             PickPlaceState.PICK_LIFT,
@@ -443,8 +496,14 @@ class SuctionStatePickPlaceController(BaseController):
             position_error < _CARTESIAN_TOLERANCE_BY_STATE[state]
             and orientation_error < _ORIENTATION_TOLERANCE
         )
-        timed_out = self._step_in_state >= _CARTESIAN_STEPS[state]
+        timed_out = self._step_in_state >= self._cartesian_steps[state]
         if timed_out and not reached:
+            if state == PickPlaceState.PICK_LIFT and self._vertical_pick_lift_only:
+                raise TimeoutError(
+                    f"PICK_LIFT vertical lift failed: "
+                    f"position_error={position_error:.4f}m, "
+                    f"orientation_error={np.degrees(orientation_error):.1f}deg"
+                )
             print(
                 f"  [경고] {state.name} 타임아웃 — 위치오차 {position_error:.4f}m, "
                 f"자세오차 {np.degrees(orientation_error):.1f}도 남은 채로 진행합니다."

@@ -1,0 +1,103 @@
+{"kind":"deck","id":"pr/k0oa8w","name":"Deck"}
+{"kind":"layout","layoutId":"afc2f5bc-5117-4967-adcc-247780d64c09","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"29b662f4-143e-4289-9ddb-5e9aa0150bb1","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/0nd2dk","slide":1,"title":"01  2026.08.02 ~ 진행 중","textShapes":11}
+{"kind":"textbox","id":"sh/x8v6pove","slide":1,"text":"01  2026.08.02 ~ 진행 중","textPreview":"01  2026.08.02 ~ 진행 중","textChars":21,"textLines":1,"bbox":[42,30,460,32]}
+{"kind":"textbox","id":"sh/a5knu9cn","slide":1,"text":"Action Graph 컨베이어 트리거가 감지·정지·재가동 단계마다 실패했다","textPreview":"Action Graph 컨베이어 트리거가 감지·정지·재가동 단계마다 실패했다","textChars":42,"textLines":1,"bbox":[42,72,1180,76]}
+{"kind":"shape","id":"sh/b6toned8","slide":1,"bbox":[42,158,1196,1]}
+{"kind":"shape","id":"sh/lwv6tova","slide":1,"bbox":[42,188,452,268]}
+{"kind":"shape","id":"sh/yt47ytcz","slide":1,"bbox":[42,485,12,12]}
+{"kind":"textbox","id":"sh/judorydk","slide":1,"text":"문제점","textPreview":"문제점","textChars":3,"textLines":1,"bbox":[64,478,430,26]}
+{"kind":"textbox","id":"sh/8zmp43u1","slide":1,"text":"• On Trigger 실행 시 KeyError, Prim '' is not valid 로그 발생\n• RigidBodyAPI가 non-xformable 재질 prim에 적용되어 물리 불안정\n• Print Text 연결 후에도 회색 상자가 센서 큐브를 통과해도 이벤트 없음\n• Write Prim Attribute는 <unresolved any>, float has no len()로 속도 주입 실패\n• 벨트 재가동 후 Cube_01이 Sleep Mode에 들어가 다시 움직이지 않음","textPreview":"• On Trigger 실행 시 KeyError, Prim '' is not valid 로그 발생 | • RigidBodyAPI가 non-xformable 재질 prim에 적용되어 물리 불안정 | • Print Text 연결 후에도 회색 상자가 ...","textChars":269,"textLines":5,"bbox":[64,507,430,123]}
+{"kind":"shape","id":"sh/t0f6x8bm","slide":1,"bbox":[530,193,12,12]}
+{"kind":"textbox","id":"sh/dojm5kbm","slide":1,"text":"원인 분석","textPreview":"원인 분석","textChars":5,"textLines":1,"bbox":[552,186,308,26]}
+{"kind":"textbox","id":"sh/s3a5cfu1","slide":1,"text":"• 참조 검증: Trigger Paths가 비어 있어 On Trigger가 None prim을 잡는지 확인\n• Collider 검증: Show > Physics > Colliders로 센서 bounds가 mesh보다 커진 현상 확인\n• 타입 검증: surface velocity는 스칼라가 아니라 3D vector 입력이어야 함\n• 물리 상태 검증: 정지 뒤 rigid body가 sleep되어 surface velocity 변화를 못 받는 흐름 확인","textPreview":"• 참조 검증: Trigger Paths가 비어 있어 On Trigger가 None prim을 잡는지 확인 | • Collider 검증: Show > Physics > Colliders로 센서 bounds가 mesh보다 커진 현상 확인 | • 타...","textChars":252,"textLines":4,"bbox":[552,215,308,183]}
+{"kind":"shape","id":"sh/r2143atg","slide":1,"bbox":[890,193,12,12]}
+{"kind":"textbox","id":"sh/q1sna5cv","slide":1,"text":"해결 방식","textPreview":"해결 방식","textChars":5,"textLines":1,"bbox":[912,186,308,26]}
+{"kind":"textbox","id":"sh/1s3m94bi","slide":1,"text":"• 센서 prim을 명시 타겟팅하고, 재질 prim의 잘못된 RigidBody 속성 제거\n• Trigger collider approximation을 Bounding Cube/Convex Hull로 변경\n• 정지/재가동 값을 Float3 벡터로 주입하고, 속성 경로를 physxSurfaceVelocity:surfaceVelocity로 수동 지정\n• Sleep Threshold=0.0으로 물리 연산을 유지\n• 최종 통합은 PhysX enter 중복을 피하기 위해 Action Graph 대신 AABB overlap 게이트로 1회 감지","textPreview":"• 센서 prim을 명시 타겟팅하고, 재질 prim의 잘못된 RigidBody 속성 제거 | • Trigger collider approximation을 Bounding Cube/Convex Hull로 변경 | • 정지/재가동 값을 Float3 ...","textChars":299,"textLines":5,"bbox":[912,215,308,243]}
+{"kind":"shape","id":"sh/0ra5gzux","slide":1,"bbox":[530,500,690,82]}
+{"kind":"textbox","id":"sh/fq147utc","slide":1,"text":"결과","textPreview":"결과","textChars":2,"textLines":1,"bbox":[552,514,90,28]}
+{"kind":"textbox","id":"sh/epsnepc7","slide":1,"text":"센서 통과 시 gamzi completed! 출력으로 1차 검증을 마쳤고, 최종 통합에서는 bbox 기반 gate가 배터리별 1회만 벨트를 정지·재개하고 pick service를 호출한다.","textPreview":"센서 통과 시 gamzi completed! 출력으로 1차 검증을 마쳤고, 최종 통합에서는 bbox 기반 gate가 배터리별 1회만 벨트를 정지·재개하고 pick service를 호출한다.","textChars":105,"textLines":1,"bbox":[632,514,560,52]}
+{"kind":"textbox","id":"sh/hwzmx0ve","slide":1,"text":"01/05","textPreview":"01/05","textChars":5,"textLines":1,"bbox":[1160,660,78,28]}
+{"kind":"image","id":"im/5wvq58nm","slide":1,"name":"","geometry":"rect","alt":"컨베이어 벨트와 트리거 센서 초기 공장 화면","bbox":[42,188,452,268]}
+{"kind":"notes","id":"nt/0nd2dk","slide":1,"text":"[Sources]\nUser troubleshooting record in conversation: Action Graph Trigger, Write Prim Attribute, Sleep Mode details.\nVisual: /home/rokey/Videos/Screencasts/initial_battery_factory.webm\nCode: /home/rokey/rokey_d2_gamin_4/main.py (enable_extension, ensure_all_conveyor_belts_running, set_conveyor_track_03_enabled, update_conveyor_gate)\n\n[Full troubleshooting write-up]\nAction Graph에서 Trigger Volume 기반 감지를 먼저 시도했다. 초기 에러는 On Trigger 노드가 참조할 Trigger Paths를 갖지 못해 None prim을 대상으로 실행되면서 발생했다. Sensor_Trigger를 명시적으로 연결해 참조 에러를 제거했다. 다음으로 3D 형상이 아닌 재질 prim에 RigidBodyAPI가 적용된 것을 제거해 PhysX API 충돌을 정리했다. 그 뒤에도 이벤트가 없어서 collider 시각화로 센서와 대상 물체의 물리 실체를 확인했고, trigger는 triangle mesh가 아니라 bounding cube/convex hull collider로 단순화해야 안정적으로 감지된다는 결론을 얻었다. 대상 큐브에도 rigid body를 부여해 trigger pair가 만들어지게 했다. 컨베이어 정지는 Write Prim Attribute로 구현했으나 surface velocity가 3D 벡터인데 Constant Float를 연결해 float has no len() 에러가 났고, Float3와 정확한 속성 경로로 수정했다. 재가동 후 멈춤은 rigid body sleep 때문이라 Sleep Threshold를 0.0으로 낮췄다. 최종 통합에서는 배터리가 여러 rigid body 조각으로 나뉘며 PhysX trigger enter가 중복 발생했기 때문에, Action Graph 체인을 비활성화하고 Python의 AABB overlap gate로 배터리 path당 정확히 1회만 감지하도록 변경했다."}
+{"kind":"slide","id":"sl/w1s3rh","slide":2,"title":"02  2026.08.05","textShapes":11}
+{"kind":"textbox","id":"sh/mhkv2h4n","slide":2,"text":"02  2026.08.05","textPreview":"02  2026.08.05","textChars":14,"textLines":1,"bbox":[42,30,460,32]}
+{"kind":"textbox","id":"sh/94bexw3y","slide":2,"text":"나사 분해 로봇이 나사 사이를 직선 이동하며 충돌 위험 경로를 만들었다","textPreview":"나사 분해 로봇이 나사 사이를 직선 이동하며 충돌 위험 경로를 만들었다","textChars":39,"textLines":1,"bbox":[42,72,1180,76]}
+{"kind":"shape","id":"sh/8j2d4rmt","slide":2,"bbox":[42,158,1196,1]}
+{"kind":"shape","id":"sh/u5kv614j","slide":2,"bbox":[42,188,452,268]}
+{"kind":"shape","id":"sh/h8ve1g3a","slide":2,"bbox":[42,485,12,12]}
+{"kind":"textbox","id":"sh/w7md8bmp","slide":2,"text":"문제점","textPreview":"문제점","textChars":3,"textLines":1,"bbox":[64,478,430,26]}
+{"kind":"textbox","id":"sh/jadw36lg","slide":2,"text":"• 나사 4개 사이를 낮은 높이에서 바로 이동해 드라이버 tip이 case와 가까워짐\n• nasa_1~4의 xform 위치가 동일하게 보이는 경우가 있어 단순 transform 기반 목표가 틀림\n• 작업대 위 배터리가 동적 rigid body라 접촉 시 밀리며 다음 목표가 흔들림","textPreview":"• 나사 4개 사이를 낮은 높이에서 바로 이동해 드라이버 tip이 case와 가까워짐 | • nasa_1~4의 xform 위치가 동일하게 보이는 경우가 있어 단순 transform 기반 목표가 틀림 | • 작업대 위 배터리가 동적 rigid bo...","textChars":156,"textLines":3,"bbox":[64,507,430,123]}
+{"kind":"shape","id":"sh/i94va14v","slide":2,"bbox":[530,193,12,12]}
+{"kind":"textbox","id":"sh/wbq9knq5","slide":2,"text":"원인 분석","textPreview":"원인 분석","textChars":5,"textLines":1,"bbox":[552,186,308,26]}
+{"kind":"textbox","id":"sh/hczads7q","slide":2,"text":"• tip과 link_6의 실제 transform 차이를 관측해 tool offset을 계산\n• 각 나사의 world bbox를 계산하고, 중심 XY와 bbox max Z를 나사 머리 목표로 사용\n• 접근 실패 구간을 HOME_ALIGN → WAYPOINT → APPROACH → STABILIZE → SCREW → RETRACT로 분해","textPreview":"• tip과 link_6의 실제 transform 차이를 관측해 tool offset을 계산 | • 각 나사의 world bbox를 계산하고, 중심 XY와 bbox max Z를 나사 머리 목표로 사용 | • 접근 실패 구간을 HOME_ALIGN ...","textChars":188,"textLines":3,"bbox":[552,215,308,183]}
+{"kind":"shape","id":"sh/up8rid8z","slide":2,"bbox":[890,193,12,12]}
+{"kind":"textbox","id":"sh/vqhsbipk","slide":2,"text":"해결 방식","textPreview":"해결 방식","textChars":5,"textLines":1,"bbox":[912,186,308,26]}
+{"kind":"textbox","id":"sh/4fq9onqh","slide":2,"text":"• 상공 waypoint와 수직 하강축을 분리해 장애물 근처 횡이동 제거\n• 작업 중 battery top prim을 kinematic으로 잠시 고정하고 finally에서 원복\n• RMPFlow 목표 허용 오차, timeout, hover/work z offset을 단계별 튜닝","textPreview":"• 상공 waypoint와 수직 하강축을 분리해 장애물 근처 횡이동 제거 | • 작업 중 battery top prim을 kinematic으로 잠시 고정하고 finally에서 원복 | • RMPFlow 목표 허용 오차, timeout, hover...","textChars":155,"textLines":3,"bbox":[912,215,308,243]}
+{"kind":"shape","id":"sh/5gzahs7m","slide":2,"bbox":[530,500,690,82]}
+{"kind":"textbox","id":"sh/id8rmx8b","slide":2,"text":"결과","textPreview":"결과","textChars":2,"textLines":1,"bbox":[552,514,90,28]}
+{"kind":"textbox","id":"sh/jehsf2pw","slide":2,"text":"드라이버는 나사 머리 위에서만 수직 접근하고, 나사별 위치가 복사 prim 구조여도 bbox로 실제 geometry를 추적한다.","textPreview":"드라이버는 나사 머리 위에서만 수직 접근하고, 나사별 위치가 복사 prim 구조여도 bbox로 실제 geometry를 추적한다.","textChars":71,"textLines":1,"bbox":[632,514,560,52]}
+{"kind":"textbox","id":"sh/sja9s7qd","slide":2,"text":"02/05","textPreview":"02/05","textChars":5,"textLines":1,"bbox":[1160,660,78,28]}
+{"kind":"image","id":"im/ehw3et0b","slide":2,"name":"","geometry":"rect","alt":"나사 분해 경로 조정 실험 화면","bbox":[42,188,452,268]}
+{"kind":"notes","id":"nt/w1s3rh","slide":2,"text":"[Sources]\nVisual: /home/rokey/Videos/Screencasts/test_4_2_수직상승추가.webm\nCode: /home/rokey/rokey_d2_gamin_4/controller/screw_disassembly_node.py\nLegacy code: /home/rokey/cobot3_ws/isaacpjt/M0609/test_04_stabilizing.py"}
+{"kind":"slide","id":"sl/rgzi6e","slide":3,"title":"03  2026.08.05","textShapes":11}
+{"kind":"textbox","id":"sh/ny947q1k","slide":3,"text":"03  2026.08.05","textPreview":"03  2026.08.05","textChars":14,"textLines":1,"bbox":[42,30,460,32]}
+{"kind":"textbox","id":"sh/oz25gbi5","slide":3,"text":"ROS 2 서비스 체인이 같은 executor에서 대기하며 공정 연결을 막았다","textPreview":"ROS 2 서비스 체인이 같은 executor에서 대기하며 공정 연결을 막았다","textChars":43,"textLines":1,"bbox":[42,72,1180,76]}
+{"kind":"shape","id":"sh/p0bm9gja","slide":3,"bbox":[42,158,1196,1]}
+{"kind":"shape","id":"sh/b2t4bq1g","slide":3,"bbox":[42,188,452,268]}
+{"kind":"shape","id":"sh/c325kvi1","slide":3,"bbox":[42,485,12,12]}
+{"kind":"textbox","id":"sh/x4bmd0jm","slide":3,"text":"문제점","textPreview":"문제점","textChars":3,"textLines":1,"bbox":[64,478,430,26]}
+{"kind":"textbox","id":"sh/q5g361kr","slide":3,"text":"• 서비스 callback 안에서 다음 서비스를 동기 대기하면 response를 처리할 spin 기회가 없음\n• Isaac Kit Python 3.11과 /opt/ros/humble Python 3.10 rclpy가 섞여 import가 깨짐\n• 공정별 독립 실행 파일은 subprocess ros2 call, flag polling, 별도 World를 섞어 통합이 어려움","textPreview":"• 서비스 callback 안에서 다음 서비스를 동기 대기하면 response를 처리할 spin 기회가 없음 | • Isaac Kit Python 3.11과 /opt/ros/humble Python 3.10 rclpy가 섞여 import가 깨짐 ...","textChars":207,"textLines":3,"bbox":[64,507,430,123]}
+{"kind":"shape","id":"sh/r6p4z61c","slide":3,"bbox":[530,193,12,12]}
+{"kind":"textbox","id":"sh/v65g72xw","slide":3,"text":"원인 분석","textPreview":"원인 분석","textChars":5,"textLines":1,"bbox":[552,186,308,26]}
+{"kind":"textbox","id":"sh/a5wzexwr","slide":3,"text":"• call_async 후 future를 기다리는 위치와 executor spin 위치를 분리해 deadlock 가능성 추적\n• sys.path와 LD_LIBRARY_PATH를 점검해 Isaac 번들 rclpy를 우선 로드해야 함을 확인\n• World.step(render=True) 루프 안에서 ROS spin_once가 필요한 지점을 공정별로 분리","textPreview":"• call_async 후 future를 기다리는 위치와 executor spin 위치를 분리해 deadlock 가능성 추적 | • sys.path와 LD_LIBRARY_PATH를 점검해 Isaac 번들 rclpy를 우선 로드해야 함을 확인 | ...","textChars":196,"textLines":3,"bbox":[552,215,308,183]}
+{"kind":"shape","id":"sh/x8ny9cv2","slide":3,"bbox":[890,193,12,12]}
+{"kind":"textbox","id":"sh/w7ehg7eh","slide":3,"text":"해결 방식","textPreview":"해결 방식","textChars":5,"textLines":1,"bbox":[912,186,308,26]}
+{"kind":"textbox","id":"sh/ni5g3ix0","slide":3,"text":"• Isaac ros2 bridge extension을 먼저 enable하고 bundled rclpy/lib 경로를 sys.path/env에 고정\n• 후속 공정 트리거는 fire-and-forget으로 보내고, 응답 대기가 필요한 체인은 helper node 사용\n• GripCellNode는 전압 서버 직접 콜백과 async Trigger polling을 병행해 같은 프로세스 deadlock 회피","textPreview":"• Isaac ros2 bridge extension을 먼저 enable하고 bundled rclpy/lib 경로를 sys.path/env에 고정 | • 후속 공정 트리거는 fire-and-forget으로 보내고, 응답 대기가 필요한 체인은 he...","textChars":223,"textLines":3,"bbox":[912,215,308,243]}
+{"kind":"shape","id":"sh/mhwzadwf","slide":3,"bbox":[530,500,690,82]}
+{"kind":"textbox","id":"sh/9kny5sf6","slide":3,"text":"결과","textPreview":"결과","textChars":2,"textLines":1,"bbox":[552,514,90,28]}
+{"kind":"textbox","id":"sh/8jehcnel","slide":3,"text":"컨베이어 감지 → 작업대 이송 → 나사 분해 → 뚜껑 분리 → 셀 검사 → 커버 닫기 → 나사 조임이 서비스 체인으로 연결됐다.","textPreview":"컨베이어 감지 → 작업대 이송 → 나사 분해 → 뚜껑 분리 → 셀 검사 → 커버 닫기 → 나사 조임이 서비스 체인으로 연결됐다.","textChars":71,"textLines":1,"bbox":[632,514,560,52]}
+{"kind":"textbox","id":"sh/zelgzixo","slide":3,"text":"03/05","textPreview":"03/05","textChars":5,"textLines":1,"bbox":[1160,660,78,28]}
+{"kind":"image","id":"im/vqxwjitk","slide":3,"name":"","geometry":"rect","alt":"ROS 서비스 호출 성공 확인 화면","bbox":[42,188,452,268]}
+{"kind":"notes","id":"nt/rgzi6e","slide":3,"text":"[Sources]\nVisual: /home/rokey/Videos/Screencasts/test6_ros통신성공.webm\nCode: /home/rokey/rokey_d2_gamin_4/main.py\nCode: /home/rokey/rokey_d2_gamin_4/controller/screw_disassembly_node.py\nCode: /home/rokey/rokey_d2_gamin_4/controller/suction_cover_close_node.py\nCode: /home/rokey/rokey_d2_gamin_4/controller/grip_cell_node.py"}
+{"kind":"slide","id":"sl/3t2d7p","slide":4,"title":"04  2026.08.10","textShapes":11}
+{"kind":"textbox","id":"sh/cbyxc7yl","slide":4,"text":"04  2026.08.10","textPreview":"04  2026.08.10","textChars":14,"textLines":1,"bbox":[42,30,460,32]}
+{"kind":"textbox","id":"sh/bapw3mh0","slide":4,"text":"뚜껑 열기 통합은 로봇 제어보다 USD 물리 구조가 먼저 문제였다","textPreview":"뚜껑 열기 통합은 로봇 제어보다 USD 물리 구조가 먼저 문제였다","textChars":36,"textLines":1,"bbox":[42,72,1180,76]}
+{"kind":"shape","id":"sh/q9gvahgf","slide":4,"bbox":[42,158,1196,1]}
+{"kind":"shape","id":"sh/0zixgryh","slide":4,"bbox":[42,188,452,268]}
+{"kind":"shape","id":"sh/zy9w7mhw","slide":4,"bbox":[42,485,12,12]}
+{"kind":"textbox","id":"sh/ydgfehgb","slide":4,"text":"문제점","textPreview":"문제점","textChars":3,"textLines":1,"bbox":[64,478,430,26]}
+{"kind":"textbox","id":"sh/94redwfy","slide":4,"text":"• 기존 good_battery는 casecover가 독립 rigid body가 아니라 뚜껑만 분리 불가\n• 조인트를 너무 일찍 끊으면 흡착 전에 뚜껑과 나사가 먼저 움직임\n• 원본 battery_open_sasumi.py는 별도 World/RMPFlow runner라 main.py에 그대로 이식하면 중복 제어 발생","textPreview":"• 기존 good_battery는 casecover가 독립 rigid body가 아니라 뚜껑만 분리 불가 | • 조인트를 너무 일찍 끊으면 흡착 전에 뚜껑과 나사가 먼저 움직임 | • 원본 battery_open_sasumi.py는 별도 Worl...","textChars":177,"textLines":3,"bbox":[64,507,430,123]}
+{"kind":"shape","id":"sh/83ixkryd","slide":4,"bbox":[530,193,12,12]}
+{"kind":"textbox","id":"sh/ex0zidkr","slide":4,"text":"원인 분석","textPreview":"원인 분석","textChars":5,"textLines":1,"bbox":[552,186,308,26]}
+{"kind":"textbox","id":"sh/fy9grilc","slide":4,"text":"• USD prim 이름과 PhysicsFixedJoint 구조를 grep/검증: casecover, casebase, nasa_1~4 확인\n• 원본 로직의 핵심은 motion runner가 아니라 접촉 순간 casecover_to_casebase joint 비활성화임을 분리\n• VG10 기존 SuctionStatePickPlaceController의 GRIP 상태와 joint release 타이밍을 대조","textPreview":"• USD prim 이름과 PhysicsFixedJoint 구조를 grep/검증: casecover, casebase, nasa_1~4 확인 | • 원본 로직의 핵심은 motion runner가 아니라 접촉 순간 casecover_to_caseb...","textChars":228,"textLines":3,"bbox":[552,215,308,183]}
+{"kind":"shape","id":"sh/gzihk32h","slide":4,"bbox":[890,193,12,12]}
+{"kind":"textbox","id":"sh/10bit832","slide":4,"text":"해결 방식","textPreview":"해결 방식","textChars":5,"textLines":1,"bbox":[912,186,308,26]}
+{"kind":"textbox","id":"sh/21kzmdkn","slide":4,"text":"• casecover/casebase/joint가 분리된 small_cell_battery_staged_meters 계열 모델로 교체\n• GRIP 단계에서 흡착 접촉을 확인한 직후 fixed joint를 비활성화\n• 나사 4개는 casecover에 붙은 상태를 유지해 원본과 같은 뚜껑+나사 일괄 제거 방식 선택","textPreview":"• casecover/casebase/joint가 분리된 small_cell_battery_staged_meters 계열 모델로 교체 | • GRIP 단계에서 흡착 접촉을 확인한 직후 fixed joint를 비활성화 | • 나사 4개는 casec...","textChars":174,"textLines":3,"bbox":[912,215,308,243]}
+{"kind":"shape","id":"sh/32t0vil8","slide":4,"bbox":[530,500,690,82]}
+{"kind":"textbox","id":"sh/o32hon2t","slide":4,"text":"결과","textPreview":"결과","textChars":2,"textLines":1,"bbox":[552,514,90,28]}
+{"kind":"textbox","id":"sh/p4bixs3e","slide":4,"text":"뚜껑은 흡착 후에만 자유 body가 되어 안정적으로 분리되고, 이후 RG2 셀 추출 공정으로 넘길 수 있게 됐다.","textPreview":"뚜껑은 흡착 후에만 자유 body가 되어 안정적으로 분리되고, 이후 RG2 셀 추출 공정으로 넘길 수 있게 됐다.","textChars":63,"textLines":1,"bbox":[632,514,560,52]}
+{"kind":"textbox","id":"sh/i5gzatkj","slide":4,"text":"04/05","textPreview":"04/05","textChars":5,"textLines":1,"bbox":[1160,660,78,28]}
+{"kind":"image","id":"im/8za94nil","slide":4,"name":"","geometry":"rect","alt":"뚜껑 열기 통합 실패 화면","bbox":[42,188,452,268]}
+{"kind":"notes","id":"nt/3t2d7p","slide":4,"text":"[Sources]\nVisual: /home/rokey/Videos/Screencasts/integration_gripper_open_failed3.webm\nCode: /home/rokey/rokey_d2_gamin_4/docs/INTEGRATION_NOTES.md\nLegacy code: /home/rokey/cobot3_ws/isaacpjt/batteryfactory/battery_open_sasumi_v5.py"}
+{"kind":"slide","id":"sl/42sw00","slide":5,"title":"05  2026.08.10 ~ 2026.08.11","textShapes":11}
+{"kind":"textbox","id":"sh/e9w7a5wf","slide":5,"text":"05  2026.08.10 ~ 2026.08.11","textPreview":"05  2026.08.10 ~ 2026.08.11","textChars":27,"textLines":1,"bbox":[42,30,460,32]}
+{"kind":"textbox","id":"sh/1cn650v6","slide":5,"text":"셀 추출·검사·적재는 절대좌표 이식이 아니라 런타임 기하 계산으로 풀었다","textPreview":"셀 추출·검사·적재는 절대좌표 이식이 아니라 런타임 기하 계산으로 풀었다","textChars":40,"textLines":1,"bbox":[42,72,1180,76]}
+{"kind":"shape","id":"sh/gbepcfel","slide":5,"bbox":[42,158,1196,1]}
+{"kind":"shape","id":"sh/65c76lwj","slide":5,"bbox":[42,188,452,268]}
+{"kind":"shape","id":"sh/t83610fu","slide":5,"bbox":[42,485,12,12]}
+{"kind":"textbox","id":"sh/s7up8ve9","slide":5,"text":"문제점","textPreview":"문제점","textChars":3,"textLines":1,"bbox":[64,478,430,26]}
+{"kind":"textbox","id":"sh/b2p8bud8","slide":5,"text":"• 독립 실행 grip_cell 코드의 검사대 좌표는 다른 씬 기준이라 통합 씬에서 도달 불가능\n• source cell, inspection point, new_case slot이 모두 다른 기준 좌표를 사용\n• 불량 셀 발생 시 cell 번호와 new_case 적재 슬롯 번호가 어긋나기 쉬움","textPreview":"• 독립 실행 grip_cell 코드의 검사대 좌표는 다른 씬 기준이라 통합 씬에서 도달 불가능 | • source cell, inspection point, new_case slot이 모두 다른 기준 좌표를 사용 | • 불량 셀 발생 시 cel...","textChars":165,"textLines":3,"bbox":[64,507,430,123]}
+{"kind":"shape","id":"sh/q1g7ipwn","slide":5,"bbox":[530,193,12,12]}
+{"kind":"textbox","id":"sh/sjyx0ze9","slide":5,"text":"원인 분석","textPreview":"원인 분석","textChars":5,"textLines":1,"bbox":[552,186,308,26]}
+{"kind":"textbox","id":"sh/dk7y94fu","slide":5,"text":"• cell/casebase/new_case prim을 이름 기반 재귀 탐색해 reference 중첩에 대응\n• 각 cell bbox의 장축/단축을 보고 RG2 yaw와 접근축을 선택\n• 전압 검사와 CNN 검사 결과를 분리해 true일 때만 stack_count를 증가시키는 상태 모델 정의","textPreview":"• cell/casebase/new_case prim을 이름 기반 재귀 탐색해 reference 중첩에 대응 | • 각 cell bbox의 장축/단축을 보고 RG2 yaw와 접근축을 선택 | • 전압 검사와 CNN 검사 결과를 분리해 true일 ...","textChars":163,"textLines":3,"bbox":[552,215,308,183]}
+{"kind":"shape","id":"sh/qhwfy9w3","slide":5,"bbox":[890,193,12,12]}
+{"kind":"textbox","id":"sh/ri5g7exo","slide":5,"text":"해결 방식","textPreview":"해결 방식","textChars":5,"textLines":1,"bbox":[912,186,308,26]}
+{"kind":"textbox","id":"sh/4fexwzex","slide":5,"text":"• runtime bbox로 pick overhead, insertion, inspection, new_case target을 매번 계산\n• gripper opening 값을 목적별로 분리해 case 벽 충돌과 release 실패를 줄임\n• cell_count는 원본 셀 진행, stack_count는 정상 셀 적재 슬롯으로 분리","textPreview":"• runtime bbox로 pick overhead, insertion, inspection, new_case target을 매번 계산 | • gripper opening 값을 목적별로 분리해 case 벽 충돌과 release 실패를 줄임 | ...","textChars":184,"textLines":3,"bbox":[912,215,308,243]}
+{"kind":"shape","id":"sh/5gny54fi","slide":5,"bbox":[530,500,690,82]}
+{"kind":"textbox","id":"sh/idwfapwr","slide":5,"text":"결과","textPreview":"결과","textChars":2,"textLines":1,"bbox":[552,514,90,28]}
+{"kind":"textbox","id":"sh/3e5g3uxc","slide":5,"text":"불량 셀은 reject로 보내고 정상 셀만 빈 슬롯 없이 new_case에 적재하는 분류 흐름이 완성됐다.","textPreview":"불량 셀은 reject로 보내고 정상 셀만 빈 슬롯 없이 new_case에 적재하는 분류 흐름이 완성됐다.","textChars":59,"textLines":1,"bbox":[632,514,560,52]}
+{"kind":"textbox","id":"sh/grux8fe1","slide":5,"text":"05/05","textPreview":"05/05","textChars":5,"textLines":1,"bbox":[1160,660,78,28]}
+{"kind":"image","id":"im/ypc32tkr","slide":5,"name":"","geometry":"rect","alt":"셀 추출 및 적재 공정 화면","bbox":[42,188,452,268]}
+{"kind":"notes","id":"nt/42sw00","slide":5,"text":"[Sources]\nVisual: /home/rokey/Videos/Screencasts/PULLOUT_FINAL.webm\nFinal visual reference: /home/rokey/Videos/Screencasts/시연영상3.webm\nCode: /home/rokey/rokey_d2_gamin_4/controller/grip_cell_node.py"}

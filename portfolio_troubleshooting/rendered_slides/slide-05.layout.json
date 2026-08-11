@@ -1,0 +1,1128 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/42sw00",
+    "id": "42sw00",
+    "slide": 5,
+    "layoutId": "29b662f4-143e-4289-9ddb-5e9aa0150bb1",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "afc2f5bc-5117-4967-adcc-247780d64c09",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#FFFFFF",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Noto Sans CJK KR"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "29b662f4-143e-4289-9ddb-5e9aa0150bb1",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "afc2f5bc-5117-4967-adcc-247780d64c09",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "afc2f5bc-5117-4967-adcc-247780d64c09",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/e9w7a5wf",
+      "id": "1",
+      "bbox": [
+        42,
+        30,
+        460,
+        32
+      ],
+      "geometry": "rect",
+      "text": "05  2026.08.10 ~ 2026.08.11",
+      "textPreview": "05  2026.08.10 ~ 2026.08.11",
+      "resolvedFontSize": 18.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#59616D",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.93,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "05  2026.08.10 ~ 2026.08.11"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "05  2026.08.10 ~ 2026.08.11",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#59616D",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "05  2026.08.10 ~ 2026.08.11",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#59616D",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1cn650v6",
+      "id": "2",
+      "bbox": [
+        42,
+        72,
+        1180,
+        76
+      ],
+      "geometry": "rect",
+      "text": "셀 추출·검사·적재는 절대좌표 이식이 아니라 런타임 기하 계산으로 풀었다",
+      "textPreview": "셀 추출·검사·적재는 절대좌표 이식이 아니라 런타임 기하 계산으로 풀었다",
+      "resolvedFontSize": 31,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 31,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "셀 추출·검사·적재는 절대좌표 이식이 아니라 런타임 기하 계산으로 풀었다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "셀 추출·검사·적재는 절대좌표 이식이 아니라 런타임 기하 계산으로 풀었다",
+          "resolvedTextStyle": {
+            "fontSize": 31,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "셀 추출·검사·적재는 절대좌표 이식이 아니라 런타임 기하 계산으로 풀었다",
+              "fontSize": 31,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/gbepcfel",
+      "id": "3",
+      "bbox": [
+        42,
+        158,
+        1196,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#B9BEC7",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/ypc32tkr",
+      "id": "4",
+      "bbox": [
+        42,
+        188,
+        452,
+        268
+      ],
+      "geometry": "rect",
+      "alt": "셀 추출 및 적재 공정 화면",
+      "contentType": "image/png",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "rect"
+      },
+      "asset": {
+        "assetId": "9f546c71-299a-45ea-b26e-ea26c03ad3d0",
+        "contentType": "image/png",
+        "byteLength": 3469614
+      }
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/65c76lwj",
+      "id": "5",
+      "bbox": [
+        42,
+        188,
+        452,
+        268
+      ],
+      "geometry": "rect",
+      "lineColor": "#B9BEC7",
+      "lineWidth": 1
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/t83610fu",
+      "id": "6",
+      "bbox": [
+        42,
+        485,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/s7up8ve9",
+      "id": "7",
+      "bbox": [
+        64,
+        478,
+        430,
+        26
+      ],
+      "geometry": "rect",
+      "text": "문제점",
+      "textPreview": "문제점",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "문제점"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "문제점",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "문제점",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/b2p8bud8",
+      "id": "8",
+      "bbox": [
+        64,
+        507,
+        430,
+        123
+      ],
+      "geometry": "rect",
+      "text": "• 독립 실행 grip_cell 코드의 검사대 좌표는 다른 씬 기준이라 통합 씬에서 도달 불가능\n• source cell, inspection point, new_case slot이 모두 다른 기준 좌표를 사용\n• 불량 셀 발생 시 cell 번호와 new_case 적재 슬롯 번호가 어긋나기 쉬움",
+      "textPreview": "• 독립 실행 grip_cell 코드의 검사대 좌표는 다른 씬 기준이라 통합 씬에서 도달 불가능 | • source cell, inspection point, new_case slot이 모두 다른 기준 좌표를 사용 | • 불량 셀 발생 시 cel...",
+      "resolvedFontSize": 13.8,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13.8,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 5,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• 독립 실행 grip_cell 코드의 검사대 좌표는 다른 씬 기준이라 통합"
+          },
+          {
+            "index": 2,
+            "text": "씬에서 도달 불가능"
+          },
+          {
+            "index": 3,
+            "text": "• source cell, inspection point, new_case slot이 모두 다른 기준"
+          },
+          {
+            "index": 4,
+            "text": "좌표를 사용"
+          },
+          {
+            "index": 5,
+            "text": "• 불량 셀 발생 시 cell 번호와 new_case 적재 슬롯 번호가 어긋나기 쉬움"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• 독립 실행 grip_cell 코드의 검사대 좌표는 다른 씬 기준이라 통합 씬에서 도달 불가능",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 독립 실행 grip_cell 코드의 검사대 좌표는 다른 씬 기준이라 통합 씬에서 도달 불가능",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• source cell, inspection point, new_case slot이 모두 다른 기준 좌표를 사용",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• source cell, inspection point, new_case slot이 모두 다른 기준 좌표를 사용",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• 불량 셀 발생 시 cell 번호와 new_case 적재 슬롯 번호가 어긋나기 쉬움",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 불량 셀 발생 시 cell 번호와 new_case 적재 슬롯 번호가 어긋나기 쉬움",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/q1g7ipwn",
+      "id": "9",
+      "bbox": [
+        530,
+        193,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/sjyx0ze9",
+      "id": "10",
+      "bbox": [
+        552,
+        186,
+        308,
+        26
+      ],
+      "geometry": "rect",
+      "text": "원인 분석",
+      "textPreview": "원인 분석",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "원인 분석"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "원인 분석",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "원인 분석",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dk7y94fu",
+      "id": "11",
+      "bbox": [
+        552,
+        215,
+        308,
+        183
+      ],
+      "geometry": "rect",
+      "text": "• cell/casebase/new_case prim을 이름 기반 재귀 탐색해 reference 중첩에 대응\n• 각 cell bbox의 장축/단축을 보고 RG2 yaw와 접근축을 선택\n• 전압 검사와 CNN 검사 결과를 분리해 true일 때만 stack_count를 증가시키는 상태 모델 정의",
+      "textPreview": "• cell/casebase/new_case prim을 이름 기반 재귀 탐색해 reference 중첩에 대응 | • 각 cell bbox의 장축/단축을 보고 RG2 yaw와 접근축을 선택 | • 전압 검사와 CNN 검사 결과를 분리해 true일 ...",
+      "resolvedFontSize": 14.2,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.2,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 6,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• cell/casebase/new_case prim을 이름 기반"
+          },
+          {
+            "index": 2,
+            "text": "재귀 탐색해 reference 중첩에 대응"
+          },
+          {
+            "index": 3,
+            "text": "• 각 cell bbox의 장축/단축을 보고 RG2 yaw와"
+          },
+          {
+            "index": 4,
+            "text": "접근축을 선택"
+          },
+          {
+            "index": 5,
+            "text": "• 전압 검사와 CNN 검사 결과를 분리해 true일"
+          },
+          {
+            "index": 6,
+            "text": "때만 stack_count를 증가시키는 상태 모델 정의"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• cell/casebase/new_case prim을 이름 기반 재귀 탐색해 reference 중첩에 대응",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• cell/casebase/new_case prim을 이름 기반 재귀 탐색해 reference 중첩에 대응",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• 각 cell bbox의 장축/단축을 보고 RG2 yaw와 접근축을 선택",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 각 cell bbox의 장축/단축을 보고 RG2 yaw와 접근축을 선택",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• 전압 검사와 CNN 검사 결과를 분리해 true일 때만 stack_count를 증가시키는 상태 모델 정의",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 전압 검사와 CNN 검사 결과를 분리해 true일 때만 stack_count를 증가시키는 상태 모델 정의",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qhwfy9w3",
+      "id": "12",
+      "bbox": [
+        890,
+        193,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ri5g7exo",
+      "id": "13",
+      "bbox": [
+        912,
+        186,
+        308,
+        26
+      ],
+      "geometry": "rect",
+      "text": "해결 방식",
+      "textPreview": "해결 방식",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "해결 방식"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "해결 방식",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "해결 방식",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4fexwzex",
+      "id": "14",
+      "bbox": [
+        912,
+        215,
+        308,
+        243
+      ],
+      "geometry": "rect",
+      "text": "• runtime bbox로 pick overhead, insertion, inspection, new_case target을 매번 계산\n• gripper opening 값을 목적별로 분리해 case 벽 충돌과 release 실패를 줄임\n• cell_count는 원본 셀 진행, stack_count는 정상 셀 적재 슬롯으로 분리",
+      "textPreview": "• runtime bbox로 pick overhead, insertion, inspection, new_case target을 매번 계산 | • gripper opening 값을 목적별로 분리해 case 벽 충돌과 release 실패를 줄임 | ...",
+      "resolvedFontSize": 14.2,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.2,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 6,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• runtime bbox로 pick overhead, insertion,"
+          },
+          {
+            "index": 2,
+            "text": "inspection, new_case target을 매번 계산"
+          },
+          {
+            "index": 3,
+            "text": "• gripper opening 값을 목적별로 분리해 case"
+          },
+          {
+            "index": 4,
+            "text": "벽 충돌과 release 실패를 줄임"
+          },
+          {
+            "index": 5,
+            "text": "• cell_count는 원본 셀 진행, stack_count는"
+          },
+          {
+            "index": 6,
+            "text": "정상 셀 적재 슬롯으로 분리"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• runtime bbox로 pick overhead, insertion, inspection, new_case target을 매번 계산",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• runtime bbox로 pick overhead, insertion, inspection, new_case target을 매번 계산",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• gripper opening 값을 목적별로 분리해 case 벽 충돌과 release 실패를 줄임",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• gripper opening 값을 목적별로 분리해 case 벽 충돌과 release 실패를 줄임",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• cell_count는 원본 셀 진행, stack_count는 정상 셀 적재 슬롯으로 분리",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• cell_count는 원본 셀 진행, stack_count는 정상 셀 적재 슬롯으로 분리",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5gny54fi",
+      "id": "15",
+      "bbox": [
+        530,
+        500,
+        690,
+        82
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFF3DB",
+      "lineColor": "#F0D38A",
+      "lineWidth": 1
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/idwfapwr",
+      "id": "16",
+      "bbox": [
+        552,
+        514,
+        90,
+        28
+      ],
+      "geometry": "rect",
+      "text": "결과",
+      "textPreview": "결과",
+      "resolvedFontSize": 15.33,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.77,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "결과"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "결과",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "결과",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/3e5g3uxc",
+      "id": "17",
+      "bbox": [
+        632,
+        514,
+        560,
+        52
+      ],
+      "geometry": "rect",
+      "text": "불량 셀은 reject로 보내고 정상 셀만 빈 슬롯 없이 new_case에 적재하는 분류 흐름이 완성됐다.",
+      "textPreview": "불량 셀은 reject로 보내고 정상 셀만 빈 슬롯 없이 new_case에 적재하는 분류 흐름이 완성됐다.",
+      "resolvedFontSize": 15.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15.51,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "불량 셀은 reject로 보내고 정상 셀만 빈 슬롯 없이 new_case에 적재하는 분류"
+          },
+          {
+            "index": 2,
+            "text": "흐름이 완성됐다."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "불량 셀은 reject로 보내고 정상 셀만 빈 슬롯 없이 new_case에 적재하는 분류 흐름이 완성됐다.",
+          "resolvedTextStyle": {
+            "fontSize": 15.51,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "불량 셀은 reject로 보내고 정상 셀만 빈 슬롯 없이 new_case에 적재하는 분류 흐름이 완성됐다.",
+              "fontSize": 15.51,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/grux8fe1",
+      "id": "18",
+      "bbox": [
+        1160,
+        660,
+        78,
+        28
+      ],
+      "geometry": "rect",
+      "text": "05/05",
+      "textPreview": "05/05",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#59616D",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "05/05"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "05/05",
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#59616D",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "05/05",
+              "fontSize": 15,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#59616D",
+              "alignment": "right"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

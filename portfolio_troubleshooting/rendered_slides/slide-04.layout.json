@@ -1,0 +1,1144 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/3t2d7p",
+    "id": "3t2d7p",
+    "slide": 4,
+    "layoutId": "29b662f4-143e-4289-9ddb-5e9aa0150bb1",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "afc2f5bc-5117-4967-adcc-247780d64c09",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#FFFFFF",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Noto Sans CJK KR"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "29b662f4-143e-4289-9ddb-5e9aa0150bb1",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "afc2f5bc-5117-4967-adcc-247780d64c09",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "afc2f5bc-5117-4967-adcc-247780d64c09",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cbyxc7yl",
+      "id": "1",
+      "bbox": [
+        42,
+        30,
+        460,
+        32
+      ],
+      "geometry": "rect",
+      "text": "04  2026.08.10",
+      "textPreview": "04  2026.08.10",
+      "resolvedFontSize": 18.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#59616D",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.93,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "04  2026.08.10"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "04  2026.08.10",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#59616D",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "04  2026.08.10",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#59616D",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bapw3mh0",
+      "id": "2",
+      "bbox": [
+        42,
+        72,
+        1180,
+        76
+      ],
+      "geometry": "rect",
+      "text": "뚜껑 열기 통합은 로봇 제어보다 USD 물리 구조가 먼저 문제였다",
+      "textPreview": "뚜껑 열기 통합은 로봇 제어보다 USD 물리 구조가 먼저 문제였다",
+      "resolvedFontSize": 31,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 31,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "뚜껑 열기 통합은 로봇 제어보다 USD 물리 구조가 먼저 문제였다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "뚜껑 열기 통합은 로봇 제어보다 USD 물리 구조가 먼저 문제였다",
+          "resolvedTextStyle": {
+            "fontSize": 31,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "뚜껑 열기 통합은 로봇 제어보다 USD 물리 구조가 먼저 문제였다",
+              "fontSize": 31,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/q9gvahgf",
+      "id": "3",
+      "bbox": [
+        42,
+        158,
+        1196,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#B9BEC7",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/8za94nil",
+      "id": "4",
+      "bbox": [
+        42,
+        188,
+        452,
+        268
+      ],
+      "geometry": "rect",
+      "alt": "뚜껑 열기 통합 실패 화면",
+      "contentType": "image/png",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "rect"
+      },
+      "asset": {
+        "assetId": "8f0ce01c-72fc-4f47-b315-382d4ff3451d",
+        "contentType": "image/png",
+        "byteLength": 630174
+      }
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0zixgryh",
+      "id": "5",
+      "bbox": [
+        42,
+        188,
+        452,
+        268
+      ],
+      "geometry": "rect",
+      "lineColor": "#B9BEC7",
+      "lineWidth": 1
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zy9w7mhw",
+      "id": "6",
+      "bbox": [
+        42,
+        485,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ydgfehgb",
+      "id": "7",
+      "bbox": [
+        64,
+        478,
+        430,
+        26
+      ],
+      "geometry": "rect",
+      "text": "문제점",
+      "textPreview": "문제점",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "문제점"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "문제점",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "문제점",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/94redwfy",
+      "id": "8",
+      "bbox": [
+        64,
+        507,
+        430,
+        123
+      ],
+      "geometry": "rect",
+      "text": "• 기존 good_battery는 casecover가 독립 rigid body가 아니라 뚜껑만 분리 불가\n• 조인트를 너무 일찍 끊으면 흡착 전에 뚜껑과 나사가 먼저 움직임\n• 원본 battery_open_sasumi.py는 별도 World/RMPFlow runner라 main.py에 그대로 이식하면 중복 제어 발생",
+      "textPreview": "• 기존 good_battery는 casecover가 독립 rigid body가 아니라 뚜껑만 분리 불가 | • 조인트를 너무 일찍 끊으면 흡착 전에 뚜껑과 나사가 먼저 움직임 | • 원본 battery_open_sasumi.py는 별도 Worl...",
+      "resolvedFontSize": 13.8,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13.8,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 5,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• 기존 good_battery는 casecover가 독립 rigid body가 아니라 뚜껑만"
+          },
+          {
+            "index": 2,
+            "text": "분리 불가"
+          },
+          {
+            "index": 3,
+            "text": "• 조인트를 너무 일찍 끊으면 흡착 전에 뚜껑과 나사가 먼저 움직임"
+          },
+          {
+            "index": 4,
+            "text": "• 원본 battery_open_sasumi.py는 별도 World/RMPFlow runner라"
+          },
+          {
+            "index": 5,
+            "text": "main.py에 그대로 이식하면 중복 제어 발생"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• 기존 good_battery는 casecover가 독립 rigid body가 아니라 뚜껑만 분리 불가",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 기존 good_battery는 casecover가 독립 rigid body가 아니라 뚜껑만 분리 불가",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• 조인트를 너무 일찍 끊으면 흡착 전에 뚜껑과 나사가 먼저 움직임",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 조인트를 너무 일찍 끊으면 흡착 전에 뚜껑과 나사가 먼저 움직임",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• 원본 battery_open_sasumi.py는 별도 World/RMPFlow runner라 main.py에 그대로 이식하면 중복 제어 발생",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 원본 battery_open_sasumi.py는 별도 World/RMPFlow runner라 main.py에 그대로 이식하면 중복 제어 발생",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/83ixkryd",
+      "id": "9",
+      "bbox": [
+        530,
+        193,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ex0zidkr",
+      "id": "10",
+      "bbox": [
+        552,
+        186,
+        308,
+        26
+      ],
+      "geometry": "rect",
+      "text": "원인 분석",
+      "textPreview": "원인 분석",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "원인 분석"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "원인 분석",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "원인 분석",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fy9grilc",
+      "id": "11",
+      "bbox": [
+        552,
+        215,
+        308,
+        183
+      ],
+      "geometry": "rect",
+      "text": "• USD prim 이름과 PhysicsFixedJoint 구조를 grep/검증: casecover, casebase, nasa_1~4 확인\n• 원본 로직의 핵심은 motion runner가 아니라 접촉 순간 casecover_to_casebase joint 비활성화임을 분리\n• VG10 기존 SuctionStatePickPlaceController의 GRIP 상태와 joint release 타이밍을 대조",
+      "textPreview": "• USD prim 이름과 PhysicsFixedJoint 구조를 grep/검증: casecover, casebase, nasa_1~4 확인 | • 원본 로직의 핵심은 motion runner가 아니라 접촉 순간 casecover_to_caseb...",
+      "resolvedFontSize": 14.2,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.2,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 9,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• USD prim 이름과 PhysicsFixedJoint 구조를"
+          },
+          {
+            "index": 2,
+            "text": "grep/검증: casecover, casebase, nasa_1~4"
+          },
+          {
+            "index": 3,
+            "text": "확인"
+          },
+          {
+            "index": 4,
+            "text": "• 원본 로직의 핵심은 motion runner가 아니라"
+          },
+          {
+            "index": 5,
+            "text": "접촉 순간 casecover_to_casebase joint"
+          },
+          {
+            "index": 6,
+            "text": "비활성화임을 분리"
+          },
+          {
+            "index": 7,
+            "text": "• VG10 기존"
+          },
+          {
+            "index": 8,
+            "text": "SuctionStatePickPlaceController의 GRIP"
+          },
+          {
+            "index": 9,
+            "text": "상태와 joint release 타이밍을 대조"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• USD prim 이름과 PhysicsFixedJoint 구조를 grep/검증: casecover, casebase, nasa_1~4 확인",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• USD prim 이름과 PhysicsFixedJoint 구조를 grep/검증: casecover, casebase, nasa_1~4 확인",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• 원본 로직의 핵심은 motion runner가 아니라 접촉 순간 casecover_to_casebase joint 비활성화임을 분리",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 원본 로직의 핵심은 motion runner가 아니라 접촉 순간 casecover_to_casebase joint 비활성화임을 분리",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• VG10 기존 SuctionStatePickPlaceController의 GRIP 상태와 joint release 타이밍을 대조",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• VG10 기존 SuctionStatePickPlaceController의 GRIP 상태와 joint release 타이밍을 대조",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/gzihk32h",
+      "id": "12",
+      "bbox": [
+        890,
+        193,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/10bit832",
+      "id": "13",
+      "bbox": [
+        912,
+        186,
+        308,
+        26
+      ],
+      "geometry": "rect",
+      "text": "해결 방식",
+      "textPreview": "해결 방식",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "해결 방식"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "해결 방식",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "해결 방식",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/21kzmdkn",
+      "id": "14",
+      "bbox": [
+        912,
+        215,
+        308,
+        243
+      ],
+      "geometry": "rect",
+      "text": "• casecover/casebase/joint가 분리된 small_cell_battery_staged_meters 계열 모델로 교체\n• GRIP 단계에서 흡착 접촉을 확인한 직후 fixed joint를 비활성화\n• 나사 4개는 casecover에 붙은 상태를 유지해 원본과 같은 뚜껑+나사 일괄 제거 방식 선택",
+      "textPreview": "• casecover/casebase/joint가 분리된 small_cell_battery_staged_meters 계열 모델로 교체 | • GRIP 단계에서 흡착 접촉을 확인한 직후 fixed joint를 비활성화 | • 나사 4개는 casec...",
+      "resolvedFontSize": 14.2,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.2,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 7,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• casecover/casebase/joint가 분리된"
+          },
+          {
+            "index": 2,
+            "text": "small_cell_battery_staged_meters 계열"
+          },
+          {
+            "index": 3,
+            "text": "모델로 교체"
+          },
+          {
+            "index": 4,
+            "text": "• GRIP 단계에서 흡착 접촉을 확인한 직후 fixed"
+          },
+          {
+            "index": 5,
+            "text": "joint를 비활성화"
+          },
+          {
+            "index": 6,
+            "text": "• 나사 4개는 casecover에 붙은 상태를 유지해"
+          },
+          {
+            "index": 7,
+            "text": "원본과 같은 뚜껑+나사 일괄 제거 방식 선택"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• casecover/casebase/joint가 분리된 small_cell_battery_staged_meters 계열 모델로 교체",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• casecover/casebase/joint가 분리된 small_cell_battery_staged_meters 계열 모델로 교체",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• GRIP 단계에서 흡착 접촉을 확인한 직후 fixed joint를 비활성화",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• GRIP 단계에서 흡착 접촉을 확인한 직후 fixed joint를 비활성화",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• 나사 4개는 casecover에 붙은 상태를 유지해 원본과 같은 뚜껑+나사 일괄 제거 방식 선택",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 나사 4개는 casecover에 붙은 상태를 유지해 원본과 같은 뚜껑+나사 일괄 제거 방식 선택",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/32t0vil8",
+      "id": "15",
+      "bbox": [
+        530,
+        500,
+        690,
+        82
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFF3DB",
+      "lineColor": "#F0D38A",
+      "lineWidth": 1
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/o32hon2t",
+      "id": "16",
+      "bbox": [
+        552,
+        514,
+        90,
+        28
+      ],
+      "geometry": "rect",
+      "text": "결과",
+      "textPreview": "결과",
+      "resolvedFontSize": 15.33,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.77,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "결과"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "결과",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "결과",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p4bixs3e",
+      "id": "17",
+      "bbox": [
+        632,
+        514,
+        560,
+        52
+      ],
+      "geometry": "rect",
+      "text": "뚜껑은 흡착 후에만 자유 body가 되어 안정적으로 분리되고, 이후 RG2 셀 추출 공정으로 넘길 수 있게 됐다.",
+      "textPreview": "뚜껑은 흡착 후에만 자유 body가 되어 안정적으로 분리되고, 이후 RG2 셀 추출 공정으로 넘길 수 있게 됐다.",
+      "resolvedFontSize": 15.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15.51,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "뚜껑은 흡착 후에만 자유 body가 되어 안정적으로 분리되고, 이후 RG2 셀 추출"
+          },
+          {
+            "index": 2,
+            "text": "공정으로 넘길 수 있게 됐다."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "뚜껑은 흡착 후에만 자유 body가 되어 안정적으로 분리되고, 이후 RG2 셀 추출 공정으로 넘길 수 있게 됐다.",
+          "resolvedTextStyle": {
+            "fontSize": 15.51,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "뚜껑은 흡착 후에만 자유 body가 되어 안정적으로 분리되고, 이후 RG2 셀 추출 공정으로 넘길 수 있게 됐다.",
+              "fontSize": 15.51,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/i5gzatkj",
+      "id": "18",
+      "bbox": [
+        1160,
+        660,
+        78,
+        28
+      ],
+      "geometry": "rect",
+      "text": "04/05",
+      "textPreview": "04/05",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#59616D",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "04/05"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "04/05",
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#59616D",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "04/05",
+              "fontSize": 15,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#59616D",
+              "alignment": "right"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

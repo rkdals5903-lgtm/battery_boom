@@ -1,0 +1,1273 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/0nd2dk",
+    "id": "0nd2dk",
+    "slide": 1,
+    "layoutId": "29b662f4-143e-4289-9ddb-5e9aa0150bb1",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "afc2f5bc-5117-4967-adcc-247780d64c09",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#FFFFFF",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Noto Sans CJK KR"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "29b662f4-143e-4289-9ddb-5e9aa0150bb1",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "afc2f5bc-5117-4967-adcc-247780d64c09",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "afc2f5bc-5117-4967-adcc-247780d64c09",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/x8v6pove",
+      "id": "1",
+      "bbox": [
+        42,
+        30,
+        460,
+        32
+      ],
+      "geometry": "rect",
+      "text": "01  2026.08.02 ~ 진행 중",
+      "textPreview": "01  2026.08.02 ~ 진행 중",
+      "resolvedFontSize": 18.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#59616D",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.93,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "01  2026.08.02 ~ 진행 중"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "01  2026.08.02 ~ 진행 중",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#59616D",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "01  2026.08.02 ~ 진행 중",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#59616D",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/a5knu9cn",
+      "id": "2",
+      "bbox": [
+        42,
+        72,
+        1180,
+        76
+      ],
+      "geometry": "rect",
+      "text": "Action Graph 컨베이어 트리거가 감지·정지·재가동 단계마다 실패했다",
+      "textPreview": "Action Graph 컨베이어 트리거가 감지·정지·재가동 단계마다 실패했다",
+      "resolvedFontSize": 31,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 31,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Action Graph 컨베이어 트리거가 감지·정지·재가동 단계마다 실패했다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Action Graph 컨베이어 트리거가 감지·정지·재가동 단계마다 실패했다",
+          "resolvedTextStyle": {
+            "fontSize": 31,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Action Graph 컨베이어 트리거가 감지·정지·재가동 단계마다 실패했다",
+              "fontSize": 31,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/b6toned8",
+      "id": "3",
+      "bbox": [
+        42,
+        158,
+        1196,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#B9BEC7",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/5wvq58nm",
+      "id": "4",
+      "bbox": [
+        42,
+        188,
+        452,
+        268
+      ],
+      "geometry": "rect",
+      "alt": "컨베이어 벨트와 트리거 센서 초기 공장 화면",
+      "contentType": "image/png",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "rect"
+      },
+      "asset": {
+        "assetId": "cc492015-7c79-473e-b0dd-8e879f6b80e9",
+        "contentType": "image/png",
+        "byteLength": 948110
+      }
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/lwv6tova",
+      "id": "5",
+      "bbox": [
+        42,
+        188,
+        452,
+        268
+      ],
+      "geometry": "rect",
+      "lineColor": "#B9BEC7",
+      "lineWidth": 1
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/yt47ytcz",
+      "id": "6",
+      "bbox": [
+        42,
+        485,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/judorydk",
+      "id": "7",
+      "bbox": [
+        64,
+        478,
+        430,
+        26
+      ],
+      "geometry": "rect",
+      "text": "문제점",
+      "textPreview": "문제점",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "문제점"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "문제점",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "문제점",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8zmp43u1",
+      "id": "8",
+      "bbox": [
+        64,
+        507,
+        430,
+        123
+      ],
+      "geometry": "rect",
+      "text": "• On Trigger 실행 시 KeyError, Prim '' is not valid 로그 발생\n• RigidBodyAPI가 non-xformable 재질 prim에 적용되어 물리 불안정\n• Print Text 연결 후에도 회색 상자가 센서 큐브를 통과해도 이벤트 없음\n• Write Prim Attribute는 <unresolved any>, float has no len()로 속도 주입 실패\n• 벨트 재가동 후 Cube_01이 Sleep Mode에 들어가 다시 움직이지 않음",
+      "textPreview": "• On Trigger 실행 시 KeyError, Prim '' is not valid 로그 발생 | • RigidBodyAPI가 non-xformable 재질 prim에 적용되어 물리 불안정 | • Print Text 연결 후에도 회색 상자가 ...",
+      "resolvedFontSize": 13.8,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13.8,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 6,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• On Trigger 실행 시 KeyError, Prim '' is not valid 로그 발생"
+          },
+          {
+            "index": 2,
+            "text": "• RigidBodyAPI가 non-xformable 재질 prim에 적용되어 물리 불안정"
+          },
+          {
+            "index": 3,
+            "text": "• Print Text 연결 후에도 회색 상자가 센서 큐브를 통과해도 이벤트 없음"
+          },
+          {
+            "index": 4,
+            "text": "• Write Prim Attribute는 <unresolved any>, float has no len()로"
+          },
+          {
+            "index": 5,
+            "text": "속도 주입 실패"
+          },
+          {
+            "index": 6,
+            "text": "• 벨트 재가동 후 Cube_01이 Sleep Mode에 들어가 다시 움직이지 않음"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• On Trigger 실행 시 KeyError, Prim '' is not valid 로그 발생",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• On Trigger 실행 시 KeyError, Prim '' is not valid 로그 발생",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• RigidBodyAPI가 non-xformable 재질 prim에 적용되어 물리 불안정",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• RigidBodyAPI가 non-xformable 재질 prim에 적용되어 물리 불안정",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• Print Text 연결 후에도 회색 상자가 센서 큐브를 통과해도 이벤트 없음",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• Print Text 연결 후에도 회색 상자가 센서 큐브를 통과해도 이벤트 없음",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 4,
+          "text": "• Write Prim Attribute는 <unresolved any>, float has no len()로 속도 주입 실패",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• Write Prim Attribute는 <unresolved any>, float has no len()로 속도 주입 실패",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 5,
+          "text": "• 벨트 재가동 후 Cube_01이 Sleep Mode에 들어가 다시 움직이지 않음",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 벨트 재가동 후 Cube_01이 Sleep Mode에 들어가 다시 움직이지 않음",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/t0f6x8bm",
+      "id": "9",
+      "bbox": [
+        530,
+        193,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dojm5kbm",
+      "id": "10",
+      "bbox": [
+        552,
+        186,
+        308,
+        26
+      ],
+      "geometry": "rect",
+      "text": "원인 분석",
+      "textPreview": "원인 분석",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "원인 분석"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "원인 분석",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "원인 분석",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/s3a5cfu1",
+      "id": "11",
+      "bbox": [
+        552,
+        215,
+        308,
+        183
+      ],
+      "geometry": "rect",
+      "text": "• 참조 검증: Trigger Paths가 비어 있어 On Trigger가 None prim을 잡는지 확인\n• Collider 검증: Show > Physics > Colliders로 센서 bounds가 mesh보다 커진 현상 확인\n• 타입 검증: surface velocity는 스칼라가 아니라 3D vector 입력이어야 함\n• 물리 상태 검증: 정지 뒤 rigid body가 sleep되어 surface velocity 변화를 못 받는 흐름 확인",
+      "textPreview": "• 참조 검증: Trigger Paths가 비어 있어 On Trigger가 None prim을 잡는지 확인 | • Collider 검증: Show > Physics > Colliders로 센서 bounds가 mesh보다 커진 현상 확인 | • 타...",
+      "resolvedFontSize": 14.2,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.2,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 9,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• 참조 검증: Trigger Paths가 비어 있어 On"
+          },
+          {
+            "index": 2,
+            "text": "Trigger가 None prim을 잡는지 확인"
+          },
+          {
+            "index": 3,
+            "text": "• Collider 검증: Show > Physics > Colliders로"
+          },
+          {
+            "index": 4,
+            "text": "센서 bounds가 mesh보다 커진 현상 확인"
+          },
+          {
+            "index": 5,
+            "text": "• 타입 검증: surface velocity는 스칼라가 아니라"
+          },
+          {
+            "index": 6,
+            "text": "3D vector 입력이어야 함"
+          },
+          {
+            "index": 7,
+            "text": "• 물리 상태 검증: 정지 뒤 rigid body가"
+          },
+          {
+            "index": 8,
+            "text": "sleep되어 surface velocity 변화를 못 받는 흐름"
+          },
+          {
+            "index": 9,
+            "text": "확인"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• 참조 검증: Trigger Paths가 비어 있어 On Trigger가 None prim을 잡는지 확인",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 참조 검증: Trigger Paths가 비어 있어 On Trigger가 None prim을 잡는지 확인",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• Collider 검증: Show > Physics > Colliders로 센서 bounds가 mesh보다 커진 현상 확인",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• Collider 검증: Show > Physics > Colliders로 센서 bounds가 mesh보다 커진 현상 확인",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• 타입 검증: surface velocity는 스칼라가 아니라 3D vector 입력이어야 함",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 타입 검증: surface velocity는 스칼라가 아니라 3D vector 입력이어야 함",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 4,
+          "text": "• 물리 상태 검증: 정지 뒤 rigid body가 sleep되어 surface velocity 변화를 못 받는 흐름 확인",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 물리 상태 검증: 정지 뒤 rigid body가 sleep되어 surface velocity 변화를 못 받는 흐름 확인",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/r2143atg",
+      "id": "12",
+      "bbox": [
+        890,
+        193,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/q1sna5cv",
+      "id": "13",
+      "bbox": [
+        912,
+        186,
+        308,
+        26
+      ],
+      "geometry": "rect",
+      "text": "해결 방식",
+      "textPreview": "해결 방식",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "해결 방식"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "해결 방식",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "해결 방식",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1s3m94bi",
+      "id": "14",
+      "bbox": [
+        912,
+        215,
+        308,
+        243
+      ],
+      "geometry": "rect",
+      "text": "• 센서 prim을 명시 타겟팅하고, 재질 prim의 잘못된 RigidBody 속성 제거\n• Trigger collider approximation을 Bounding Cube/Convex Hull로 변경\n• 정지/재가동 값을 Float3 벡터로 주입하고, 속성 경로를 physxSurfaceVelocity:surfaceVelocity로 수동 지정\n• Sleep Threshold=0.0으로 물리 연산을 유지\n• 최종 통합은 PhysX enter 중복을 피하기 위해 Action Graph 대신 AABB overlap 게이트로 1회 감지",
+      "textPreview": "• 센서 prim을 명시 타겟팅하고, 재질 prim의 잘못된 RigidBody 속성 제거 | • Trigger collider approximation을 Bounding Cube/Convex Hull로 변경 | • 정지/재가동 값을 Float3 ...",
+      "resolvedFontSize": 14.2,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.2,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 12,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• 센서 prim을 명시 타겟팅하고, 재질 prim의"
+          },
+          {
+            "index": 2,
+            "text": "잘못된 RigidBody 속성 제거"
+          },
+          {
+            "index": 3,
+            "text": "• Trigger collider approximation을 Bounding"
+          },
+          {
+            "index": 4,
+            "text": "Cube/Convex Hull로 변경"
+          },
+          {
+            "index": 5,
+            "text": "• 정지/재가동 값을 Float3 벡터로 주입하고, 속성"
+          },
+          {
+            "index": 6,
+            "text": "경로를"
+          },
+          {
+            "index": 7,
+            "text": "physxSurfaceVelocity:surfaceVelocity로 수동"
+          },
+          {
+            "index": 8,
+            "text": "지정"
+          },
+          {
+            "index": 9,
+            "text": "• Sleep Threshold=0.0으로 물리 연산을 유지"
+          },
+          {
+            "index": 10,
+            "text": "• 최종 통합은 PhysX enter 중복을 피하기 위해"
+          },
+          {
+            "index": 11,
+            "text": "Action Graph 대신 AABB overlap 게이트로 1회"
+          },
+          {
+            "index": 12,
+            "text": "감지"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• 센서 prim을 명시 타겟팅하고, 재질 prim의 잘못된 RigidBody 속성 제거",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 센서 prim을 명시 타겟팅하고, 재질 prim의 잘못된 RigidBody 속성 제거",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• Trigger collider approximation을 Bounding Cube/Convex Hull로 변경",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• Trigger collider approximation을 Bounding Cube/Convex Hull로 변경",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• 정지/재가동 값을 Float3 벡터로 주입하고, 속성 경로를 physxSurfaceVelocity:surfaceVelocity로 수동 지정",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 정지/재가동 값을 Float3 벡터로 주입하고, 속성 경로를 physxSurfaceVelocity:surfaceVelocity로 수동 지정",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 4,
+          "text": "• Sleep Threshold=0.0으로 물리 연산을 유지",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• Sleep Threshold=0.0으로 물리 연산을 유지",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 5,
+          "text": "• 최종 통합은 PhysX enter 중복을 피하기 위해 Action Graph 대신 AABB overlap 게이트로 1회 감지",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 최종 통합은 PhysX enter 중복을 피하기 위해 Action Graph 대신 AABB overlap 게이트로 1회 감지",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0ra5gzux",
+      "id": "15",
+      "bbox": [
+        530,
+        500,
+        690,
+        82
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFF3DB",
+      "lineColor": "#F0D38A",
+      "lineWidth": 1
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fq147utc",
+      "id": "16",
+      "bbox": [
+        552,
+        514,
+        90,
+        28
+      ],
+      "geometry": "rect",
+      "text": "결과",
+      "textPreview": "결과",
+      "resolvedFontSize": 15.33,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.77,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "결과"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "결과",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "결과",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/epsnepc7",
+      "id": "17",
+      "bbox": [
+        632,
+        514,
+        560,
+        52
+      ],
+      "geometry": "rect",
+      "text": "센서 통과 시 gamzi completed! 출력으로 1차 검증을 마쳤고, 최종 통합에서는 bbox 기반 gate가 배터리별 1회만 벨트를 정지·재개하고 pick service를 호출한다.",
+      "textPreview": "센서 통과 시 gamzi completed! 출력으로 1차 검증을 마쳤고, 최종 통합에서는 bbox 기반 gate가 배터리별 1회만 벨트를 정지·재개하고 pick service를 호출한다.",
+      "resolvedFontSize": 15.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15.51,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "센서 통과 시 gamzi completed! 출력으로 1차 검증을 마쳤고, 최종 통합에서는"
+          },
+          {
+            "index": 2,
+            "text": "bbox 기반 gate가 배터리별 1회만 벨트를 정지·재개하고 pick service를 호출한다."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "센서 통과 시 gamzi completed! 출력으로 1차 검증을 마쳤고, 최종 통합에서는 bbox 기반 gate가 배터리별 1회만 벨트를 정지·재개하고 pick service를 호출한다.",
+          "resolvedTextStyle": {
+            "fontSize": 15.51,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "센서 통과 시 gamzi completed! 출력으로 1차 검증을 마쳤고, 최종 통합에서는 bbox 기반 gate가 배터리별 1회만 벨트를 정지·재개하고 pick service를 호출한다.",
+              "fontSize": 15.51,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hwzmx0ve",
+      "id": "18",
+      "bbox": [
+        1160,
+        660,
+        78,
+        28
+      ],
+      "geometry": "rect",
+      "text": "01/05",
+      "textPreview": "01/05",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#59616D",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "01/05"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "01/05",
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#59616D",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "01/05",
+              "fontSize": 15,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#59616D",
+              "alignment": "right"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

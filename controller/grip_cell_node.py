@@ -135,6 +135,7 @@ SPARE_CASE_ROOT_POSITIONS = (
 CASE_GRIP_OUTWARD_OFFSET_M = 0.010
 OLD_CASE_GRIP_X_CORRECTION_M = -0.020
 OLD_CASE_GRIP_Y_CORRECTION_M = -0.020
+SPARE_CASE_GRIP_Y_CORRECTION_M = -0.020
 CASE_OVERHEAD_CLEARANCE_M = 0.18
 CASE_REJECT_EXTRA_Y_M = 0.20
 CASE_FLOOR_CLEARANCE_M = 0.002
@@ -1657,6 +1658,7 @@ class GripCellNode(Node):
         accept_contact: bool = False,
         accept_release: bool = False,
         contact_min_rad: float = GRIPPER_CONTACT_MIN_RAD,
+        contact_max_residual_rad: float = GRIPPER_CONTACT_MAX_RESIDUAL_RAD,
     ) -> None:
         """target은 GRIPPER_OPEN/GRIPPER_INSPECTION_RELEASE/GRIPPER_CLOSED 중 하나를
         그대로 넘긴다 — 원본 grip_cell_fianl.py의 command_gripper()처럼 열림 정도를
@@ -1750,7 +1752,7 @@ class GripCellNode(Node):
             previous = current.copy()
         if accept_contact:
             residual = float(np.max(np.abs(target - current)))
-            if float(current[0]) >= contact_min_rad and residual <= GRIPPER_CONTACT_MAX_RESIDUAL_RAD:
+            if float(current[0]) >= contact_min_rad and residual <= contact_max_residual_rad:
                 self.get_logger().info(
                     f"[GRIPPER CONTACT ACCEPTED] {label}: timeout boundary, "
                     f"actual={np.round(current, 4)}, residual={residual:.4f} rad"
@@ -1967,12 +1969,26 @@ class GripCellNode(Node):
         )
         return side, target
 
-    def _hide_completed_cell_proxies(self, stage: Usd.Stage) -> None:
-        for proxy_path in self._placed_proxy_paths:
-            prim = stage.GetPrimAtPath(proxy_path)
-            if prim.IsValid():
-                UsdGeom.Imageable(prim).MakeInvisible()
-        self._placed_proxy_paths.clear()
+    def _hide_completed_cell_proxies(self, stage: Usd.Stage, clear_paths: bool = True) -> None:
+        hide_roots = [
+            *self._placed_proxy_paths,
+            *(f"/World/good_battery/cell_{index}" for index in range(1, 5)),
+        ]
+        hidden = 0
+        for root_path in hide_roots:
+            root = stage.GetPrimAtPath(root_path)
+            if not root.IsValid():
+                continue
+            for prim in Usd.PrimRange.AllPrims(root):
+                if prim.IsA(UsdGeom.Imageable):
+                    UsdGeom.Imageable(prim).MakeInvisible()
+                    hidden += 1
+        self.get_logger().info(
+            f"[CELL VISUAL HIDE] completed destination cells hidden: "
+            f"roots={len(hide_roots)}, imageables={hidden}"
+        )
+        if clear_paths:
+            self._placed_proxy_paths.clear()
 
     def discard_old_case(
         self,
@@ -2155,6 +2171,7 @@ class GripCellNode(Node):
         grip_side, spare_grip_tcp = self._case_grip_target(
             spare_min, spare_max, reference
         )
+        spare_grip_tcp[1] += SPARE_CASE_GRIP_Y_CORRECTION_M
         destination_grip_tcp = spare_grip_tcp + (
             np.asarray(destination_root, dtype=float) - spare_root
         )
@@ -2166,7 +2183,10 @@ class GripCellNode(Node):
         self.get_logger().info(
             f"[SPARE CASE] name={spare_name}, side={grip_side}, "
             f"configured={np.round(SPARE_CASE_ROOT_POSITIONS[spare_index], 5)}, "
-            f"live={np.round(spare_root, 5)}, transit_z={transit_z:.5f}"
+            f"live={np.round(spare_root, 5)}, "
+            f"y_correction={SPARE_CASE_GRIP_Y_CORRECTION_M * 1000:+.0f} mm, "
+            f"grip_tcp={np.round(spare_grip_tcp, 5)}, "
+            f"transit_z={transit_z:.5f}"
         )
 
         self._command_gripper(CASE_GRIPPER_APPROACH, f"spare {spare_name} approach 0.66")
@@ -2184,6 +2204,7 @@ class GripCellNode(Node):
             CASE_GRIPPER_CLOSED,
             f"grip spare {spare_name} 0.95",
             accept_contact=True,
+            contact_max_residual_rad=0.55,
         )
 
         spare_prim = stage.GetPrimAtPath(spare_path)
@@ -2554,6 +2575,22 @@ class GripCellNode(Node):
         self.get_logger().info(
             f"[DESTINATION SLOT 4 INFERRED] raw={np.round(raw_slot_4, 5)}, "
             f"inferred={np.round(inferred_slot_4, 5)}"
+        )
+        # 실측 보정: 3,4번 셀이 Y 방향으로 밀려 보였다. 목적지 case 안에서는
+        # 3번은 1번 Y 라인, 4번은 2번 Y 라인에 맞아야 하므로 각 대응 슬롯의
+        # Y만 강제로 맞춘다. 3/4를 같은 Y로 맞추면 둘의 X가 거의 같아 겹친다.
+        raw_slot_3_y = float(destination_slot_centers[3][1])
+        raw_slot_4_y = float(destination_slot_centers[4][1])
+        reference_slot_3_y = float(destination_slot_centers[1][1])
+        reference_slot_4_y = float(destination_slot_centers[2][1])
+        destination_slot_centers[3][1] = reference_slot_3_y
+        destination_slot_centers[4][1] = reference_slot_4_y
+        self.get_logger().info(
+            f"[DESTINATION SLOT Y ALIGNED] "
+            f"slot_3_y {raw_slot_3_y:.5f}->{reference_slot_3_y:.5f} "
+            f"(match slot_1), "
+            f"slot_4_y {raw_slot_4_y:.5f}->{reference_slot_4_y:.5f} "
+            f"(match slot_2)"
         )
         slot_3_to_4_distance = float(
             np.linalg.norm(

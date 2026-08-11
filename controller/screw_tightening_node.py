@@ -104,8 +104,9 @@ class ScrewTighteningNode(Node):
         get_new_case_screw_prim_paths: Callable[[], Optional[Sequence[str]]],
         controller_kwargs: dict,
         get_completed_cell_prim_paths: Optional[Callable[[], Sequence[str]]] = None,
-        completed_pack_service_name: str = "/vg10_pallet/run_completed_newcase_to_conveyor",
-        progress_completed_pack: Optional[Callable[[], None]] = None,
+        swap_finished_case_proxy: Optional[Callable[[], bool]] = None,
+        case_outfeed_service_name: str = "/start_case_outfeed",
+        progress_case_outfeed: Optional[Callable[[], None]] = None,
         node_name: str = "screw_tightening_node",
         service_name: str = "/start_screw_tightening",
     ) -> None:
@@ -116,12 +117,13 @@ class ScrewTighteningNode(Node):
         self._screw_tool = screw_tool
         self._get_new_case_screw_prim_paths = get_new_case_screw_prim_paths
         self._get_completed_cell_prim_paths = get_completed_cell_prim_paths
-        self._progress_completed_pack = progress_completed_pack
-        self._completed_pack_client_node = Node(f"{node_name}_completed_pack_client")
-        self._completed_pack_client = self._completed_pack_client_node.create_client(
-            Trigger, completed_pack_service_name
+        self._swap_finished_case_proxy = swap_finished_case_proxy
+        self._progress_case_outfeed = progress_case_outfeed
+        self._case_outfeed_client_node = Node(f"{node_name}_case_outfeed_client")
+        self._case_outfeed_client = self._case_outfeed_client_node.create_client(
+            Trigger, case_outfeed_service_name
         )
-        self._completed_pack_service_name = completed_pack_service_name
+        self._case_outfeed_service_name = case_outfeed_service_name
 
         # joint_2 ±60도 제한을 URDF/RMPFlow 설정 자체에 구워 넣은 사본으로
         # 교체한다 — 원본 controller_kwargs는 건드리지 않고 복사본만 바꾼다.
@@ -174,32 +176,32 @@ class ScrewTighteningNode(Node):
         self.get_logger().info(f"[READY] service={service_name}")
 
     def destroy_node(self):
-        self._completed_pack_client_node.destroy_node()
+        self._case_outfeed_client_node.destroy_node()
         return super().destroy_node()
 
-    def _trigger_completed_pack(self) -> None:
-        """조임 완료 직후 완성 new_case 이송 로봇을 호출하고 완료까지 기다린다."""
+    def _trigger_case_outfeed(self) -> None:
+        """조임 완료 직후 완성 new_case 컨베이어 투입 로봇을 호출하고 완료까지 기다린다."""
         started = time.monotonic()
-        while not self._completed_pack_client.service_is_ready():
+        while not self._case_outfeed_client.service_is_ready():
             if time.monotonic() - started > 10.0:
                 raise TimeoutError(
                     f"완성 new_case 이송 서비스가 준비되지 않았습니다: "
-                    f"{self._completed_pack_service_name}"
+                    f"{self._case_outfeed_service_name}"
                 )
-            rclpy.spin_once(self._completed_pack_client_node, timeout_sec=0.0)
+            rclpy.spin_once(self._case_outfeed_client_node, timeout_sec=0.0)
             self._world.step(render=True)
         self.get_logger().info(
-            f"[CHAIN] screw tightening complete -> completed new_case conveyor: "
-            f"service={self._completed_pack_service_name}"
+            f"[CHAIN] screw tightening complete -> case outfeed: "
+            f"service={self._case_outfeed_service_name}"
         )
-        future = self._completed_pack_client.call_async(Trigger.Request())
+        future = self._case_outfeed_client.call_async(Trigger.Request())
         started = time.monotonic()
         while not future.done():
             if time.monotonic() - started > 300.0:
                 raise TimeoutError("완성 new_case 컨베이어 이송 timeout")
-            if self._progress_completed_pack is not None:
-                self._progress_completed_pack()
-            rclpy.spin_once(self._completed_pack_client_node, timeout_sec=0.0)
+            if self._progress_case_outfeed is not None:
+                self._progress_case_outfeed()
+            rclpy.spin_once(self._case_outfeed_client_node, timeout_sec=0.0)
             if not future.done():
                 self._world.step(render=True)
         result = future.result()
@@ -354,7 +356,11 @@ class ScrewTighteningNode(Node):
                     raise RuntimeError(f"완성 팩 셀 프록시가 없습니다: {path}")
                 # VisualCellProxy는 렌더링 전용이다. 참조된 하위 prim에 물리
                 # API가 있어도 완제품 단계에는 solver에 들어오지 않게 한다.
+                hidden_imageables = 0
                 for prim in Usd.PrimRange(cell):
+                    if prim.IsA(UsdGeom.Imageable):
+                        UsdGeom.Imageable(prim).MakeInvisible()
+                        hidden_imageables += 1
                     if prim.HasAPI(UsdPhysics.RigidBodyAPI):
                         UsdPhysics.RigidBodyAPI(
                             prim
@@ -363,6 +369,10 @@ class ScrewTighteningNode(Node):
                         UsdPhysics.CollisionAPI(
                             prim
                         ).CreateCollisionEnabledAttr().Set(False)
+                self.get_logger().info(
+                    f"[PACK CELL HIDE] screw tightening complete: "
+                    f"{path}, imageables={hidden_imageables}"
+                )
         finally:
             stage.SetEditTarget(previous_edit_target)
 
@@ -416,7 +426,10 @@ class ScrewTighteningNode(Node):
             self._run_state_machine(screw_prims)
             self._freeze_completed_pack(case_top_path)
             pack_frozen = True
-            self._trigger_completed_pack()
+            if self._swap_finished_case_proxy is not None:
+                if not self._swap_finished_case_proxy():
+                    raise RuntimeError("완성 케이스 출고 프록시 바꿔치기 실패")
+            self._trigger_case_outfeed()
 
             response.success = True
             response.message = "나사 조이기 완료"

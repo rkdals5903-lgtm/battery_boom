@@ -1,0 +1,1148 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/rgzi6e",
+    "id": "rgzi6e",
+    "slide": 3,
+    "layoutId": "29b662f4-143e-4289-9ddb-5e9aa0150bb1",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "afc2f5bc-5117-4967-adcc-247780d64c09",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#FFFFFF",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Noto Sans CJK KR"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "29b662f4-143e-4289-9ddb-5e9aa0150bb1",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "afc2f5bc-5117-4967-adcc-247780d64c09",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "afc2f5bc-5117-4967-adcc-247780d64c09",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ny947q1k",
+      "id": "1",
+      "bbox": [
+        42,
+        30,
+        460,
+        32
+      ],
+      "geometry": "rect",
+      "text": "03  2026.08.05",
+      "textPreview": "03  2026.08.05",
+      "resolvedFontSize": 18.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#59616D",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.93,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "03  2026.08.05"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "03  2026.08.05",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#59616D",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "03  2026.08.05",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#59616D",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/oz25gbi5",
+      "id": "2",
+      "bbox": [
+        42,
+        72,
+        1180,
+        76
+      ],
+      "geometry": "rect",
+      "text": "ROS 2 서비스 체인이 같은 executor에서 대기하며 공정 연결을 막았다",
+      "textPreview": "ROS 2 서비스 체인이 같은 executor에서 대기하며 공정 연결을 막았다",
+      "resolvedFontSize": 31,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 31,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ROS 2 서비스 체인이 같은 executor에서 대기하며 공정 연결을 막았다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ROS 2 서비스 체인이 같은 executor에서 대기하며 공정 연결을 막았다",
+          "resolvedTextStyle": {
+            "fontSize": 31,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "ROS 2 서비스 체인이 같은 executor에서 대기하며 공정 연결을 막았다",
+              "fontSize": 31,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p0bm9gja",
+      "id": "3",
+      "bbox": [
+        42,
+        158,
+        1196,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#B9BEC7",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/vqxwjitk",
+      "id": "4",
+      "bbox": [
+        42,
+        188,
+        452,
+        268
+      ],
+      "geometry": "rect",
+      "alt": "ROS 서비스 호출 성공 확인 화면",
+      "contentType": "image/png",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "rect"
+      },
+      "asset": {
+        "assetId": "bbe02b85-d97b-4616-8228-15ccd5308826",
+        "contentType": "image/png",
+        "byteLength": 637188
+      }
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/b2t4bq1g",
+      "id": "5",
+      "bbox": [
+        42,
+        188,
+        452,
+        268
+      ],
+      "geometry": "rect",
+      "lineColor": "#B9BEC7",
+      "lineWidth": 1
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/c325kvi1",
+      "id": "6",
+      "bbox": [
+        42,
+        485,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/x4bmd0jm",
+      "id": "7",
+      "bbox": [
+        64,
+        478,
+        430,
+        26
+      ],
+      "geometry": "rect",
+      "text": "문제점",
+      "textPreview": "문제점",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "문제점"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "문제점",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "문제점",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/q5g361kr",
+      "id": "8",
+      "bbox": [
+        64,
+        507,
+        430,
+        123
+      ],
+      "geometry": "rect",
+      "text": "• 서비스 callback 안에서 다음 서비스를 동기 대기하면 response를 처리할 spin 기회가 없음\n• Isaac Kit Python 3.11과 /opt/ros/humble Python 3.10 rclpy가 섞여 import가 깨짐\n• 공정별 독립 실행 파일은 subprocess ros2 call, flag polling, 별도 World를 섞어 통합이 어려움",
+      "textPreview": "• 서비스 callback 안에서 다음 서비스를 동기 대기하면 response를 처리할 spin 기회가 없음 | • Isaac Kit Python 3.11과 /opt/ros/humble Python 3.10 rclpy가 섞여 import가 깨짐 ...",
+      "resolvedFontSize": 13.8,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13.8,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 6,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• 서비스 callback 안에서 다음 서비스를 동기 대기하면 response를"
+          },
+          {
+            "index": 2,
+            "text": "처리할 spin 기회가 없음"
+          },
+          {
+            "index": 3,
+            "text": "• Isaac Kit Python 3.11과 /opt/ros/humble Python 3.10 rclpy가"
+          },
+          {
+            "index": 4,
+            "text": "섞여 import가 깨짐"
+          },
+          {
+            "index": 5,
+            "text": "• 공정별 독립 실행 파일은 subprocess ros2 call, flag polling, 별도"
+          },
+          {
+            "index": 6,
+            "text": "World를 섞어 통합이 어려움"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• 서비스 callback 안에서 다음 서비스를 동기 대기하면 response를 처리할 spin 기회가 없음",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 서비스 callback 안에서 다음 서비스를 동기 대기하면 response를 처리할 spin 기회가 없음",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• Isaac Kit Python 3.11과 /opt/ros/humble Python 3.10 rclpy가 섞여 import가 깨짐",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• Isaac Kit Python 3.11과 /opt/ros/humble Python 3.10 rclpy가 섞여 import가 깨짐",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• 공정별 독립 실행 파일은 subprocess ros2 call, flag polling, 별도 World를 섞어 통합이 어려움",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 공정별 독립 실행 파일은 subprocess ros2 call, flag polling, 별도 World를 섞어 통합이 어려움",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/r6p4z61c",
+      "id": "9",
+      "bbox": [
+        530,
+        193,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/v65g72xw",
+      "id": "10",
+      "bbox": [
+        552,
+        186,
+        308,
+        26
+      ],
+      "geometry": "rect",
+      "text": "원인 분석",
+      "textPreview": "원인 분석",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "원인 분석"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "원인 분석",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "원인 분석",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/a5wzexwr",
+      "id": "11",
+      "bbox": [
+        552,
+        215,
+        308,
+        183
+      ],
+      "geometry": "rect",
+      "text": "• call_async 후 future를 기다리는 위치와 executor spin 위치를 분리해 deadlock 가능성 추적\n• sys.path와 LD_LIBRARY_PATH를 점검해 Isaac 번들 rclpy를 우선 로드해야 함을 확인\n• World.step(render=True) 루프 안에서 ROS spin_once가 필요한 지점을 공정별로 분리",
+      "textPreview": "• call_async 후 future를 기다리는 위치와 executor spin 위치를 분리해 deadlock 가능성 추적 | • sys.path와 LD_LIBRARY_PATH를 점검해 Isaac 번들 rclpy를 우선 로드해야 함을 확인 | ...",
+      "resolvedFontSize": 14.2,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.2,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 7,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• call_async 후 future를 기다리는 위치와"
+          },
+          {
+            "index": 2,
+            "text": "executor spin 위치를 분리해 deadlock 가능성"
+          },
+          {
+            "index": 3,
+            "text": "추적"
+          },
+          {
+            "index": 4,
+            "text": "• sys.path와 LD_LIBRARY_PATH를 점검해"
+          },
+          {
+            "index": 5,
+            "text": "Isaac 번들 rclpy를 우선 로드해야 함을 확인"
+          },
+          {
+            "index": 6,
+            "text": "• World.step(render=True) 루프 안에서 ROS"
+          },
+          {
+            "index": 7,
+            "text": "spin_once가 필요한 지점을 공정별로 분리"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• call_async 후 future를 기다리는 위치와 executor spin 위치를 분리해 deadlock 가능성 추적",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• call_async 후 future를 기다리는 위치와 executor spin 위치를 분리해 deadlock 가능성 추적",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• sys.path와 LD_LIBRARY_PATH를 점검해 Isaac 번들 rclpy를 우선 로드해야 함을 확인",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• sys.path와 LD_LIBRARY_PATH를 점검해 Isaac 번들 rclpy를 우선 로드해야 함을 확인",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• World.step(render=True) 루프 안에서 ROS spin_once가 필요한 지점을 공정별로 분리",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• World.step(render=True) 루프 안에서 ROS spin_once가 필요한 지점을 공정별로 분리",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/x8ny9cv2",
+      "id": "12",
+      "bbox": [
+        890,
+        193,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/w7ehg7eh",
+      "id": "13",
+      "bbox": [
+        912,
+        186,
+        308,
+        26
+      ],
+      "geometry": "rect",
+      "text": "해결 방식",
+      "textPreview": "해결 방식",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "해결 방식"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "해결 방식",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "해결 방식",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ni5g3ix0",
+      "id": "14",
+      "bbox": [
+        912,
+        215,
+        308,
+        243
+      ],
+      "geometry": "rect",
+      "text": "• Isaac ros2 bridge extension을 먼저 enable하고 bundled rclpy/lib 경로를 sys.path/env에 고정\n• 후속 공정 트리거는 fire-and-forget으로 보내고, 응답 대기가 필요한 체인은 helper node 사용\n• GripCellNode는 전압 서버 직접 콜백과 async Trigger polling을 병행해 같은 프로세스 deadlock 회피",
+      "textPreview": "• Isaac ros2 bridge extension을 먼저 enable하고 bundled rclpy/lib 경로를 sys.path/env에 고정 | • 후속 공정 트리거는 fire-and-forget으로 보내고, 응답 대기가 필요한 체인은 he...",
+      "resolvedFontSize": 14.2,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.2,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 9,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• Isaac ros2 bridge extension을 먼저"
+          },
+          {
+            "index": 2,
+            "text": "enable하고 bundled rclpy/lib 경로를"
+          },
+          {
+            "index": 3,
+            "text": "sys.path/env에 고정"
+          },
+          {
+            "index": 4,
+            "text": "• 후속 공정 트리거는 fire-and-forget으로"
+          },
+          {
+            "index": 5,
+            "text": "보내고, 응답 대기가 필요한 체인은 helper node"
+          },
+          {
+            "index": 6,
+            "text": "사용"
+          },
+          {
+            "index": 7,
+            "text": "• GripCellNode는 전압 서버 직접 콜백과 async"
+          },
+          {
+            "index": 8,
+            "text": "Trigger polling을 병행해 같은 프로세스"
+          },
+          {
+            "index": 9,
+            "text": "deadlock 회피"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• Isaac ros2 bridge extension을 먼저 enable하고 bundled rclpy/lib 경로를 sys.path/env에 고정",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• Isaac ros2 bridge extension을 먼저 enable하고 bundled rclpy/lib 경로를 sys.path/env에 고정",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• 후속 공정 트리거는 fire-and-forget으로 보내고, 응답 대기가 필요한 체인은 helper node 사용",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 후속 공정 트리거는 fire-and-forget으로 보내고, 응답 대기가 필요한 체인은 helper node 사용",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• GripCellNode는 전압 서버 직접 콜백과 async Trigger polling을 병행해 같은 프로세스 deadlock 회피",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• GripCellNode는 전압 서버 직접 콜백과 async Trigger polling을 병행해 같은 프로세스 deadlock 회피",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/mhwzadwf",
+      "id": "15",
+      "bbox": [
+        530,
+        500,
+        690,
+        82
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFF3DB",
+      "lineColor": "#F0D38A",
+      "lineWidth": 1
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/9kny5sf6",
+      "id": "16",
+      "bbox": [
+        552,
+        514,
+        90,
+        28
+      ],
+      "geometry": "rect",
+      "text": "결과",
+      "textPreview": "결과",
+      "resolvedFontSize": 15.33,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.77,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "결과"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "결과",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "결과",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8jehcnel",
+      "id": "17",
+      "bbox": [
+        632,
+        514,
+        560,
+        52
+      ],
+      "geometry": "rect",
+      "text": "컨베이어 감지 → 작업대 이송 → 나사 분해 → 뚜껑 분리 → 셀 검사 → 커버 닫기 → 나사 조임이 서비스 체인으로 연결됐다.",
+      "textPreview": "컨베이어 감지 → 작업대 이송 → 나사 분해 → 뚜껑 분리 → 셀 검사 → 커버 닫기 → 나사 조임이 서비스 체인으로 연결됐다.",
+      "resolvedFontSize": 15.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15.51,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "컨베이어 감지 → 작업대 이송 → 나사 분해 → 뚜껑 분리 → 셀 검사 → 커버 닫기 →"
+          },
+          {
+            "index": 2,
+            "text": "나사 조임이 서비스 체인으로 연결됐다."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "컨베이어 감지 → 작업대 이송 → 나사 분해 → 뚜껑 분리 → 셀 검사 → 커버 닫기 → 나사 조임이 서비스 체인으로 연결됐다.",
+          "resolvedTextStyle": {
+            "fontSize": 15.51,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "컨베이어 감지 → 작업대 이송 → 나사 분해 → 뚜껑 분리 → 셀 검사 → 커버 닫기 → 나사 조임이 서비스 체인으로 연결됐다.",
+              "fontSize": 15.51,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zelgzixo",
+      "id": "18",
+      "bbox": [
+        1160,
+        660,
+        78,
+        28
+      ],
+      "geometry": "rect",
+      "text": "03/05",
+      "textPreview": "03/05",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#59616D",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "03/05"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "03/05",
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#59616D",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "03/05",
+              "fontSize": 15,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#59616D",
+              "alignment": "right"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

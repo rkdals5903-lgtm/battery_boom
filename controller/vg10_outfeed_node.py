@@ -39,7 +39,7 @@ class VG10OutfeedNode(Node):
         end_effector_offset: np.ndarray,
         controller_kwargs: dict,
         node_name: str = "vg10_outfeed_node",
-        service_name: str = "/lastpickandplace",
+        service_name: str = "/vg10_outfeed/run_belt_to_pallet",
         stack_height_step_m: float = 0.05,
         get_pick_yaw_deg: Optional[Callable[[str], float]] = None,
     ) -> None:
@@ -68,7 +68,11 @@ class VG10OutfeedNode(Node):
         self._controller.reset()
         self._next_order_index = 0
 
-    def _run_single_item(self, source_path: str, placing_position: np.ndarray) -> None:
+    def _run_single_item(
+        self,
+        source_path: str,
+        placing_position: np.ndarray,
+    ) -> None:
         self._controller.reset()
         while self._world.is_playing() and not self._controller.is_done():
             picking_position = self._get_source_position(source_path)

@@ -1,0 +1,1136 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/w1s3rh",
+    "id": "w1s3rh",
+    "slide": 2,
+    "layoutId": "29b662f4-143e-4289-9ddb-5e9aa0150bb1",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "afc2f5bc-5117-4967-adcc-247780d64c09",
+    "masterLayoutName": "Master",
+    "backgroundColor": "#FFFFFF",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Noto Sans CJK KR"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "29b662f4-143e-4289-9ddb-5e9aa0150bb1",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "afc2f5bc-5117-4967-adcc-247780d64c09",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "afc2f5bc-5117-4967-adcc-247780d64c09",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/mhkv2h4n",
+      "id": "1",
+      "bbox": [
+        42,
+        30,
+        460,
+        32
+      ],
+      "geometry": "rect",
+      "text": "02  2026.08.05",
+      "textPreview": "02  2026.08.05",
+      "resolvedFontSize": 18.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#59616D",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.93,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "02  2026.08.05"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "02  2026.08.05",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#59616D",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "02  2026.08.05",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#59616D",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/94bexw3y",
+      "id": "2",
+      "bbox": [
+        42,
+        72,
+        1180,
+        76
+      ],
+      "geometry": "rect",
+      "text": "나사 분해 로봇이 나사 사이를 직선 이동하며 충돌 위험 경로를 만들었다",
+      "textPreview": "나사 분해 로봇이 나사 사이를 직선 이동하며 충돌 위험 경로를 만들었다",
+      "resolvedFontSize": 31,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 31,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "나사 분해 로봇이 나사 사이를 직선 이동하며 충돌 위험 경로를 만들었다"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "나사 분해 로봇이 나사 사이를 직선 이동하며 충돌 위험 경로를 만들었다",
+          "resolvedTextStyle": {
+            "fontSize": 31,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "나사 분해 로봇이 나사 사이를 직선 이동하며 충돌 위험 경로를 만들었다",
+              "fontSize": 31,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8j2d4rmt",
+      "id": "3",
+      "bbox": [
+        42,
+        158,
+        1196,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#B9BEC7",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/ehw3et0b",
+      "id": "4",
+      "bbox": [
+        42,
+        188,
+        452,
+        268
+      ],
+      "geometry": "rect",
+      "alt": "나사 분해 경로 조정 실험 화면",
+      "contentType": "image/png",
+      "imageFit": "cover",
+      "imageMask": {
+        "geometry": "rect"
+      },
+      "asset": {
+        "assetId": "d0a976b8-c7e0-49a6-ba3d-a11c7424c30b",
+        "contentType": "image/png",
+        "byteLength": 578610
+      }
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/u5kv614j",
+      "id": "5",
+      "bbox": [
+        42,
+        188,
+        452,
+        268
+      ],
+      "geometry": "rect",
+      "lineColor": "#B9BEC7",
+      "lineWidth": 1
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/h8ve1g3a",
+      "id": "6",
+      "bbox": [
+        42,
+        485,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/w7md8bmp",
+      "id": "7",
+      "bbox": [
+        64,
+        478,
+        430,
+        26
+      ],
+      "geometry": "rect",
+      "text": "문제점",
+      "textPreview": "문제점",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "문제점"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "문제점",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "문제점",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/jadw36lg",
+      "id": "8",
+      "bbox": [
+        64,
+        507,
+        430,
+        123
+      ],
+      "geometry": "rect",
+      "text": "• 나사 4개 사이를 낮은 높이에서 바로 이동해 드라이버 tip이 case와 가까워짐\n• nasa_1~4의 xform 위치가 동일하게 보이는 경우가 있어 단순 transform 기반 목표가 틀림\n• 작업대 위 배터리가 동적 rigid body라 접촉 시 밀리며 다음 목표가 흔들림",
+      "textPreview": "• 나사 4개 사이를 낮은 높이에서 바로 이동해 드라이버 tip이 case와 가까워짐 | • nasa_1~4의 xform 위치가 동일하게 보이는 경우가 있어 단순 transform 기반 목표가 틀림 | • 작업대 위 배터리가 동적 rigid bo...",
+      "resolvedFontSize": 13.8,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13.8,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 6,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• 나사 4개 사이를 낮은 높이에서 바로 이동해 드라이버 tip이 case와"
+          },
+          {
+            "index": 2,
+            "text": "가까워짐"
+          },
+          {
+            "index": 3,
+            "text": "• nasa_1~4의 xform 위치가 동일하게 보이는 경우가 있어 단순"
+          },
+          {
+            "index": 4,
+            "text": "transform 기반 목표가 틀림"
+          },
+          {
+            "index": 5,
+            "text": "• 작업대 위 배터리가 동적 rigid body라 접촉 시 밀리며 다음 목표가"
+          },
+          {
+            "index": 6,
+            "text": "흔들림"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• 나사 4개 사이를 낮은 높이에서 바로 이동해 드라이버 tip이 case와 가까워짐",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 나사 4개 사이를 낮은 높이에서 바로 이동해 드라이버 tip이 case와 가까워짐",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• nasa_1~4의 xform 위치가 동일하게 보이는 경우가 있어 단순 transform 기반 목표가 틀림",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• nasa_1~4의 xform 위치가 동일하게 보이는 경우가 있어 단순 transform 기반 목표가 틀림",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• 작업대 위 배터리가 동적 rigid body라 접촉 시 밀리며 다음 목표가 흔들림",
+          "resolvedTextStyle": {
+            "fontSize": 13.8,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 작업대 위 배터리가 동적 rigid body라 접촉 시 밀리며 다음 목표가 흔들림",
+              "fontSize": 13.8,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/i94va14v",
+      "id": "9",
+      "bbox": [
+        530,
+        193,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wbq9knq5",
+      "id": "10",
+      "bbox": [
+        552,
+        186,
+        308,
+        26
+      ],
+      "geometry": "rect",
+      "text": "원인 분석",
+      "textPreview": "원인 분석",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "원인 분석"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "원인 분석",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "원인 분석",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hczads7q",
+      "id": "11",
+      "bbox": [
+        552,
+        215,
+        308,
+        183
+      ],
+      "geometry": "rect",
+      "text": "• tip과 link_6의 실제 transform 차이를 관측해 tool offset을 계산\n• 각 나사의 world bbox를 계산하고, 중심 XY와 bbox max Z를 나사 머리 목표로 사용\n• 접근 실패 구간을 HOME_ALIGN → WAYPOINT → APPROACH → STABILIZE → SCREW → RETRACT로 분해",
+      "textPreview": "• tip과 link_6의 실제 transform 차이를 관측해 tool offset을 계산 | • 각 나사의 world bbox를 계산하고, 중심 XY와 bbox max Z를 나사 머리 목표로 사용 | • 접근 실패 구간을 HOME_ALIGN ...",
+      "resolvedFontSize": 14.2,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.2,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 7,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• tip과 link_6의 실제 transform 차이를 관측해"
+          },
+          {
+            "index": 2,
+            "text": "tool offset을 계산"
+          },
+          {
+            "index": 3,
+            "text": "• 각 나사의 world bbox를 계산하고, 중심 XY와"
+          },
+          {
+            "index": 4,
+            "text": "bbox max Z를 나사 머리 목표로 사용"
+          },
+          {
+            "index": 5,
+            "text": "• 접근 실패 구간을 HOME_ALIGN →"
+          },
+          {
+            "index": 6,
+            "text": "WAYPOINT → APPROACH → STABILIZE →"
+          },
+          {
+            "index": 7,
+            "text": "SCREW → RETRACT로 분해"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• tip과 link_6의 실제 transform 차이를 관측해 tool offset을 계산",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• tip과 link_6의 실제 transform 차이를 관측해 tool offset을 계산",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• 각 나사의 world bbox를 계산하고, 중심 XY와 bbox max Z를 나사 머리 목표로 사용",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 각 나사의 world bbox를 계산하고, 중심 XY와 bbox max Z를 나사 머리 목표로 사용",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• 접근 실패 구간을 HOME_ALIGN → WAYPOINT → APPROACH → STABILIZE → SCREW → RETRACT로 분해",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 접근 실패 구간을 HOME_ALIGN → WAYPOINT → APPROACH → STABILIZE → SCREW → RETRACT로 분해",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/up8rid8z",
+      "id": "12",
+      "bbox": [
+        890,
+        193,
+        12,
+        12
+      ],
+      "geometry": "rect",
+      "fillColor": "#2F7DFF",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vqhsbipk",
+      "id": "13",
+      "bbox": [
+        912,
+        186,
+        308,
+        26
+      ],
+      "geometry": "rect",
+      "text": "해결 방식",
+      "textPreview": "해결 방식",
+      "resolvedFontSize": 13.67,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.68,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "해결 방식"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "해결 방식",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "해결 방식",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4fq9onqh",
+      "id": "14",
+      "bbox": [
+        912,
+        215,
+        308,
+        243
+      ],
+      "geometry": "rect",
+      "text": "• 상공 waypoint와 수직 하강축을 분리해 장애물 근처 횡이동 제거\n• 작업 중 battery top prim을 kinematic으로 잠시 고정하고 finally에서 원복\n• RMPFlow 목표 허용 오차, timeout, hover/work z offset을 단계별 튜닝",
+      "textPreview": "• 상공 waypoint와 수직 하강축을 분리해 장애물 근처 횡이동 제거 | • 작업 중 battery top prim을 kinematic으로 잠시 고정하고 finally에서 원복 | • RMPFlow 목표 허용 오차, timeout, hover...",
+      "resolvedFontSize": 14.2,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14.2,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 6,
+        "lines": [
+          {
+            "index": 1,
+            "text": "• 상공 waypoint와 수직 하강축을 분리해 장애물"
+          },
+          {
+            "index": 2,
+            "text": "근처 횡이동 제거"
+          },
+          {
+            "index": 3,
+            "text": "• 작업 중 battery top prim을 kinematic으로"
+          },
+          {
+            "index": 4,
+            "text": "잠시 고정하고 finally에서 원복"
+          },
+          {
+            "index": 5,
+            "text": "• RMPFlow 목표 허용 오차, timeout,"
+          },
+          {
+            "index": 6,
+            "text": "hover/work z offset을 단계별 튜닝"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "• 상공 waypoint와 수직 하강축을 분리해 장애물 근처 횡이동 제거",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 상공 waypoint와 수직 하강축을 분리해 장애물 근처 횡이동 제거",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "• 작업 중 battery top prim을 kinematic으로 잠시 고정하고 finally에서 원복",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• 작업 중 battery top prim을 kinematic으로 잠시 고정하고 finally에서 원복",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "• RMPFlow 목표 허용 오차, timeout, hover/work z offset을 단계별 튜닝",
+          "resolvedTextStyle": {
+            "fontSize": 14.2,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "• RMPFlow 목표 허용 오차, timeout, hover/work z offset을 단계별 튜닝",
+              "fontSize": 14.2,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5gzahs7m",
+      "id": "15",
+      "bbox": [
+        530,
+        500,
+        690,
+        82
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFF3DB",
+      "lineColor": "#F0D38A",
+      "lineWidth": 1
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/id8rmx8b",
+      "id": "16",
+      "bbox": [
+        552,
+        514,
+        90,
+        28
+      ],
+      "geometry": "rect",
+      "text": "결과",
+      "textPreview": "결과",
+      "resolvedFontSize": 15.33,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 20,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 0.77,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "결과"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "결과",
+          "resolvedTextStyle": {
+            "fontSize": 20,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "결과",
+              "fontSize": 20,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "bold": true,
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/jehsf2pw",
+      "id": "17",
+      "bbox": [
+        632,
+        514,
+        560,
+        52
+      ],
+      "geometry": "rect",
+      "text": "드라이버는 나사 머리 위에서만 수직 접근하고, 나사별 위치가 복사 prim 구조여도 bbox로 실제 geometry를 추적한다.",
+      "textPreview": "드라이버는 나사 머리 위에서만 수직 접근하고, 나사별 위치가 복사 prim 구조여도 bbox로 실제 geometry를 추적한다.",
+      "resolvedFontSize": 15.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15.51,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#111111",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "드라이버는 나사 머리 위에서만 수직 접근하고, 나사별 위치가 복사 prim 구조여도"
+          },
+          {
+            "index": 2,
+            "text": "bbox로 실제 geometry를 추적한다."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "드라이버는 나사 머리 위에서만 수직 접근하고, 나사별 위치가 복사 prim 구조여도 bbox로 실제 geometry를 추적한다.",
+          "resolvedTextStyle": {
+            "fontSize": 15.51,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#111111",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "드라이버는 나사 머리 위에서만 수직 접근하고, 나사별 위치가 복사 prim 구조여도 bbox로 실제 geometry를 추적한다.",
+              "fontSize": 15.51,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#111111",
+              "alignment": "left"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/sja9s7qd",
+      "id": "18",
+      "bbox": [
+        1160,
+        660,
+        78,
+        28
+      ],
+      "geometry": "rect",
+      "text": "02/05",
+      "textPreview": "02/05",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 15,
+        "typeface": "Noto Sans CJK KR",
+        "color": "#59616D",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "wrap": "square",
+        "autoFit": "shrinkText",
+        "autoFitScale": 1,
+        "insets": {
+          "top": 4.8,
+          "right": 9.6,
+          "bottom": 4.8,
+          "left": 9.6
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "02/05"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "02/05",
+          "resolvedTextStyle": {
+            "fontSize": 15,
+            "typeface": "Noto Sans CJK KR",
+            "color": "#59616D",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "02/05",
+              "fontSize": 15,
+              "typeface": "Noto Sans CJK KR",
+              "color": "#59616D",
+              "alignment": "right"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

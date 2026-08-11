@@ -2357,12 +2357,6 @@ def main() -> None:
             # INIT_HOME이 시작하자마자 반대쪽으로 돌아갔다. 실제 시작 자세를 그대로
             # home으로 줘서 INIT_HOME/RETURN_HOME이 제자리를 유지하게 한다.
             home_joints_deg=np.array([0.0, 0.0, 90.0, 0.0, 90.0, 0.0]),
-            # 팔레트에서 처음 들어 올릴 때 옆 배터리를 치지 않도록, 같은 XY에서
-            # 충분히 수직 상승한 뒤 다음 회전/이송 단계로 넘어간다.
-            approach_height=0.35,
-            vertical_pick_lift_only=True,
-            pick_lift_y_tilt_deg=-20.0,
-            pick_lift_steps=360,
             # 컨베이어 위(특히 이미 배터리가 쌓여 있는 2번째 이후)에 정확한 접촉
             # 높이까지 수렴시키려다 로봇이 계속 높은 채로 멈춰있지 않도록, 목표
             # 지점 8cm 위에서 흡착만 풀어 떨어뜨린다.
@@ -2447,7 +2441,7 @@ def main() -> None:
         world=my_world,
         robot=robot,
         get_battery_root=task.get_last_placed_battery_path,
-        voltage_threshold=9.0,
+        voltage_threshold=10.0,
         sample_voltage=battery_voltage_server.sample_voltage,
         progress_cover_close=lambda: rclpy.spin_once(
             suction_cover_close_node, timeout_sec=0.0
@@ -2568,7 +2562,7 @@ def main() -> None:
         controller_kwargs=dict(
             gripper=vg10_robot.gripper,
             home_joints_deg=np.array([-90.0, 0.0, 90.0, 0.0, 90.0, 0.0]),
-            approach_height=0.25,
+            approach_height=0.05,
             pick_lift_tilt_deg=20.0,
             j1_place_deg=180.0,
             place_yaw_deg=180.0,
