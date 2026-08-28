@@ -1,0 +1,59 @@
+[문제]
+main.py 실행 시 아래 에러 발생:
+  RuntimeError: /World/m0609_rg2 아래에서 link_6을 찾을 수 없습니다.
+
+[원인]
+- usd/m0609/m0609_rg2_cube.usd (그리고 vg10_cube.usd, screw_cube.usd)는
+  실제 로봇 링크(link_1~link_6 등)를 담은 파일이 아니라, Cube 하나만 있는
+  placeholder이며 실제 로봇 데이터는 payload로 외부 파일을 참조하는 구조였음.
+
+- 그 payload 경로가 상대경로로 파일 안에 저장되어 있었음:
+    m0609_rg2_cube.usd  -> ../M0609/Collected_m0609_camera/Collected_m0609_camera/m0609_camera.usd
+    m0609_vg10_cube.usd -> ../M0609/Collected_m0609_vg10/m0609_vg10_raw/m0609_isaac_sim.usd
+    m0609_screw_cube.usd-> ../M0609/Collected_m0609_screw/m0609_screw.usd
+  즉 usd/m0609/ 기준으로 usd/M0609/... 폴더를 찾도록 되어 있었음.
+
+- 그런데 최근 "디렉토리 구조 정리" 커밋(c5fa23a)에서 usd/M0609/ 폴더가
+  _archive/M0609/ 로 이동되면서, 위 payload 상대경로가 깨짐.
+
+- Isaac Sim이 stage를 열 때 payload 대상 asset(usd/M0609/...)을 찾지 못해
+  "Could not open asset" 경고만 내고, placeholder Cube만 로드됨.
+  → /World/m0609_rg2 아래에 link_6이 실제로 존재하지 않아
+    _discover_prims()의 find_prim_path_by_name()이 None을 반환하고 에러 발생.
+
+- world.reset() 호출 방식 자체는 정상이었음 (원인 아님).
+
+[검증]
+- pxr(Sdf) API로 각 cube usd 파일의 payload 정보를 직접 확인:
+    /World/Xform/m0609_camera payload -> ../M0609/Collected_m0609_camera/Collected_m0609_camera/m0609_camera.usd
+    /Root/Xform_robot1/m0609_isaac_sim payload -> ../M0609/Collected_m0609_vg10/m0609_vg10_raw/m0609_isaac_sim.usd
+    /Root/Xform_robot1/m0609_screw payload -> ../M0609/Collected_m0609_screw/m0609_screw.usd
+- _archive/M0609/... 안에 해당 payload 대상 파일들이 실제로 존재하고,
+  link_6 prim도 정상적으로 들어있음을 pxr.Usd.Stage.Open()으로 확인.
+
+[수정]
+  git mv _archive/M0609 usd/M0609
+
+  _archive 폴더 안의 다른 항목(basic, batteryfactory, clock, src, 4_pick_place (2).py)은
+  건드리지 않음. M0609 폴더만 원래 경로로 되돌림.
+
+[수정 후 검증]
+  pxr로 usd/m0609/m0609_rg2_cube.usd, m0609_vg10_cube.usd, m0609_screw_cube.usd를
+  다시 열어 link_6 prim이 정상적으로 검색되는 것을 확인:
+    RG2   -> /World/Xform/m0609_camera/m0609/link_6
+    VG10  -> /Root/Xform_robot1/m0609_isaac_sim/link_6
+    SCREW -> /Root/Xform_robot1/m0609_screw/m0609/link_6
+
+  "Could not open asset" 경고는 더 이상 발생하지 않음.
+
+[남은 참고사항 - 별개 이슈]
+  m0609_rg2_cube.usd를 열 때 아래 경고가 하나 남아 있음 (link_6 탐색과는 무관):
+    Unresolved reference prim path ... onrobot_rg2_physics.usd ...
+      introduced by ... onrobot_rg2_base.usd
+  RG2 그리퍼 서브에셋 내부의 별도 참조 문제로 보이며, Isaac Sim에서
+  RG2 그리퍼 physics가 정상 동작하는지는 별도로 확인 필요.
+
+[git 상태]
+  git mv로 인해 110개 파일이 rename으로 스테이징된 상태 (내용 변경 없음, 0 insertions/deletions).
+  아직 commit은 하지 않음.
+  main.py의 "M" 상태는 이번 작업과 무관한 기존 uncommitted 변경(포맷팅)임.

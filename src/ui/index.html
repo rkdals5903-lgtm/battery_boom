@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Battery Pack Story UI</title>
+  <link rel="stylesheet" href="style.css?v=motionv13" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.185.0/build/three.module.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div id="scene"></div>
+    <div id="transitionFade" class="transition-fade"></div>
+
+    <div id="menuOverlay" class="overlay visible">
+      <div class="menu-copy">
+        <div class="eyebrow">BATTERY MODULE AUTOMATION</div>
+        <h1>BATTERY PACK INTERFACE</h1>
+        <p>실제 통합 프로젝트의 현재 공정 정보를 확인하세요.</p>
+      </div>
+      <div class="menu-controls">
+        <button id="openBtn" class="main-btn">OPEN BATTERY</button>
+      </div>
+    </div>
+
+    <div id="inspectionOverlay" class="overlay hidden">
+      <div class="counter left">
+        <span class="counter-label">오픈한 배터리</span>
+        <strong id="openedCount">0</strong>
+      </div>
+
+      <div class="counter right">
+        <span class="counter-label">새로 만들어진 배터리</span>
+        <strong id="rebuiltCount">0</strong>
+      </div>
+
+      <div class="phase-banner">
+        <span id="phaseText">시스템 대기</span>
+      </div>
+
+      <div id="connectionBadge" class="connection-badge offline">ROS2 로그 연결 대기</div>
+
+      <div id="cellInfoCard" class="cell-info hidden">
+        <div class="cell-head">
+          <div class="head-copy">
+            <span id="batteryOrder" class="small-pill">배터리 #1</span>
+            <strong id="cellOrder">CELL 1 / 4</strong>
+          </div>
+          <div id="judgementBadge" class="status-badge neutral">검사 대기</div>
+        </div>
+        <div class="cell-body">
+          <div class="metric metric-voltage">
+            <span>전압</span>
+            <strong id="cellVoltage">-</strong>
+            <em id="voltageHint">합격 기준 10.00V 이상</em>
+          </div>
+          <div class="metric metric-appearance">
+            <span>CNN 검사</span>
+            <strong id="cellAppearance">-</strong>
+            <div id="appearanceBadge" class="status-badge neutral small">검사 대기</div>
+          </div>
+          <div class="metric full metric-judgement">
+            <span>판정</span>
+            <strong id="cellJudgement">-</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="good-pool">
+        <span>양품 셀 누적</span>
+        <strong id="goodCellPool">0 / 4</strong>
+      </div>
+
+      <div class="bottom-actions">
+        <button id="exitBtn" class="secondary-btn">나가기</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="main.js?v=motionv13"></script>
+</body>
+</html>

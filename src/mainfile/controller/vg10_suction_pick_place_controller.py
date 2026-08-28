@@ -1,0 +1,519 @@
+from enum import Enum
+
+import numpy as np
+from isaacsim.core.api.controllers import BaseController
+from isaacsim.core.utils.rotations import euler_angles_to_quat
+from isaacsim.core.utils.types import ArticulationAction
+from isaacsim.robot.manipulators.grippers import SurfaceGripper
+from isaacsim.robot.manipulators.manipulators import SingleManipulator
+
+from m0609_rmpflow_controller import RMPFlowController
+
+# ── EE 목표 자세 (Isaac Sim 쿼터니언 순서 = [qw, qx, qy, qz], scalar-first) ──
+# euler_angles_to_quat()의 각도 입력 단위는 라디안(radian)이다.
+# roll=0, pitch=π(=180deg) → VG10 흡착판(EE +Z)이 아래(-Z)를 향하는 자세.
+# pick 쪽 yaw는 배터리의 실제 놓인 방향(bbox)에 맞춰 forward()가 매 호출 계산하고,
+# place 쪽 yaw만 place_yaw_deg로 인스턴스 생성 시 고정한다.
+
+
+# ============================================================
+# 상태머신 Pick & Place 컨트롤러 (VG10 흡착 그리퍼용)
+# ============================================================
+#
+# RMPFlow 하나에 전체 경로를 맡기면 특이점 회피 때문에 짧은 이동에도
+# 돌아가는 경로가 나온다. 그래서 목표 관절 값이 뻔한 홈 복귀·베이스
+# 회전 구간은 관절을 직접 제어하고, 장애물/특이점 회피가 필요한
+# 접근·하강·상승 구간만 RMPFlow에 맡긴다.
+#
+#   INIT_HOME(관절) -> PICK_ABOVE(RMPFlow) -> PICK_DOWN(RMPFlow)
+#   -> GRIP(흡착) -> PICK_LIFT(RMPFlow) -> ROTATE_J1(관절)
+#   -> PLACE_ABOVE(RMPFlow) -> PLACE_DOWN(RMPFlow) -> RELEASE(흡착 해제)
+#   -> RETREAT(RMPFlow) -> RETURN_HOME(관절)
+#
+class PickPlaceState(Enum):
+    INIT_HOME = 0
+    PICK_ABOVE = 1
+    PICK_DOWN = 2
+    GRIP = 3
+    PICK_LIFT = 4
+    ROTATE_J1 = 5
+    PLACE_ABOVE = 6
+    PLACE_DOWN = 7
+    RELEASE = 8
+    RETREAT = 9
+    RETURN_HOME = 10
+    DONE = 11
+
+
+_STATE_ORDER = [
+    PickPlaceState.INIT_HOME,
+    PickPlaceState.PICK_ABOVE,
+    PickPlaceState.PICK_DOWN,
+    PickPlaceState.GRIP,
+    PickPlaceState.PICK_LIFT,
+    PickPlaceState.ROTATE_J1,
+    PickPlaceState.PLACE_ABOVE,
+    PickPlaceState.PLACE_DOWN,
+    PickPlaceState.RELEASE,
+    PickPlaceState.RETREAT,
+    PickPlaceState.RETURN_HOME,
+]
+
+# Event(State)별 사용 자세.
+#   Event 0~4 (PICK_ABOVE~PICK_LIFT)   : forward()가 pick_yaw_deg로 매 호출 계산(배터리 실제 방향)
+#   Event 5~9 (ROTATE_J1~RETURN_HOME)  : self._state_orientation(place_yaw_deg로 __init__에서 고정)
+# INIT_HOME / ROTATE_J1 / RETURN_HOME은 관절을 직접 제어하는 구간이라 RMPFlow에
+# orientation을 전달하지 않는다(=RMPFlow 미사용).
+
+# RMPFlow(Cartesian) 구간의 "최대 대기(타임아웃)" 프레임 수 — 아래 실제 도달 여부
+# 확인(_CARTESIAN_TOLERANCE)이 주 판정 기준이고, 이건 그래도 못 도달했을 때
+# 팔이 그 자리에 영원히 멈추지 않도록 하는 안전장치다. place 지점은 로봇 리치
+# 경계에 걸쳐 있어 수렴이 느릴 수 있으므로 넉넉하게 잡는다.
+_CARTESIAN_STEPS = {
+    PickPlaceState.PICK_ABOVE: 240,
+    PickPlaceState.PICK_DOWN: 180,
+    PickPlaceState.PICK_LIFT: 180,
+    PickPlaceState.PLACE_ABOVE: 240,
+    # PLACE_DOWN 실측 결과 180스텝(3초)에 위치오차 0.24m/자세오차 25도를 남긴 채
+    # 타임아웃되는 경우가 있었다 — 관절이 꼬여 특이점 근처에서 막힌 것으로 보여
+    # 시간을 늘려도 완전히 해결 안 될 수 있지만(진짜 도달 불가 지점이면 시간을
+    # 더 줘도 그대로 막힘), "시간 부족"과 "도달 불가"를 구분하기 위해 우선
+    # 넉넉하게(600스텝=10초) 늘려서 실제로 수렴하는지부터 확인한다.
+    PickPlaceState.PLACE_DOWN: 600,
+    PickPlaceState.RETREAT: 180,
+}
+# 목표 지점에 "도달했다"고 판정할 위치 오차 허용치(m).
+# PICK_DOWN/PLACE_DOWN(실제 접촉 지점)은 정밀해야 하지만, PICK_ABOVE/PICK_LIFT/
+# PLACE_ABOVE/RETREAT는 접근 높이(approach_height)만큼 띄운 경유점일 뿐이라
+# 몇 cm 어긋나도 실제 동작(접촉/흡착)에 영향이 없다. 그런데 RMPFlow는 목표에
+# 가까워질수록(마지막 몇 cm) 수렴이 느려져서, 이 경유점들까지 접촉 지점과
+# 같은 엄격한 허용치(0.02m)를 요구하면 TIMEOUT까지 몇 초를 그냥 날린다 —
+# 컨베이어 정지 시간(CONVEYOR_STOP_DURATION_S)을 갉아먹어 로봇이 실제로 집기도
+# 전에 벨트가 재개되는 원인이 됐다. 경유점은 허용치를 넉넉히 풀어 빨리
+# 넘어가고, 접촉 지점만 정밀도를 유지한다.
+_CARTESIAN_TOLERANCE = 0.02
+_APPROACH_CARTESIAN_TOLERANCE = 0.08
+_CARTESIAN_TOLERANCE_BY_STATE = {
+    PickPlaceState.PICK_ABOVE: _APPROACH_CARTESIAN_TOLERANCE,
+    PickPlaceState.PICK_DOWN: _CARTESIAN_TOLERANCE,
+    PickPlaceState.PICK_LIFT: _APPROACH_CARTESIAN_TOLERANCE,
+    PickPlaceState.PLACE_ABOVE: _APPROACH_CARTESIAN_TOLERANCE,
+    PickPlaceState.PLACE_DOWN: _CARTESIAN_TOLERANCE,
+    PickPlaceState.RETREAT: _APPROACH_CARTESIAN_TOLERANCE,
+}
+# 목표 자세에 "도달했다"고 판정할 각도 오차 허용치(rad, 약 3도).
+# 위치만 확인하면, RMPFlow가 위치는 다 왔는데 yaw 회전(PICK_ORIENTATION ->
+# place_orientation)이 아직 덜 끝난 채로 다음 단계(RELEASE)로 넘어가
+# 배터리가 덜 돌아간 자세로 놓이는 문제가 생긴다.
+_ORIENTATION_TOLERANCE = 0.05
+
+
+def _quat_angle_diff(q1: np.ndarray, q2: np.ndarray) -> float:
+    """두 쿼터니언 사이의 최소 회전각(rad). 부호(이중 표현) 차이는 무시한다."""
+    dot = float(np.clip(np.abs(np.dot(np.asarray(q1), np.asarray(q2))), -1.0, 1.0))
+    return 2.0 * np.arccos(dot)
+
+# 관절 직접 제어 구간의 목표 오차 허용치(rad)와, 못 미쳐도 강제로 넘어갈
+# 최대 프레임(타임아웃, 안전장치).
+_JOINT_TOLERANCE = 0.01
+_JOINT_TIMEOUT_STEPS = {
+    PickPlaceState.INIT_HOME: 200,
+    PickPlaceState.ROTATE_J1: 150,
+    PickPlaceState.RETURN_HOME: 200,
+}
+
+# 흡착/해제 명령을 유지하며 대기하는 프레임 수.
+# GRIP은 "최대 대기(타임아웃)"이다 — SurfaceGripper는 SURFACE_RETRY_INTERVAL(1.0초 ≈
+# 60프레임, 기본 60Hz 기준)마다 부착을 재시도하므로, 이보다 짧게 잡으면 실제로
+# 붙기도 전에 다음 단계(PICK_LIFT)로 넘어가 허공만 들어올리게 된다.
+_GRIPPER_HOLD_STEPS = {
+    PickPlaceState.GRIP: 180,
+    # open()을 불렀다고 곧바로 물리적으로 떨어지는 게 아니라서(GRIP의 부착
+    # 재시도와 대칭으로, 해제도 즉시 반영 안 될 수 있음), is_closed()로 실제
+    # 해제를 확인하고 넘어간다. 이 값은 그 확인이 안 될 때의 안전장치
+    # 타임아웃일 뿐이다 — 예전엔 20프레임(0.33초)이었는데, 확인 없이 그냥
+    # 시간이 지나면 넘어가는 방식이라 실제로는 아직 안 떨어졌는데 RETREAT로
+    # 넘어가 팔이 움직이기 시작했고, 뒤늦게 떨어지는 순간 팔의 이동 속도를
+    # 그대로 이어받아 가벼운 뚜껑이 튕겨 날아가는 원인이 됐다.
+    PickPlaceState.RELEASE: 90,
+}
+# 부착이 확인된 뒤에도 곧장 들어올리지 않고 이만큼(프레임) 더 붙잡고 있다가
+# 넘어간다 — 접촉 직후 물리가 안정되기 전에 들어올리다 놓치는 것을 방지.
+_GRIPPER_SETTLE_STEPS = 10
+
+
+class SuctionStatePickPlaceController(BaseController):
+    """VG10 흡착 그리퍼용 명시적 상태머신 Pick & Place 컨트롤러."""
+
+    def __init__(
+        self,
+        name: str,
+        gripper: SurfaceGripper,
+        robot_articulation: SingleManipulator,
+        urdf_path: str,
+        robot_description_path: str,
+        rmpflow_config_path: str,
+        end_effector_frame_name: str = "link_6",
+        home_joints_deg: np.ndarray = None,
+        j1_place_deg: float = 0.0,
+        approach_height: float = 0.25,
+        place_drop_height: float = 0.0,
+        place_yaw_deg: float = 90.0,
+        pick_lift_tilt_deg: float = 0.0,
+        pick_lift_y_tilt_deg: float = 0.0,
+        vertical_pick_lift_only: bool = False,
+        pick_lift_steps: int = None,
+        place_down_steps: int = None,
+    ) -> None:
+        super().__init__(name=name)
+
+        self._gripper = gripper
+        self._robot_articulation = robot_articulation
+        self._cspace_controller = RMPFlowController(
+            name=name + "_cspace_controller",
+            robot_articulation=robot_articulation,
+            urdf_path=urdf_path,
+            robot_description_path=robot_description_path,
+            rmpflow_config_path=rmpflow_config_path,
+            end_effector_frame_name=end_effector_frame_name,
+        )
+
+        self._home_joints = np.deg2rad(
+            home_joints_deg
+            if home_joints_deg is not None
+            else np.array([180.0, 0.0, 90.0, 0.0, 90.0, 0.0])
+        )
+        self._j1_place = np.deg2rad(j1_place_deg)
+        self._approach_height = approach_height
+        # place 쪽은 정확한 접촉 지점까지 완전히 내려가지 않고, 이만큼(m) 위에서
+        # 흡착을 풀어 그냥 떨어뜨린다 — 특히 이미 쌓여 있는 배터리 위에 놓을 때
+        # 정확한 접촉 높이까지 수렴시키려다 로봇이 계속 높은 채로 멈춰있는 문제를
+        # 피하기 위함.
+        self._place_drop_height = place_drop_height
+        # 이 값은 필요한 인스턴스에서만 PICK_LIFT에 적용한다. 기본값은 0도라
+        # 기존 VG10 동작에는 영향이 없다.
+        self._pick_lift_tilt_deg = pick_lift_tilt_deg
+        self._pick_lift_y_tilt_deg = pick_lift_y_tilt_deg
+        self._vertical_pick_lift_only = bool(vertical_pick_lift_only)
+
+        self._cartesian_steps = dict(_CARTESIAN_STEPS)
+        if pick_lift_steps is not None:
+            self._cartesian_steps[PickPlaceState.PICK_LIFT] = pick_lift_steps
+        if place_down_steps is not None:
+            self._cartesian_steps[PickPlaceState.PLACE_DOWN] = place_down_steps
+
+        # PICK 쪽(PICK_ABOVE/PICK_DOWN/GRIP/PICK_LIFT)은 forward()가 매 호출 받는
+        # pick_yaw_deg로 그때그때 계산하므로 여기서는 place 쪽만 고정해서 들고 있는다.
+        place_orientation = euler_angles_to_quat(
+            np.array([0.0, np.pi, np.deg2rad(place_yaw_deg)])
+        )
+        self._state_orientation = {
+            PickPlaceState.PLACE_ABOVE: place_orientation,
+            PickPlaceState.PLACE_DOWN:  place_orientation,
+            PickPlaceState.RELEASE:     place_orientation,
+            PickPlaceState.RETREAT:     place_orientation,
+        }
+
+        self._state_index = 0
+        self._step_in_state = 0
+        self._pick_target = None  # PICK_DOWN에서 고정한 XY를 PICK_LIFT에서 재사용
+        self._pick_lift_target = None
+        self._pick_lift_orientation = None
+        self._gripped_steps = 0  # GRIP 상태에서 is_closed()==True가 연속된 프레임 수
+        self._rotate_j1_hold = None  # ROTATE_J1 진입 시점에 고정한 J1 외 관절 스냅샷
+
+    @property
+    def _state(self) -> PickPlaceState:
+        if self._state_index >= len(_STATE_ORDER):
+            return PickPlaceState.DONE
+        return _STATE_ORDER[self._state_index]
+
+    def get_current_event(self) -> PickPlaceState:
+        return self._state
+
+    def is_done(self) -> bool:
+        return self._state == PickPlaceState.DONE
+
+    def did_pick_succeed(self) -> bool:
+        """GRIP 상태에서 흡착이 실제로 붙어(SETTLE_STEPS만큼 유지) 성공했는지.
+
+        is_done()은 상태머신이 끝까지 진행됐는지만 보고, GRIP 타임아웃으로
+        흡착 없이 강제로 다음 단계로 넘어간 경우도 True가 된다 — 물체를
+        못 집었는데도 pick&place가 "성공"으로 보고되는 걸 막으려면 이것도
+        같이 확인해야 한다.
+        """
+        return self._gripped_steps >= _GRIPPER_SETTLE_STEPS
+
+    def reset(self, skip_init_home: bool = False) -> None:
+        """skip_init_home=True면 INIT_HOME(관절을 home_joints_deg로 이동)을
+        건너뛰고 바로 PICK_ABOVE부터 시작한다. 호출부가 이미 다른 방식으로
+        시작 자세를 맞춰 놓은 경우(예: 관절을 직접 0도로 스냅) INIT_HOME이
+        거기서 또 home_joints_deg로 한 번 더 움직이는 중복 이동을 막는다."""
+        self._cspace_controller.reset()
+        self._state_index = 1 if skip_init_home else 0
+        self._step_in_state = 0
+        self._pick_target = None
+        self._pick_lift_target = None
+        self._pick_lift_orientation = None
+        self._gripped_steps = 0
+        self._rotate_j1_hold = None
+
+    def _advance(self) -> None:
+        self._state_index += 1
+        self._step_in_state = 0
+
+    def _joint_action(self, current_joint_positions, target_joints, joint_indices=None):
+        """current -> target(일부 관절만일 수도 있음)로 목표를 명령하고, 도달 여부를 함께 반환한다.
+
+        joint_indices가 주어지면, 그 안에 없는 관절은 target_joints에 담긴 값으로
+        고정 명령한다(현재 위치를 매 프레임 다시 읽어 명령하면 실제로는 붙잡는 게
+        아니라 그때그때 위치를 쫓아가기만 해서, 관성/동역학으로 흔들려도 저항하지
+        않는다). 호출부는 target_joints에 "움직일 축 목표값 + 나머지 축은 고정하고
+        싶은 값"을 전부 채워서 넘겨야 한다.
+        """
+        current_joint_positions = np.asarray(current_joint_positions, dtype=float)
+        target_joints = np.asarray(target_joints, dtype=float)
+
+        if joint_indices is None:
+            command = target_joints.copy()
+            error = np.abs(command - current_joint_positions)
+        else:
+            command = target_joints.copy()
+            error = np.abs(command[joint_indices] - current_joint_positions[joint_indices])
+
+        reached = bool(np.all(error < _JOINT_TOLERANCE)) if error.size else True
+        return ArticulationAction(joint_positions=command), reached
+
+    @staticmethod
+    def _log_event(state, target_position, target_orientation, gripper_cmd=None):
+        event = state.name
+        msg = (
+            f"[EVENT {event}] "
+            f"target_position={target_position}, "
+            f"target_orientation={target_orientation}"
+        )
+        if gripper_cmd is not None:
+            msg += f", gripper_cmd={gripper_cmd}"
+        print(msg)
+
+    def forward(
+        self,
+        picking_position: np.ndarray,
+        placing_position: np.ndarray,
+        current_joint_positions: np.ndarray,
+        end_effector_offset: np.ndarray = None,
+        pick_yaw_deg: float = 0.0,
+    ) -> ArticulationAction:
+        if end_effector_offset is None:
+            end_effector_offset = np.zeros(3)
+
+        state = self._state
+        self._step_in_state += 1
+        # 배터리가 컨베이어/팔레트 위에 놓인 실제 방향(bbox 긴 변 기준)에 맞춰
+        # 흡착 각도를 맞추려고, PICK 쪽 orientation은 매 프레임 호출부가 넘기는
+        # pick_yaw_deg로 새로 계산한다(place 쪽처럼 __init__에서 고정하지 않음).
+        pick_orientation = euler_angles_to_quat(
+            np.array([0.0, np.pi, np.deg2rad(pick_yaw_deg)])
+        )
+
+        # ---------------- DONE ----------------
+        if state == PickPlaceState.DONE:
+            if self._step_in_state == 1:
+                self._log_event(state, target_position=None, target_orientation=None)
+            return ArticulationAction(
+                joint_positions=[None] * current_joint_positions.shape[0]
+            )
+
+        # ---------------- 관절 직접 제어 구간 (RMPFlow 미사용 → EE orientation 개념 없음) ----------------
+        if state in (PickPlaceState.INIT_HOME, PickPlaceState.RETURN_HOME):
+            action, reached = self._joint_action(current_joint_positions, self._home_joints)
+            if self._step_in_state == 1:
+                self._log_event(
+                    state,
+                    target_position=self._home_joints,  # 관절-공간 목표 (Cartesian 목표 아님)
+                    target_orientation="N/A (joint-space control)",
+                )
+            if reached or self._step_in_state >= _JOINT_TIMEOUT_STEPS[state]:
+                self._advance()
+            return action
+
+        if state == PickPlaceState.ROTATE_J1:
+            if self._step_in_state == 1:
+                # J1 이외의 관절은 회전 시작 시점의 값으로 스냅샷을 떠서 그대로
+                # 고정한다(매 프레임 현재값을 다시 읽으면 흔들림에 저항하지 못함).
+                self._rotate_j1_hold = np.asarray(current_joint_positions, dtype=float).copy()
+            target = self._rotate_j1_hold.copy()
+            target[0] = self._j1_place
+            action, reached = self._joint_action(
+                current_joint_positions, target, joint_indices=[0]
+            )
+            if self._step_in_state == 1:
+                self._log_event(
+                    state,
+                    target_position=target,  # 관절-공간 목표 (Cartesian 목표 아님)
+                    target_orientation="N/A (joint-space control)",
+                )
+            if reached or self._step_in_state >= _JOINT_TIMEOUT_STEPS[state]:
+                self._advance()
+            return action
+
+        # ---------------- 흡착 ON/OFF (팔은 접촉 위치를 RMPFlow로 유지) ----------------
+        if state == PickPlaceState.GRIP:
+            self._gripper.close()
+            if self._step_in_state == 1:
+                self._pick_target = picking_position + end_effector_offset
+
+            target_position = self._pick_target
+            target_orientation = pick_orientation  # Event 2~3: bbox 기준 pick 각도
+
+            action = self._cspace_controller.forward(
+                target_end_effector_position=target_position,
+                target_end_effector_orientation=target_orientation,
+            )
+            if self._step_in_state == 1:
+                self._log_event(state, target_position, target_orientation, gripper_cmd="CLOSE")
+
+            # close()를 호출했다고 곧바로 붙은 게 아니다 — SurfaceGripper는 실제로
+            # 표면에 닿을 때까지 내부적으로 재시도한다. is_closed()로 실제 부착
+            # 여부를 확인하고, 붙은 뒤에도 SETTLE_STEPS만큼 더 붙잡고 있다가 넘어간다.
+            # 타임아웃(_GRIPPER_HOLD_STEPS[GRIP])이 지나도록 못 붙으면 흡착 실패로
+            # 보고 강제로 진행한다(팔이 그 자리에 멈춰버리는 것을 방지).
+            if self._gripper.is_closed():
+                self._gripped_steps += 1
+            else:
+                self._gripped_steps = 0
+
+            timed_out = self._step_in_state >= _GRIPPER_HOLD_STEPS[state]
+            if timed_out and self._gripped_steps < _GRIPPER_SETTLE_STEPS:
+                print("  [경고] 흡착 실패(타임아웃) — 붙잡지 못한 채로 다음 단계로 진행합니다.")
+            if self._gripped_steps >= _GRIPPER_SETTLE_STEPS or timed_out:
+                self._advance()
+            return action
+
+        if state == PickPlaceState.RELEASE:
+            self._gripper.open()
+
+            drop_up = np.array([0.0, 0.0, self._place_drop_height])
+            target_position = placing_position + end_effector_offset + drop_up
+            target_orientation = self._state_orientation[state]  # Event 7: place_orientation
+
+            action = self._cspace_controller.forward(
+                target_end_effector_position=target_position,
+                target_end_effector_orientation=target_orientation,
+            )
+            if self._step_in_state == 1:
+                self._log_event(state, target_position, target_orientation, gripper_cmd="OPEN")
+
+            really_released = not self._gripper.is_closed()
+            timed_out = self._step_in_state >= _GRIPPER_HOLD_STEPS[state]
+            if timed_out and not really_released:
+                print("  [경고] 흡착 해제 확인 안 됨(타임아웃) — 그래도 다음 단계로 진행합니다.")
+            if really_released or timed_out:
+                self._advance()
+            return action
+
+        # ---------------- RMPFlow(Cartesian) 구간 ----------------
+        pick_target = picking_position + end_effector_offset
+        place_target = placing_position + end_effector_offset
+        up = np.array([0.0, 0.0, self._approach_height])
+
+        if state == PickPlaceState.PICK_ABOVE:
+            target_position = pick_target + up          # Event 0: Pick 위치 위 접근
+        elif state == PickPlaceState.PICK_DOWN:
+            target_position = pick_target                # Event 1: Pick 위치로 하강
+            self._pick_target = pick_target
+        elif state == PickPlaceState.PICK_LIFT:
+            if self._vertical_pick_lift_only:
+                if self._pick_lift_target is None:
+                    ee_pos, ee_orientation = self._robot_articulation.end_effector.get_world_pose()
+                    self._pick_lift_target = np.asarray(ee_pos, dtype=float) + up
+                    self._pick_lift_orientation = np.asarray(ee_orientation, dtype=float)
+                    print(
+                        "[VERTICAL PICK LIFT] lock XY/orientation, "
+                        f"target={np.round(self._pick_lift_target, 5)}"
+                    )
+                target_position = self._pick_lift_target
+            else:
+                base = self._pick_target if self._pick_target is not None else pick_target
+                target_position = base + up                  # Event 4: 물체를 들고 수직 상승
+        elif state == PickPlaceState.PLACE_ABOVE:
+            target_position = place_target + up           # Event 5: Place 위치 위로 수평 이동
+        elif state == PickPlaceState.PLACE_DOWN:
+            # 정확한 접촉 지점까지 내려가지 않고 place_drop_height만큼 위에서 멈춘다
+            # (RELEASE에서 이 높이 그대로 흡착만 풀어 떨어뜨린다).
+            target_position = place_target + np.array([0.0, 0.0, self._place_drop_height])
+        elif state == PickPlaceState.RETREAT:
+            target_position = place_target + up           # Event 8: Place 위치에서 수직 상승
+        else:
+            raise RuntimeError(f"처리되지 않은 상태: {state}")
+
+        if (
+            state == PickPlaceState.PICK_LIFT
+            and (
+                self._pick_lift_tilt_deg != 0.0
+                or self._pick_lift_y_tilt_deg != 0.0
+            )
+        ):
+            target_orientation = euler_angles_to_quat(
+                np.array(
+                    [
+                        np.deg2rad(self._pick_lift_tilt_deg),
+                        np.pi + np.deg2rad(self._pick_lift_y_tilt_deg),
+                        np.deg2rad(pick_yaw_deg),
+                    ]
+                )
+            )
+        elif (
+            state == PickPlaceState.PICK_LIFT
+            and self._vertical_pick_lift_only
+            and self._pick_lift_orientation is not None
+        ):
+            target_orientation = self._pick_lift_orientation
+        elif state in (
+            PickPlaceState.PICK_ABOVE,
+            PickPlaceState.PICK_DOWN,
+            PickPlaceState.PICK_LIFT,
+        ):
+            target_orientation = pick_orientation
+        else:
+            target_orientation = self._state_orientation[state]
+
+        action = self._cspace_controller.forward(
+            target_end_effector_position=target_position,
+            target_end_effector_orientation=target_orientation,
+        )
+        if self._step_in_state == 1:
+            self._log_event(state, target_position, target_orientation)
+
+        # step_in_state가 타임아웃을 넘겼다고 무조건 넘어가면, RMPFlow가 아직
+        # 수렴하지 않았는데(특히 목표가 로봇 리치 경계에 걸린 place 쪽) 다음
+        # 단계(예: RELEASE)로 넘어가 "이동 다 끝나기도 전에 놓는" 문제가 생긴다.
+        # 실제 end_effector 위치를 target_position과 비교해 도달을 확인한다.
+        ee_pos, ee_orientation = self._robot_articulation.end_effector.get_world_pose()
+        position_error = float(np.linalg.norm(np.asarray(ee_pos) - target_position))
+        orientation_error = _quat_angle_diff(ee_orientation, target_orientation)
+        reached = (
+            position_error < _CARTESIAN_TOLERANCE_BY_STATE[state]
+            and orientation_error < _ORIENTATION_TOLERANCE
+        )
+        timed_out = self._step_in_state >= self._cartesian_steps[state]
+        if timed_out and not reached:
+            if state == PickPlaceState.PICK_LIFT and self._vertical_pick_lift_only:
+                raise TimeoutError(
+                    f"PICK_LIFT vertical lift failed: "
+                    f"position_error={position_error:.4f}m, "
+                    f"orientation_error={np.degrees(orientation_error):.1f}deg"
+                )
+            print(
+                f"  [경고] {state.name} 타임아웃 — 위치오차 {position_error:.4f}m, "
+                f"자세오차 {np.degrees(orientation_error):.1f}도 남은 채로 진행합니다."
+            )
+        if reached or timed_out:
+            tag = "REACHED" if reached else "TIMEOUT"
+            print(
+                f"  [POSTURE {state.name} {tag}] "
+                f"joint_positions_deg={np.round(np.degrees(current_joint_positions), 3).tolist()}"
+            )
+            self._advance()
+
+        return action
